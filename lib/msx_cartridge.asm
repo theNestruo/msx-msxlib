@@ -175,7 +175,7 @@ FRAME_RATE_60HZ_0:
 	.db	60, 6
 ; -----------------------------------------------------------------------------
 
-	.printtext	" ... msxlib init"
+	.printtext	" ... msxlib init (cartridge)"
 	.printhex	$
 
 ; EOF

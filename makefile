@@ -1,17 +1,15 @@
 
 #
-# current project (game) name
+# current game name
 #
 
-GAME=stevedore
+GAME=example
 
 #
 # commands
 #
 
 ASM=asmsx
-# ASM=sjasm
-# ASM=sjasmpg32_esp
 COPY=cmd /c copy
 EMULATOR=cmd /c start
 DEBUGGER=cmd /c start \MSX\bin\blueMSX_2.8.2\blueMSX.exe
@@ -44,8 +42,7 @@ ROM=\
 ROM_INTERMEDIATE=\
 	$(GAME_PATH)\$(GAME).rom
 
-SRCS=\
-	$(GAME_PATH)\$(GAME).asm \
+SRCS_MSXLIB=\
 	lib\msx_cartridge.asm \
 	lib\asm.asm \
 	lib\msx_input.asm \
@@ -83,58 +80,34 @@ SPRS_INTERMEDIATE=\
 	$(GAME_PATH)\sprites.pcx.spr
 
 DATAS=\
-	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\tutorial_01.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\tutorial_02.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\tutorial_03.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\tutorial_04.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\tutorial_05.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\jungle_01.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\vulcan_01.tmx.bin.$(PACK_EXTENSION)
+	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
 
 DATAS_INTERMEDIATE=\
-	$(GAME_PATH)\screen.tmx.bin \
-	$(GAME_PATH)\tutorial_01.tmx.bin \
-	$(GAME_PATH)\tutorial_02.tmx.bin \
-	$(GAME_PATH)\tutorial_03.tmx.bin \
-	$(GAME_PATH)\tutorial_04.tmx.bin \
-	$(GAME_PATH)\tutorial_05.tmx.bin \
-	$(GAME_PATH)\jungle_01.tmx.bin \
-	$(GAME_PATH)\vulcan_01.tmx.bin
+	$(GAME_PATH)\screen.tmx.bin
 
 #
 # phony targets
 #
 
 # default target
-default: rom
+default: $(ROM_INTERMEDIATE)
 
 clean:
 	$(REMOVE) ~tmppre.? $(GAME_PATH)\$(GAME).txt $(GAME_PATH)\$(GAME).sym
-
-cleangfx:
 	$(REMOVE) $(GFXS) $(GFXS_INTERMEDIATE)
-
-cleanspr:
 	$(REMOVE) $(SPRS) $(SPRS_INTERMEDIATE)
-
-cleandata:
 	$(REMOVE) $(DATAS) $(DATAS_INTERMEDIATE)
-
-cleanall: clean cleangfx cleanspr cleandata
 
 cleanrom:
 	$(REMOVE) $(ROM_INTERMEDIATE)
-	
-cleanallrom: cleanall cleanrom
 
-rom: $(ROM_INTERMEDIATE)
+cleanall: clean cleanrom
+
+test: $(ROM_INTERMEDIATE)
+	$(EMULATOR) $<
 
 debug: $(ROM_INTERMEDIATE)
 	$(DEBUGGER) $<
-
-run: $(ROM_INTERMEDIATE)
-	$(EMULATOR) $<
 
 deploy: $(ROM)
 
@@ -148,7 +121,7 @@ deploy: $(ROM)
 $(ROM): $(ROM_INTERMEDIATE)
 	$(COPY) $< $@
 	
-$(ROM_INTERMEDIATE): $(SRCS) $(GFXS) $(SPRS) $(DATAS)
+$(ROM_INTERMEDIATE): $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(GFXS) $(SPRS) $(DATAS)
 	$(REMOVE) $(GAME_PATH)\$(GAME).txt
 	$(ASM) $<
 	$(TYPE) $(GAME_PATH)\$(GAME).txt
@@ -171,7 +144,7 @@ $(GAME_PATH):
 %.pcx.nam.$(PACK_EXTENSION): %.pcx.nam
 	$(PACK) $<
 
-# -lh by default as packing produces smaller binaries
+# -lh by default because produces smaller binaries when packing
 %.pcx.chr %.pcx.clr: %.pcx
 	$(PCX2MSX) -lh $<
 
