@@ -5,12 +5,11 @@ rom_end:
 	.printhex	$
 ; -----------------------------------------------------------------------------
 
-;
 ; =============================================================================
 ; 	RAM
 ; =============================================================================
-;
 
+; -----------------------------------------------------------------------------
 IF (CFG_INIT_16KB_RAM > 0)
 	.page	3
 	.printtext	"------------------------------$c000-RAM-"
@@ -21,40 +20,38 @@ ELSE
 	.printhex	$
 ENDIF
 ram_start:
-
-;
-; =============================================================================
-; 	RAM: main MSXlib variables
-; =============================================================================
-;
-
-; rom_begin.asm
-
 ; -----------------------------------------------------------------------------
-; Refresh rate in Hertzs (50Hz/60Hz)
+
+
+; =============================================================================
+; 	MSX cartridge (ROM) header, entry point and initialization
+; -----------------------------------------------------------------------------
+; Refresh rate in Hertzs (50Hz/60Hz) and related convenience vars
 frame_rate:
 	.byte
-; Convenience vars that depends on the refresh rate
 frames_per_tenth:
 	.byte
-; -----------------------------------------------------------------------------
+; =============================================================================
 
-; helper_msx.asm
 
+; =============================================================================
+;	Input routines (BIOS-based)
 ; -----------------------------------------------------------------------------
 ; Stores GET_TRIGGER result
 trigger:
 	.byte
+
 ; Stores GET_STICK_TRIGGER_BITS result
 stick:
 	.byte
 stick_edge:
 	.byte
-; -----------------------------------------------------------------------------
+; =============================================================================
 
-; -----------------------------------------------------------------------------
-; VRAM buffers (namtbl, spratr)
 
+; =============================================================================
+;	VRAM buffers (NAMTBL and SPRATR)
+; -----------------------------------------------------------------------------
 ; NAMTBL buffer in RAM
 namtbl_buffer:
 	.ds	NAMTBL_SIZE
@@ -64,16 +61,19 @@ spratr_buffer:
 	.ds	SPRATR_SIZE
 spratr_buffer_end:
 	.byte	; to store one SPAT_END when the buffer is full
-; Direct pointers inside SPRATR buffer
+; (direct pointers inside SPRATR buffer)
 	spratr_player	equ spratr_buffer + 4* CFG_SPRITES_RESERVED_BEFORE
 	dynamic_sprites	equ spratr_buffer + 4* (CFG_SPRITES_RESERVED_BEFORE + CFG_PLAYER_SPRITES + CFG_SPRITES_RESERVED_AFTER)
-; -----------------------------------------------------------------------------
 
-;
+; Deferred WRTVRM vars (aka VPOKE-like vars)
+IF (CFG_VRAM_VPOKES > 0)
+vpoke_count:
+	.byte
+vpoke_array:
+	.ds	CFG_VRAM_VPOKES * VPOKE_SIZE
+ENDIF ; (CFG_VRAM_VPOKES > 0)
 ; =============================================================================
-; 	RAM: lib/game
-; =============================================================================
-;
+
 
 ; -----------------------------------------------------------------------------
 ; Player vars
@@ -130,6 +130,44 @@ IF (CFG_ENEMY_COUNT > 1)
 ENDIF
 	ENEMIES_SIZE	equ $ - enemies_array
 ; -----------------------------------------------------------------------------
+
+
+; =============================================================================
+;	Spriteable tiles routines
+; -----------------------------------------------------------------------------
+spriteables_data:
+spriteables_count:
+	.byte
+spriteables_array:
+; estado (0 = reposo, [MASK_TILE_SPRITE_DIRECTION | MASK_TILE_SPRITE_PENDING] = movimiento pendiente)
+	_SPRITEABLE_STATUS	equ $ - spriteables_array
+	.byte
+; offset del caracter superior izquierdo
+	_SPRITEABLE_OFFSET	equ $ - spriteables_array
+	.word
+; caracteres que definen el tile convertible
+	_SPRITEABLE_FOREGROUND	equ $ - spriteables_array
+	.ds	4
+; caracteres de fondo cubiertos por el tile convertible
+	_SPRITEABLE_BACKGROUND	equ $ - spriteables_array
+	.ds	4
+; atributos del sprite equivalente (patrón, color)
+	_SPRITEABLE_SPRATR	equ $ - spriteables_array
+	.byte	; patrón
+	.byte	; color
+	SPRITEABLE_SIZE		equ $ - spriteables_array
+; (resto del array)
+	.ds	(CFG_MAX_SPRITEABLES -1) * ($ - spriteables_array)
+	SPRITEABLES_SIZE	equ $ - spriteables_array
+
+	; _SPRITEABLE_STATUS	equ 0
+	; _SPRITEABLE_OFFSET	equ 1
+	; _SPRITEABLE_FOREGROUND	equ 3
+	; _SPRITEABLE_BACKGROUND	equ 7
+	; _SPRITEABLE_SPRATR	equ 11
+	; SPRITEABLE_SIZE		equ 13
+	; SPRITEABLES_SIZE	equ CFG_MAX_SPRITEABLES * SPRITEABLE_SIZE
+
 
 ; ;
 ; ; =============================================================================

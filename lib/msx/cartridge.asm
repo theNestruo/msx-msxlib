@@ -56,9 +56,9 @@
 rom_start:
 	.rom			; ID ("AB")
 	.start	CARTRIDGE_INIT	; INIT
-	nop			; random NOPs make asmsx happy
-	nop
-	nop
+	; nop			; random NOPs make asmsx happy
+	; nop
+	; nop
 	.org	rom_start + $10	; STATEMENT, DEVICE, TEXT, Reserved
 
 	.printtext	"-----Cartridge header---------$4000-ROM-"

@@ -1,11 +1,4 @@
 	
-; Rutinas para la actualización diferida de NAMTBL
-	CFG_VRAM_DELAYED_WRTVRM	equ 1
-	DELAYED_WRTVRM_SIZE	equ 64
-	
-; Número máximo de tiles convertibles en sprites
-	CFG_MAX_SPRITEABLES	equ 16
-
 ; Constantes simbólicas de tiles convertibles en sprites
 	MASK_SPRITEABLE_PENDING		equ $0f ; movimiento en píxeles
 	MASK_SPRITEABLE_DIRECTION	equ $70
@@ -17,77 +10,9 @@
 	SPRITEABLE_DIR_LEFT		equ $40
 	SPRITEABLE_STOPPED		equ $80
 
-;
 ; =============================================================================
 ;	Subrutinas para tiles convertibles en sprites
 ; =============================================================================
-;
-
-; -----------------------------------------------------------------------------
-; Inicializa la cola de volcados de NAMTBL
-INIT_DELAYED_WRTVRM_ARRAY:
-	xor	a
-	ld	[delayed_wrtvrm_count], a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Añade un elemento a la cola de volcados de NAMTBL
-; param hl: offset de NAMTBL
-; param a: valor a escribir
-; ret hl: offset de NAMTBL
-; ret a: valor escrito
-; touches bc
-DELAYED_WRTVRM:
-	push	ix ; preserva el valor anterior de IX
-	push	af ; preserva el valor a escribir
-; Añade un elemento al array
-	ld	ix, delayed_wrtvrm_count
-	ld	bc, 3
-	call	ADD_ARRAY_IX
-; Informa el elemento añadido
-	pop	af ; restaura el valor a escribir
-	ld	[ix +0], l
-	ld	[ix +1], h
-	ld	[ix +2], a
-	pop	ix ; restaura el valor anterior de IX
-	ret
-; -----------------------------------------------------------------------------
-	
-; -----------------------------------------------------------------------------
-; Ejecuta los volcados de NAMTBL encolados y vacía la cola
-EXECUTE_DELAYED_WRTVRM:
-; Comprueba si hay elementos encolados
-	ld	ix, delayed_wrtvrm_count
-	ld	a, [ix]
-	or	a
-	ret	z ; no hay elementos
-; hay elementos
-	ld	b, a
-	xor	a ; resetea el contador para la próxima ejecución
-	ld	[ix], a
-	inc	ix ; ix = delayed_wrtvrm_array
-	ld	de, NAMTBL ; para convertir offsets en NAMTBL
-
-; Para cada elemento
-@@LOOP:
-	push	bc ; preserva el contador
-	
-; Lee el offset en bc
-	ld	l, [ix +0]
-	ld	h, [ix +1]
-	ld	a, [ix +2]
-; Vuelca el byte en VRAM
-	add	hl, de
-	call	WRTVRM
-; Avanza al siguiente elemento
-	ld	bc, 3
-	add	ix, bc
-	
-	pop	bc ; restaura el contador
-	djnz	@@LOOP
-	ret
-; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Resetea toda la información de los tiles convertibles
@@ -206,7 +131,7 @@ UPDATE_SPRITEABLES:
 	; xor	a ; innecesario
 	ld	[ix + _SPRITEABLE_STATUS], a
 ; vuelca en VRAM los caracteres que definen del tile convertible
-	call	DELAYED_WRTVRM_SPRITEABLE_FOREGROUND
+	call	VPOKE_SPRITEABLE_FOREGROUND
 	
 ; siguiente elemento
 @@NEXT:
@@ -225,7 +150,7 @@ MOVE_SPRITEABLE_RIGHT:
 	ld	a, SPRITEABLE_DIR_RIGHT | SPRITEABLE_PENDING_0
 	ld	[ix +_SPRITEABLE_STATUS], a
 ; Limpia el tile convertible en VRAM y en buffer
-	call	DELAYED_WRTVRM_SPRITEABLE_BACKGROUND
+	call	VPOKE_SPRITEABLE_BACKGROUND
 	call	NAMTBL_BUFFER_ERASE
 ; Actualiza las coordenadas del tile convertible
 	ld	e, [ix +_SPRITEABLE_OFFSET +0]
@@ -246,7 +171,7 @@ MOVE_SPRITEABLE_LEFT:
 	ld	a, SPRITEABLE_DIR_LEFT | SPRITEABLE_PENDING_0
 	ld	[ix +_SPRITEABLE_STATUS], a
 ; Limpia el tile convertible en VRAM y en buffer
-	call	DELAYED_WRTVRM_SPRITEABLE_BACKGROUND
+	call	VPOKE_SPRITEABLE_BACKGROUND
 	call	NAMTBL_BUFFER_ERASE
 ; Actualiza las coordenadas del tile convertible
 	ld	e, [ix +_SPRITEABLE_OFFSET +0]
@@ -267,7 +192,7 @@ MOVE_SPRITEABLE_DOWN:
 	ld	a, SPRITEABLE_DIR_DOWN | SPRITEABLE_PENDING_0
 	ld	[ix +_SPRITEABLE_STATUS], a
 ; Limpia el tile convertible en VRAM y en buffer
-	call	DELAYED_WRTVRM_SPRITEABLE_BACKGROUND
+	call	VPOKE_SPRITEABLE_BACKGROUND
 	call	NAMTBL_BUFFER_ERASE
 ; Actualiza las coordenadas del tile convertible
 	ld	l, [ix +_SPRITEABLE_OFFSET +0]
@@ -347,49 +272,49 @@ NAMTBL_BUFFER_PRINT:
 ; -----------------------------------------------------------------------------
 ; Vuelca en VRAM los caracteres de fondo del tile convertible
 ; param ix: puntero al tile convertible
-DELAYED_WRTVRM_SPRITEABLE_BACKGROUND:
+VPOKE_SPRITEABLE_BACKGROUND:
 ; Caracter superior izquierdo
 	ld	l, [ix +_SPRITEABLE_OFFSET +0]
 	ld	h, [ix +_SPRITEABLE_OFFSET +1]
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +0]
-	call	DELAYED_WRTVRM
+	call	VPOKE
 ; Caracter superior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +1]
-	call	DELAYED_WRTVRM
+	call	VPOKE
 ; Caracter inferior izquierdo
 	ld	de, SCR_WIDTH -1
 	add	hl, de
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +2]
-	call	DELAYED_WRTVRM
+	call	VPOKE
 ; Caracter inferior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +3]
-	jp	DELAYED_WRTVRM
+	jp	VPOKE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Vuelca en VRAM los caracteres que definen del tile convertible
 ; param ix: puntero al tile convertible
-DELAYED_WRTVRM_SPRITEABLE_FOREGROUND:
+VPOKE_SPRITEABLE_FOREGROUND:
 ; Caracter superior izquierdo
 	ld	l, [ix +_SPRITEABLE_OFFSET +0]
 	ld	h, [ix +_SPRITEABLE_OFFSET +1]
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +0]
-	call	DELAYED_WRTVRM
+	call	VPOKE
 ; Caracter superior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +1]
-	call	DELAYED_WRTVRM
+	call	VPOKE
 ; Caracter inferior izquierdo
 	ld	de, SCR_WIDTH -1
 	add	hl, de
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +2]
-	call	DELAYED_WRTVRM
+	call	VPOKE
 ; Caracter inferior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +3]
-	jp	DELAYED_WRTVRM
+	jp	VPOKE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
