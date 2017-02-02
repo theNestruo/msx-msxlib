@@ -5,14 +5,14 @@
 
 ; -----------------------------------------------------------------------------
 ; Bit index for default tile properties
-	BIT_WORLD_SOLID		equ 0
-	BIT_WORLD_FLOOR		equ 1
-	BIT_WORLD_STAIRS	equ 2
-	BIT_WORLD_DEATH		equ 3
-	BIT_WORLD_UX_WALK_ON	equ 4 ; Tile collision (single char)
-	BIT_WORLD_UX_WIDE_ON	equ 5 ; Wide tile collision (player width)
-	BIT_WORLD_UX_WALK_OVER	equ 6 ; Walking over tiles (player width)
-	BIT_WORLD_UX_PUSH	equ 7 ; Pushing tiles (player height)
+	BIT_WORLD_SOLID:	equ 0
+	BIT_WORLD_FLOOR:	equ 1
+	BIT_WORLD_STAIRS:	equ 2
+	BIT_WORLD_DEATH:	equ 3
+	BIT_WORLD_UX_WALK_ON:	equ 4 ; Tile collision (single char)
+	BIT_WORLD_UX_WIDE_ON:	equ 5 ; Wide tile collision (player width)
+	BIT_WORLD_UX_WALK_OVER:	equ 6 ; Walking over tiles (player width)
+	BIT_WORLD_UX_PUSH:	equ 7 ; Pushing tiles (player height)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ GET_TILE_AT_XY:
 ; Is on screen?
 	ld	a, e
 	sub	192 -1
-	jr	nc, @@OFF_SCREEN ; no (e >= 192)
+	jr	nc, .OFF_SCREEN ; no (e >= 192)
 ; yes: pixel coordinates to offset
 	call	COORDS_TO_OFFSET
 	ex	de, hl ; offset now in de
@@ -98,7 +98,7 @@ GET_TILE_AT_XY:
 	ld	a, [hl]
 	ret
 	
-@@OFF_SCREEN:
+.OFF_SCREEN:
 ; Is below screen?
 	cp	32 +1
 	ld	a, CFG_TILES_OFFSCREEN_BOTTOM
@@ -115,16 +115,16 @@ GET_TILE_AT_XY:
 ; touches hl
 GET_TILE_PROPERTIES:
 	ld	hl, TILE_PROPERTIES_TABLE
-@@LOOP:
+.LOOP:
 ; Is the current tile group max index less than or equals the tile index?
 	cp	[hl]
 	inc	hl ; hl now points to the properties
-	jr	c, @@OK ; yes (lower)
-	jr	z, @@OK ; yes (equal)
+	jr	c, .OK ; yes (lower)
+	jr	z, .OK ; yes (equal)
 ; no: skip to the next tile group
 	inc	hl ; hl now points to the next tile group
-	jr	@@LOOP
-@@OK:
+	jr	.LOOP
+.OK:
 	ld	a, [hl]
 	ret
 ; -----------------------------------------------------------------------------
@@ -166,7 +166,7 @@ CHECK_V_TILES:
 	call	GET_TILE_PROPERTIES
 	pop	hl ; restaura puntero a buffer namtbl
 ; Para cada tile restante
-@@LOOP:
+.LOOP:
 	push	bc ; preserva contador
 ; Avanza el puntero en buffer namtbl
 	ld	bc, SCR_WIDTH
@@ -182,7 +182,7 @@ CHECK_V_TILES:
 ; Pasa al siguiente tile
 	pop	hl ; restaura el puntero
 	pop	bc ; restaura contador
-	djnz	@@LOOP
+	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -213,7 +213,7 @@ CHECK_H_TILES:
 	call	GET_TILE_PROPERTIES
 	pop	hl ; restaura puntero a buffer namtbl
 ; Para cada tile restante
-@@LOOP:
+.LOOP:
 	push	bc ; preserva contador
 ; Avanza el puntero en buffer namtbl
 	inc	hl
@@ -228,7 +228,7 @@ CHECK_H_TILES:
 ; Pasa al siguiente tile
 	pop	hl ; restaura el puntero
 	pop	bc ; restaura contador
-	djnz	@@LOOP
+	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------
 

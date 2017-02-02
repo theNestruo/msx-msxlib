@@ -68,21 +68,21 @@ DISSCR_FADE_OUT:
 ; Fundido
 	ld	hl, NAMTBL
 	ld	b, SCR_WIDTH
-@@COL:
+.COL:
 	push	bc ; preserva contador de columnas
 	push	hl ; preserva puntero
 	ld	de, SCR_WIDTH
 	ld	b, SCR_HEIGHT
 	ld	a, $20 ; " " ASCII
-@@H_CHAR:
+.H_CHAR:
 	call	WRTVRM
 	add	hl, de
-	djnz	@@H_CHAR
+	djnz	.H_CHAR
 	halt
 	pop	hl ; restaura puntero
 	inc	hl
 	pop	bc ; restaura contador de columnas
-	djnz	@@COL
+	djnz	.COL
 
 ; Desactiva la pantalla
 	jp	DISSCR
@@ -129,11 +129,11 @@ LDIRVM_NAMTBL_FADE_INOUT:
 	ld	hl, NAMTBL
 	ld	de, namtbl_buffer
 	ld	c, SCR_WIDTH
-@@COL:
+.COL:
 	push	hl ; preserva puntero hl
 	push	de ; preserva puntero de
 	ld	b, SCR_HEIGHT
-@@CHAR:
+.CHAR:
 	push	bc ; preserva contadores
 ; escribe un caracter
 	ld	a, [de]
@@ -145,7 +145,7 @@ LDIRVM_NAMTBL_FADE_INOUT:
 	add	hl, bc
 	ex	de, hl
 	pop	bc ; restaura contadores
-	djnz	@@CHAR
+	djnz	.CHAR
 	push	bc ; preserva contadores
 	halt
 ; se mueve a la derecha una posición
@@ -155,7 +155,7 @@ LDIRVM_NAMTBL_FADE_INOUT:
 	pop	hl ; restaura puntero hl
 	inc	hl
 	dec	c
-	jr	nz, @@COL
+	jr	nz, .COL
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -263,16 +263,6 @@ LDIRVM_CXRTBL_BANK:
 	jp	LDIRVM
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Descomprime
-; param hl: origen de datos (comprimidos)
-; param de: destino en RAM
-UNPACK:
-	; Pletter (v0.5c1, XL2S Entertainment, asMSX syntax by José Vila Cuadrillero)
-	.include	"libext/pletter05c-unpackRam-asmsx.asm"
-; -----------------------------------------------------------------------------
-
-
 ; =============================================================================
 ;	NAMTBL buffer text routines
 ; =============================================================================
@@ -286,11 +276,11 @@ PRINT_TXT:
 	call	LOCATE_CENTER
 PRINT_TXT_DE_OK:
 	xor	a
-@@LOOP:
+.LOOP:
 	cp	[hl]
 	ret	z
 	ldi
-	jr	@@LOOP
+	jr	.LOOP
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -358,7 +348,7 @@ CLEAR_LINE:
 
 ; -----------------------------------------------------------------------------
 ; Número de sprites gestionados dinámicamente (por ejemplo: enemigos, balas)
-	CFG_SPRITES_DYNAMIC	equ 32 -CFG_SPRITES_RESERVED_BEFORE -CFG_PLAYER_SPRITES -CFG_SPRITES_RESERVED_AFTER
+	CFG_SPRITES_DYNAMIC:	equ 32 -CFG_SPRITES_RESERVED_BEFORE -CFG_PLAYER_SPRITES -CFG_SPRITES_RESERVED_AFTER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -368,9 +358,9 @@ CLEAR_LINE:
 ; param e: coordenada y
 ; param b: número de sprites
 MOVE_SPRITE_XY:
-	djnz	@@MULTI
+	djnz	.MULTI
 
-@@DO_PUT_SPRITE_XY:
+.DO_PUT_SPRITE_XY:
 ; spratr y = coordenada y -16 -1
 	ld	a, e
 	add	CFG_SPRITES_Y_OFFSET
@@ -382,29 +372,29 @@ MOVE_SPRITE_XY:
 	ld	[hl], a
 	ret
 	
-@@MULTI:
+.MULTI:
 ; primer sprite
 	push	de ; preserva las coordenadas del objeto
-	call	@@DO_PUT_SPRITE_XY
+	call	.DO_PUT_SPRITE_XY
 	pop	de ; restaura las coordenadas del objeto
 ; lee el patrón del sprite
 	inc	hl
 	ld	a, [hl]
-@@LOOP:
+.LOOP:
 ; guarda el patrón del sprite en c
 	ld	c, a
 ; siguiente sprite
 	push	de ; preserva las coordenadas del objeto
 	inc	hl ; avanza hasta el buffer de la spratr del siguiente sprite
 	inc	hl
-	call	@@DO_PUT_SPRITE_XY
+	call	.DO_PUT_SPRITE_XY
 	pop	de ; restaura las coordenadas del objeto
 ; escribe el siguiente patrón (c + 4)
 	inc	hl
 	ld	a, 4
 	add	c
 	ld	[hl], a
-	djnz	@@LOOP
+	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -415,14 +405,14 @@ RESET_DYNAMIC_SPRITES:
 	ld	hl, dynamic_sprites
 	ld	b, (spratr_buffer_end - dynamic_sprites) / 4
 	ld	a, SPAT_END
-@@LOOP:
+.LOOP:
 	ld	[hl], a
 ; Avanza al siguiente sprite
 	inc	hl
 	inc	hl
 	inc	hl
 	inc	hl
-	djnz	@@LOOP
+	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -443,15 +433,15 @@ PUT_DYNAMIC_SPRITE:
 ; Localiza el SPAT_END
 	ld	hl, dynamic_sprites
 	ld	a, SPAT_END
-@@LOOP:
+.LOOP:
 	cp	[hl]
-	jr	z, @@HL_OK
+	jr	z, .HL_OK
 	inc	hl
 	inc	hl
 	inc	hl
 	inc	hl
-	jr	@@LOOP
-@@HL_OK:
+	jr	.LOOP
+.HL_OK:
 
 ; Vuelca los valores en el buffer de SPRATR
 	ld	[hl], d
@@ -469,13 +459,13 @@ PUT_DYNAMIC_SPRITE:
 ;	Deferred WRTVRM routines (aka VPOKE-like routines)
 ; =============================================================================
 
-	VPOKE_SIZE	equ 3
+	VPOKE_SIZE:	equ 3
 
 IF (CFG_VRAM_VPOKES > 0)
 
 ; -----------------------------------------------------------------------------
 ; Inicializa la cola de volcados de NAMTBL
-INIT_VPOKES:
+RESET_VPOKES:
 	xor	a
 	ld	[vpoke_count], a
 	ret
@@ -520,7 +510,7 @@ EXECUTE_VPOKES:
 	ld	de, NAMTBL ; para convertir offsets en NAMTBL
 
 ; Para cada elemento
-@@LOOP:
+.LOOP:
 	push	bc ; preserva el contador
 	
 ; Lee el offset en bc
@@ -535,7 +525,7 @@ EXECUTE_VPOKES:
 	add	ix, bc
 	
 	pop	bc ; restaura el contador
-	djnz	@@LOOP
+	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------
 

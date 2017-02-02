@@ -1,14 +1,14 @@
 	
 ; Constantes simbólicas de tiles convertibles en sprites
-	MASK_SPRITEABLE_PENDING		equ $0f ; movimiento en píxeles
-	MASK_SPRITEABLE_DIRECTION	equ $70
-	SPRITEABLE_PENDING_0		equ 7 ; número de píxeles: 8 (= 1 tile)
-	SPRITEABLE_IDLE			equ $00
-	SPRITEABLE_DIR_UP		equ $10
-	SPRITEABLE_DIR_DOWN		equ $20
-	SPRITEABLE_DIR_RIGHT		equ $30
-	SPRITEABLE_DIR_LEFT		equ $40
-	SPRITEABLE_STOPPED		equ $80
+	MASK_SPRITEABLE_PENDING:	equ $0f ; movimiento en píxeles
+	MASK_SPRITEABLE_DIRECTION:	equ $70
+	SPRITEABLE_PENDING_0:		equ 7 ; número de píxeles: 8 (= 1 tile)
+	SPRITEABLE_IDLE:		equ $00
+	SPRITEABLE_DIR_UP:		equ $10
+	SPRITEABLE_DIR_DOWN:		equ $20
+	SPRITEABLE_DIR_RIGHT:		equ $30
+	SPRITEABLE_DIR_LEFT:		equ $40
+	SPRITEABLE_STOPPED:		equ $80
 
 ; =============================================================================
 ;	Subrutinas para tiles convertibles en sprites
@@ -79,20 +79,20 @@ GET_SPRITEABLE_COORDS:
 GET_SPRITEABLE_OFFSET:
 ; Recorre el array de elementos
 	ld	ix, spriteables_array
-@@LOOP:
+.LOOP:
 ; ¿Coincide la coordenada y?
 	ld	a, [ix +_SPRITEABLE_OFFSET +0]
 	cp	e
-	jr	nz, @@NEXT ; no
+	jr	nz, .NEXT ; no
 ; sí: ¿coincide la coordenada x?
 	ld	a, [ix +_SPRITEABLE_OFFSET +1]
 	cp	d
 	ret	z ; sí
 ; no: siguiente elemento
-@@NEXT:
+.NEXT:
 	ld	bc, SPRITEABLE_SIZE
 	add	ix, bc
-	jr	@@LOOP
+	jr	.LOOP
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -107,26 +107,26 @@ UPDATE_SPRITEABLES:
 	inc	ix ; ix = spriteables_array
 	
 ; Para cada elemento
-@@LOOP:
+.LOOP:
 	push	bc ; preserva contador
 	
 ; Comprueba si tiene dirección de movimiento
 	ld	a, [ix + _SPRITEABLE_STATUS]
 	ld	b, a ; preserva status
 	and	MASK_SPRITEABLE_DIRECTION
-	jr	z, @@NEXT ; no
+	jr	z, .NEXT ; no
 	
 ; sí: comprueba si tiene pendiente movimiento
 	ld	a, MASK_SPRITEABLE_PENDING
 	and	b
-	jr	z, @@END ; no
+	jr	z, .END ; no
 	
 ; sí: muestra el sprite
 	dec	[ix + _SPRITEABLE_STATUS]
 	call	PUT_SPRITEABLE_SPRITE
-	jr	@@NEXT
+	jr	.NEXT
 	
-@@END:
+.END:
 ; desactiva el tile convertible para el siguiente frame
 	; xor	a ; innecesario
 	ld	[ix + _SPRITEABLE_STATUS], a
@@ -134,11 +134,11 @@ UPDATE_SPRITEABLES:
 	call	VPOKE_SPRITEABLE_FOREGROUND
 	
 ; siguiente elemento
-@@NEXT:
+.NEXT:
 	ld	bc, SPRITEABLE_SIZE
 	add	ix, bc
 	pop	bc ; restaura contador
-	djnz	@@LOOP
+	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -147,7 +147,7 @@ UPDATE_SPRITEABLES:
 ; param ix: puntero al tile convertible
 MOVE_SPRITEABLE_RIGHT:
 ; Cambio de estado del elemento
-	ld	a, SPRITEABLE_DIR_RIGHT | SPRITEABLE_PENDING_0
+	ld	a, SPRITEABLE_DIR_RIGHT OR SPRITEABLE_PENDING_0
 	ld	[ix +_SPRITEABLE_STATUS], a
 ; Limpia el tile convertible en VRAM y en buffer
 	call	VPOKE_SPRITEABLE_BACKGROUND
@@ -168,7 +168,7 @@ MOVE_SPRITEABLE_RIGHT:
 ; param ix: puntero al tile convertible
 MOVE_SPRITEABLE_LEFT:
 ; cambio de estado del elemento
-	ld	a, SPRITEABLE_DIR_LEFT | SPRITEABLE_PENDING_0
+	ld	a, SPRITEABLE_DIR_LEFT OR SPRITEABLE_PENDING_0
 	ld	[ix +_SPRITEABLE_STATUS], a
 ; Limpia el tile convertible en VRAM y en buffer
 	call	VPOKE_SPRITEABLE_BACKGROUND
@@ -189,7 +189,7 @@ MOVE_SPRITEABLE_LEFT:
 ; param ix: puntero al tile convertible
 MOVE_SPRITEABLE_DOWN:
 ; cambio de estado del elemento
-	ld	a, SPRITEABLE_DIR_DOWN | SPRITEABLE_PENDING_0
+	ld	a, SPRITEABLE_DIR_DOWN OR SPRITEABLE_PENDING_0
 	ld	[ix +_SPRITEABLE_STATUS], a
 ; Limpia el tile convertible en VRAM y en buffer
 	call	VPOKE_SPRITEABLE_BACKGROUND
@@ -328,48 +328,48 @@ PUT_SPRITEABLE_SPRITE:
 ; ¿Hay movimiento pendiente?
 	ld	a, [ix +_SPRITEABLE_STATUS]
 	and	MASK_SPRITEABLE_PENDING
-	jr	z, @@DE_OK ; no
+	jr	z, .DE_OK ; no
 ; sí: ajuste de coordenadas en función de la dirección
 	ld	b, a ; preserva el número de píxeles pendientes
 	ld	a, [ix +_SPRITEABLE_STATUS]
 	and	MASK_SPRITEABLE_DIRECTION
 	cp	SPRITEABLE_DIR_RIGHT
-	jr	z, @@RIGHT
+	jr	z, .RIGHT
 	cp	SPRITEABLE_DIR_LEFT
-	jr	z, @@LEFT
+	jr	z, .LEFT
 	cp	SPRITEABLE_DIR_DOWN
-	jr	z, @@DOWN
-	; jr	@@UP ; falls through
+	jr	z, .DOWN
+	; jr	.UP ; falls through
 	
-@@UP:
+.UP:
 ; arriba: ajuste de coordenada y += pediente
 	ld	a, d
 	add	b
 	ld	d, a
-	jr	@@DE_OK
+	jr	.DE_OK
 	
-@@RIGHT:
+.RIGHT:
 ; derecha: ajuste de coordenada x -= pediente
 	ld	a, e
 	sub	b
 	ld	e, a
-	jr	@@DE_OK
+	jr	.DE_OK
 	
-@@LEFT:
+.LEFT:
 ; izquierda: ajuste de coordenada x += pediente
 	ld	a, e
 	add	b
 	ld	e, a
-	jr	@@DE_OK
+	jr	.DE_OK
 	
-@@DOWN:
+.DOWN:
 ; abajo: ajuste de coordenada y -= pediente
 	ld	a, d
 	sub	b
 	ld	d, a
-	jr	@@DE_OK
+	jr	.DE_OK
 	
-@@DE_OK:
+.DE_OK:
 	ld	c, [ix + _SPRITEABLE_SPRATR +0] ; patrón
 	ld	b, [ix + _SPRITEABLE_SPRATR +1] ; color
 	jp	PUT_DYNAMIC_SPRITE

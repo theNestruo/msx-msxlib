@@ -15,14 +15,14 @@ EH_PUT_SPRITE_ANIM:
 	ld	a, [ix + _ENEMY_ANIMATION_DELAY]
 	inc	a
 	cp	CFG_ENEMY_ANIMATION_DELAY
-	jr	nz, @@DONT_ANIMATE ; not yet
+	jr	nz, .DONT_ANIMATE ; not yet
 ; switches the animation flag
 	ld	a, FLAG_ENEMY_PATTERN_ANIM
 	xor	[ix + _ENEMY_PATTERN]
 	ld	[ix + _ENEMY_PATTERN], a
 ; resets the animation delay
 	xor	a
-@@DONT_ANIMATE:
+.DONT_ANIMATE:
 	ld	[ix + _ENEMY_ANIMATION_DELAY], a
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -51,12 +51,12 @@ EH_IDLE:
 ; Is the argument zero?
 	ld	a, [iy + _STATE_ARGUMENT]
 	or	a
-	jr	nz, @@DO_WAIT ; no: do the wait
+	jr	nz, .DO_WAIT ; no: do the wait
 ; yes: ret nz (this handler never finishes)
 	or	1
 	ret
 	
-@@DO_WAIT:
+.DO_WAIT:
 ; increases frame counter and checks against the argument
 	inc	[ix + _ENEMY_FRAME_COUNTER]
 	; ld	a, [iy + _STATE_ARGUMENT] ; unnecessary
@@ -78,12 +78,12 @@ EH_IDLE_TURNING:
 	xor	[iy + _STATE_ARGUMENT]
 	ld	b, a ; preserves comparison without mask
 	and	$3f ; masks the ffffff part
-	jr	z, @@DO_TURN ; must turn
+	jr	z, .DO_TURN ; must turn
 ; no turn yet
 	inc	[ix + _ENEMY_FRAME_COUNTER]
 	ret	; nz
 	
-@@DO_TURN:
+.DO_TURN:
 	call	TURN_ENEMY
 ; checks iteration counter against the argument
 	ld	a, b ; restores comparison (ffffff is zero)

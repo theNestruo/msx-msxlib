@@ -6,22 +6,22 @@
 
 ; -----------------------------------------------------------------------------
 ; Bounding box coordinates offset from the logical coordinates
-	ENEMY_BOX_X_OFFSET	equ -(CFG_ENEMY_WIDTH / 2)
-	ENEMY_BOX_Y_OFFSET	equ -CFG_ENEMY_HEIGHT
+	ENEMY_BOX_X_OFFSET:	equ -(CFG_ENEMY_WIDTH / 2)
+	ENEMY_BOX_Y_OFFSET:	equ -CFG_ENEMY_HEIGHT
 
 ; Bits and flags of the enemy pattern modifiers
-	BIT_ENEMY_PATTERN_LEFT	equ 3
-	BIT_ENEMY_PATTERN_ANIM	equ 2
-	FLAG_ENEMY_PATTERN_LEFT	equ (1 << BIT_ENEMY_PATTERN_LEFT) ; $08
-	FLAG_ENEMY_PATTERN_ANIM	equ (1 << BIT_ENEMY_PATTERN_ANIM) ; $04
+	BIT_ENEMY_PATTERN_LEFT:	equ 3
+	BIT_ENEMY_PATTERN_ANIM:	equ 2
+	FLAG_ENEMY_PATTERN_LEFT:	equ (1 << BIT_ENEMY_PATTERN_LEFT) ; $08
+	FLAG_ENEMY_PATTERN_ANIM:	equ (1 << BIT_ENEMY_PATTERN_ANIM) ; $04
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; State definition related values
-	_STATE_HANDLER_L	equ 0
-	_STATE_HANDLER_H	equ 1
-	_STATE_ARGUMENT		equ 2
-	STATE_SIZE		equ 3
+	_STATE_HANDLER_L:	equ 0
+	_STATE_HANDLER_H:	equ 1
+	_STATE_ARGUMENT:	equ 2
+	STATE_SIZE:		equ 3
 ; -----------------------------------------------------------------------------
 
 ;
@@ -52,14 +52,14 @@ INIT_ENEMY:
 	ld	hl, enemies_array
 	ld	bc, ENEMY_SIZE
 	xor	a ; a = 0 (marker value)
-@@LOOP:
+.LOOP:
 	cp	[hl]
-	jr	z, @@SET_VALUES ; empty slot (y = 0 means offscreen)
+	jr	z, .SET_VALUES ; empty slot (y = 0 means offscreen)
 ; Skips to the next element of the array
 	add	hl, bc
-	jr	@@LOOP
+	jr	.LOOP
 	
-@@SET_VALUES:
+.SET_VALUES:
 ; Stores the logical coordinates
 	ld	[hl], d ; _ENEMY_Y
 	inc	hl
@@ -86,34 +86,34 @@ UPDATE_ENEMIES:
 ; For each enemy in the array
 	ld	ix, enemies_array
 	ld	b, CFG_ENEMY_COUNT
-@@ENEMY_LOOP:
+.ENEMY_LOOP:
 	push	bc ; preserves counter in b
 ; Is this enemy slot empty?
 	xor	a ; 0 = marker value
 	cp	[ix +_ENEMY_Y]
-	jr	z, @@NEXT_ENEMY ; yes: skip to the next enemy
+	jr	z, .NEXT_ENEMY ; yes: skip to the next enemy
 ; no: dereferences the state pointer
 	ld	h, [ix +_ENEMY_STATE_H]
 	ld	l, [ix +_ENEMY_STATE_L]
 	push	hl ; iy = hl
 	pop	iy
-@@HANDLER_LOOP:
+.HANDLER_LOOP:
 ; Invokes the current state handler
 	ld	h, [iy +_STATE_HANDLER_H]
 	ld	l, [iy +_STATE_HANDLER_L]
 	call	JP_HL ; emulates "call [hl]"
 ; Has the handler finished?
-	jr	nz, @@NEXT_ENEMY ; no: pending frames
+	jr	nz, .NEXT_ENEMY ; no: pending frames
 ; Yes: skips to the next state handler
 	ld	bc, STATE_SIZE
 	add	iy, bc
-	jr	@@HANDLER_LOOP
-@@NEXT_ENEMY:
+	jr	.HANDLER_LOOP
+.NEXT_ENEMY:
 ; Skip to the next enemy
 	ld	bc, ENEMY_SIZE
 	add	ix, bc
 	pop	bc ; restores the counter
-	djnz	@@ENEMY_LOOP
+	djnz	.ENEMY_LOOP
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -166,13 +166,13 @@ TURN_ENEMY:
 TURN_ENEMY_TOWARDS_PLAYER:
 	ld	a, [player_x]
 	cp	[ix +_ENEMY_X]
-	jr	c, @@AIM_LEFT
+	jr	c, .AIM_LEFT
 	
-@@AIM_RIGHT:
+.AIM_RIGHT:
 	res	BIT_ENEMY_PATTERN_LEFT, [ix + _ENEMY_PATTERN]
 	ret
 	
-@@AIM_LEFT:
+.AIM_LEFT:
 	set	BIT_ENEMY_PATTERN_LEFT, [ix + _ENEMY_PATTERN]
 	ret
 ; -----------------------------------------------------------------------------
@@ -327,14 +327,14 @@ CHECK_TILE_UNDER_ENEMY_A_OK:
 ; ; Recorre el array de enemigos
 	; ld	ix, enemies_array
 	; ld	b, MAX_ENEMY_COUNT
-; @@LOOP:
+; .LOOP:
 	; push	bc ; preserva el contador en b
 	; call	CHECK_COLLISION_ENEMY
 ; ; AVanza al siguiente enemigo
 	; ld	bc, ENEMY_SIZE
 	; add	ix, bc
 	; pop	bc ; restaura el contador
-	; djnz	@@LOOP
+	; djnz	.LOOP
 ; ; -----------------------------------------------------------------------------
 
 
@@ -345,9 +345,9 @@ CHECK_TILE_UNDER_ENEMY_A_OK:
 	; ld	a, [player_x]
 	; sub	[ix + _ENEMY_X]
 ; ; (valor absoluto)
-	; jp	p, @@ELSE_X
+	; jp	p, .ELSE_X
 	; neg
-; @@ELSE_X:
+; .ELSE_X:
 ; ; ¿Hay solapamiento?
 	; cp	(PLAYER_WIDTH + ENEMY_WIDTH) /2
 	; ret	nc ; no
@@ -356,9 +356,9 @@ CHECK_TILE_UNDER_ENEMY_A_OK:
 	; ld	a, [player_y]
 	; sub	[ix + _ENEMY_Y]
 ; ; (valor absoluto)
-	; jp	p, @@ELSE_Y
+	; jp	p, .ELSE_Y
 	; neg
-; @@ELSE_Y:
+; .ELSE_Y:
 ; ; ¿Hay solapamiento?
 	; cp	(PLAYER_HEIGHT + ENEMY_HEIGHT) /2
 	; ret	nc ; no
@@ -367,4 +367,4 @@ CHECK_TILE_UNDER_ENEMY_A_OK:
 	; jp	ON_ENEMY_COLLISION_UX
 ; ; -----------------------------------------------------------------------------
 
-; ; EOF
+; EOF

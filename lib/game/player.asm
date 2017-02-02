@@ -6,28 +6,28 @@
 
 ; -----------------------------------------------------------------------------
 ; Offset de las coordenadas del bounding box de los sprites
-	PLAYER_BOX_X_OFFSET	equ -(CFG_PLAYER_WIDTH / 2)
-	PLAYER_BOX_Y_OFFSET	equ -CFG_PLAYER_HEIGHT
+	PLAYER_BOX_X_OFFSET:	equ -(CFG_PLAYER_WIDTH / 2)
+	PLAYER_BOX_Y_OFFSET:	equ -CFG_PLAYER_HEIGHT
 	
 ; Modificadores de estados del jugador (en forma de bits y flags) 
-	BIT_STATE_LEFT		equ 0
-	BIT_STATE_ANIM		equ 1
-	FLAG_STATE_LEFT		equ (1 << BIT_STATE_LEFT) ; $01
-	FLAG_STATE_ANIM		equ (1 << BIT_STATE_ANIM) ; $02
-	FLAGS_STATE		equ FLAG_STATE_LEFT | FLAG_STATE_ANIM ; $03
+	BIT_STATE_LEFT:		equ 0
+	BIT_STATE_ANIM:		equ 1
+	FLAG_STATE_LEFT:	equ (1 << BIT_STATE_LEFT) ; $01
+	FLAG_STATE_ANIM:	equ (1 << BIT_STATE_ANIM) ; $02
+	FLAGS_STATE:		equ FLAG_STATE_LEFT + FLAG_STATE_ANIM ; $03
 
 ; Estados del jugador por defecto
-	PLAYER_STATE_FLOOR	equ (0 << 2) ; $00
-	PLAYER_STATE_STAIRS	equ (1 << 2) ; $04
-	PLAYER_STATE_AIR	equ (2 << 2) ; $08
-	PLAYER_STATE_DYING	equ (3 << 2) ; $0c
+	PLAYER_STATE_FLOOR:	equ (0 << 2) ; $00
+	PLAYER_STATE_STAIRS:	equ (1 << 2) ; $04
+	PLAYER_STATE_AIR:	equ (2 << 2) ; $08
+	PLAYER_STATE_DYING:	equ (3 << 2) ; $0c
 ; Estados del jugador definidos por el usuario
 	; ...
 
 ; Condiciones de salida por defecto (estados del jugador especiales)
-	BIT_STATE_FINISH	equ 7
-	PLAYER_STATE_DEAD	equ (1 << BIT_STATE_FINISH) | 0; $80 
-	PLAYER_STATE_FINISH	equ (1 << BIT_STATE_FINISH) | 1; $81
+	BIT_STATE_FINISH:	equ 7
+	PLAYER_STATE_DEAD:	equ (1 << BIT_STATE_FINISH) + 0; $80 
+	PLAYER_STATE_FINISH:	equ (1 << BIT_STATE_FINISH) + 1; $81
 ; Condiciones de salida definidas por el usuario
 	; ...
 ; -----------------------------------------------------------------------------
@@ -122,26 +122,26 @@ UPDATE_PLAYER_FLOOR:
 ; ¿Accede a escaleras?
 	ld	hl, stick
 	bit	BIT_STICK_UP, [hl]
-	jr	z, @@NO_UPSTAIRS
+	jr	z, .NO_UPSTAIRS
 ; sí (arriba)
 	call	CHECK_TILE_PLAYER
-	jr	@@CHECK_STAIRS
+	jr	.CHECK_STAIRS
 	
-@@NO_UPSTAIRS:
+.NO_UPSTAIRS:
 	ld	hl, stick
 	bit	BIT_STICK_DOWN, [hl]
-	jr	z, @@NO_DOWNSTAIRS ; no
+	jr	z, .NO_DOWNSTAIRS ; no
 ; sí (abajo)
 	call	CHECK_TILES_UNDER_PLAYER_FAST
-	; jr	@@CHECK_STAIRS ; falls through
+	; jr	.CHECK_STAIRS ; falls through
 	
-@@CHECK_STAIRS:
+.CHECK_STAIRS:
 ; ¿Hay escaleras pero no sólido?
-	and	(1 << BIT_WORLD_SOLID) | (1 << BIT_WORLD_STAIRS)
+	and	(1 << BIT_WORLD_SOLID) + (1 << BIT_WORLD_STAIRS)
 	cp	(1 << BIT_WORLD_STAIRS)
 	jr	z, SET_PLAYER_STAIRS ; sí
 
-@@NO_DOWNSTAIRS:
+.NO_DOWNSTAIRS:
 ; no: ¿Salto?
 	ld	hl, stick_edge
 	bit	BIT_STICK_UP, [hl]
@@ -186,7 +186,7 @@ UPDATE_PLAYER_STAIRS_0:
 ; no: ¿desplazamiento vertical?
 	ld	hl, stick
 	bit	BIT_STICK_UP, [hl]
-	jr	z, @@NO_UP
+	jr	z, .NO_UP
 ; sí (arriba): ¿Hay sólido?
 	call	CHECK_TILES_OVER_PLAYER_FAST
 	bit	BIT_WORLD_SOLID, a
@@ -196,7 +196,7 @@ UPDATE_PLAYER_STAIRS_0:
 	dec	[hl]
 	jp	UPDATE_PLAYER_ANIMATION
 
-@@NO_UP:
+.NO_UP:
 	bit	BIT_STICK_DOWN, [hl]
 	ret	z ; no
 ; sí (abajo): ¿Sigue habiendo escaleras?
@@ -252,7 +252,7 @@ UPDATE_PLAYER_AIR:
 	call	UPDATE_PLAYER_DY
 	or	a
 	ret	z ; (dy == 0)
-	jp	m, @@UP ; (dy < 0)
+	jp	m, .UP ; (dy < 0)
 
 ; (dy > 0): ¿Hay suelo debajo del jugador?
 	push	af ; preserva dy
@@ -264,7 +264,7 @@ UPDATE_PLAYER_AIR:
 	ld	a, b ; restaura dy (en a)
 	jp	MOVE_PLAYER_DY
 	
-@@UP:
+.UP:
 ; (dy < 0): ¿Hay sólido encima del jugador?
 	push	af ; preserva dy
 	call	CHECK_TILES_OVER_PLAYER_FAST
@@ -281,7 +281,7 @@ UPDATE_PLAYER_AIR:
 SET_PLAYER_DYING:
 ; ¿ya está muriendo? (evita que vuelva a empezar a morir si ya está muriendo)
 	ld	a, [player_state]
-	and	$ff ^ FLAGS_STATE
+	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_DYING
 	ret	z ; sí
 ; no: cambia el estado
@@ -322,7 +322,7 @@ SET_PLAYER_DEAD:
 ; touches hl, b
 ; ret a: nuevo estado con el flag izquierda anterior
 SET_PLAYER_STATE:
-	ld	b, $ff ^ FLAG_STATE_LEFT
+	ld	b, $ff XOR FLAG_STATE_LEFT
 SET_PLAYER_STATE_B_OK:
 	ld	hl, player_state
 	jp	LD_HL_A_MASK
@@ -334,7 +334,7 @@ MOVE_PLAYER_LR:
 ; ¿Desplazamiento lateral?
 	ld	hl, stick
 	bit	BIT_STICK_RIGHT, [hl]
-	jr	z, @@NO_RIGHT
+	jr	z, .NO_RIGHT
 	
 ; sí: derecha
 	call	CHECK_TILES_RIGHT_PLAYER_FAST
@@ -342,7 +342,7 @@ MOVE_PLAYER_LR:
 	ret	nz
 	jp	MOVE_PLAYER_RIGHT
 	
-@@NO_RIGHT:
+.NO_RIGHT:
 	bit	BIT_STICK_LEFT, [hl]
 	ret	z ; no
 	
@@ -359,11 +359,11 @@ MOVE_PLAYER_LR_ANIMATE:
 ; ¿Desplazamiento lateral?
 	ld	hl, stick
 	bit	BIT_STICK_RIGHT, [hl]
-	jr	nz, @@RIGHT ; sí (derecha)
+	jr	nz, .RIGHT ; sí (derecha)
 	bit	BIT_STICK_LEFT, [hl]
-	jr	nz, @@LEFT ; sí (izquierda)
+	jr	nz, .LEFT ; sí (izquierda)
 
-@@RESET_ANIMATION:
+.RESET_ANIMATION:
 ; resetea el contador de animación
 	xor	a
 	ld	[player_animation_delay], a
@@ -371,17 +371,17 @@ MOVE_PLAYER_LR_ANIMATE:
 	ld	hl, player_state
 	res	BIT_STATE_ANIM, [hl]
 	
-IF (BIT_WORLD_UX_PUSH == 0)
+IF (BIT_WORLD_UX_PUSH = 0)
 	ret
 ELSE
-@@RESET_STATE:
+.RESET_STATE:
 ; resetea el estado si está activa la UX de empujar
 	ld	a, PLAYER_STATE_FLOOR
-	ld	b, $ff ^ (FLAG_STATE_LEFT | FLAG_STATE_ANIM)
+	ld	b, $ff XOR FLAGS_STATE
 	jp	SET_PLAYER_STATE_B_OK
 ENDIF ; (BIT_WORLD_UX_PUSH == 0)
 
-@@RIGHT:
+.RIGHT:
 	call	CHECK_TILES_RIGHT_PLAYER_FAST
 	
 ; UX: ¿empujando tiles (alto del jugador)?
@@ -392,18 +392,18 @@ ENDIF ; (BIT_WORLD_UX_PUSH != $0000)
 
 ; ¿Hay sólido a la derecha?
 	bit	BIT_WORLD_SOLID, a
-	jr	nz, @@RESET_ANIMATION ; sí
+	jr	nz, .RESET_ANIMATION ; sí
 
 ; resetea el estado si está activa la UX de empujar
 IF (UPDATE_PLAYER_UX_PUSH_RIGHT != $000)
-	call	@@RESET_STATE
+	call	.RESET_STATE
 ENDIF ; (UPDATE_PLAYER_UX_PUSH_RIGHT != $000)
 
 ; no: mueve y anima
 	call	MOVE_PLAYER_RIGHT
 	jp	UPDATE_PLAYER_ANIMATION
 
-@@LEFT:
+.LEFT:
 	call	CHECK_TILES_LEFT_PLAYER_FAST
 
 ; UX: ¿empujando tiles (alto del jugador)?
@@ -414,11 +414,11 @@ ENDIF ; (UPDATE_PLAYER_UX_PUSH_LEFT != $0000)
 
 ; ¿Hay sólido a la izquierda?
 	bit	BIT_WORLD_SOLID, a
-	jr	nz, @@RESET_ANIMATION ; sí
+	jr	nz, .RESET_ANIMATION ; sí
 
 ; resetea el estado si está activa la UX de empujar
 IF (UPDATE_PLAYER_UX_PUSH_LEFT != $0000)
-	call	@@RESET_STATE
+	call	.RESET_STATE
 ENDIF ; (UPDATE_PLAYER_UX_PUSH_LEFT != $0000)
 
 ; no: mueve y anima
@@ -434,10 +434,10 @@ UPDATE_PLAYER_DY:
 	ld	hl, player_dy_index
 	ld	a, [hl]
 	cp	JUMP_DY_TABLE_SIZE -1
-	jr	z, @@DY_MAX ; sí
+	jr	z, .DY_MAX ; sí
 ; no: avanza el puntero
 	inc	[hl]
-@@DY_MAX:
+.DY_MAX:
 ; Lee el valor de dy
 	ld	hl, JUMP_DY_TABLE
 	jp	GET_HL_A_BYTE
@@ -455,7 +455,7 @@ UPDATE_PLAYER_ANIMATION:
 	ld	a, [player_animation_delay]
 	inc	a
 	cp	CFG_PLAYER_ANIMATION_DELAY
-	jr	nz, @@DONT_ANIMATE
+	jr	nz, .DONT_ANIMATE
 ; alterna el bit de animación
 	ld	hl, player_state
 	ld	a, 1 << BIT_STATE_ANIM
@@ -463,7 +463,7 @@ UPDATE_PLAYER_ANIMATION:
 	ld	[hl], a
 ; resetea el contador de animación
 	xor	a
-@@DONT_ANIMATE:
+.DONT_ANIMATE:
 	ld	[player_animation_delay], a
 	ret
 ; -----------------------------------------------------------------------------

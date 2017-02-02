@@ -5,10 +5,10 @@
 
 ; -----------------------------------------------------------------------------
 ; Bit of the return values of GET_STICK_BITS
-	BIT_STICK_UP		equ 0
-	BIT_STICK_RIGHT		equ 1
-	BIT_STICK_DOWN		equ 2
-	BIT_STICK_LEFT		equ 3
+	BIT_STICK_UP:		equ 0
+	BIT_STICK_RIGHT:	equ 1
+	BIT_STICK_DOWN:		equ 2
+	BIT_STICK_LEFT:		equ 3
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -62,16 +62,16 @@ GET_TRIGGER:
 	call	GTTRIG
 ; Had value?
 	or	a
-	jr	nz, @@ON ; yes
+	jr	nz, .ON ; yes
 ; No: reads joystick
 	inc	a ; a = 1
 	call	GTTRIG
 	or	a
-	jr	nz, @@ON
+	jr	nz, .ON
 ; off
 	ld	[trigger], a
 	ret	; ret z
-@@ON:
+.ON:
 	ld	hl, trigger
 	cp	[hl] ; for ret z / nz
 	ld	[hl], a
