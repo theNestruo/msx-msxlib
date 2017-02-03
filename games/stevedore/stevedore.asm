@@ -84,10 +84,10 @@ TILE_PROPERTIES_TABLE:
 	CFG_PLAYER_ANIMATION_DELAY:	equ 6
 
 ; Default player states
-	; PLAYER_STATE_FLOOR	equ (0 << 2) ; $00
-	; PLAYER_STATE_STAIRS	equ (1 << 2) ; $04
-	; PLAYER_STATE_AIR	equ (2 << 2) ; $08
-	; PLAYER_STATE_DYING	equ (3 << 2) ; $0c
+	; PLAYER_STATE_FLOOR:	equ (0 << 2) ; $00
+	; PLAYER_STATE_STAIRS:	equ (1 << 2) ; $04
+	; PLAYER_STATE_AIR:	equ (2 << 2) ; $08
+	; PLAYER_STATE_DYING:	equ (3 << 2) ; $0c
 ; Custom player states
 	PLAYER_STATE_PUSH:	equ (4 << 2) ; $10
 	;	...
@@ -114,7 +114,7 @@ UPDATE_PLAYER_TABLE:
 ; Terminal falling speed (pixels/frame)
 	CFG_PLAYER_GRAVITY:		equ 4
 
-; Delta-Y table for jumping and falling
+; Delta-Y (dY) table for jumping and falling
 JUMP_DY_TABLE:
 	db	-4, -4			; (2,-8)
 	db	-2, -2, -2		; (5,-14)
@@ -143,10 +143,6 @@ JUMP_DY_TABLE:
 ; Enemies animation delay (frames)
 	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
 	
-; Define as $0000 the unused MSXlib user extension (UX)
-	; ON_ENEMY_COLLISION_UX
-	; ON_BULLET_COLLISION_UX
-
 ; Enemies related routines
 	include	"lib/game/enemy.asm"
 ; (optional) Default handlers and behavior
@@ -219,7 +215,7 @@ MAIN_MENU:
 	;	...TBD...
 	
 ; Fade in
-	call	ENASCR_FADE_IN
+	; call	ENASCR_FADE_IN
 
 ; Main menu loop
 .LOOP:
@@ -312,8 +308,8 @@ GAME_LOOP:
 ; yes: conditionally jump according the exit status
 	cp	PLAYER_STATE_DEAD
 	jr	z, GAME_LOOP_DEAD ; player is dead
-	cp	PLAYER_STATE_FINISH
-	jr	z, GAME_LOOP_FINISH ; stage finished ; falls through
+	; cp	PLAYER_STATE_FINISH
+	; jr	z, GAME_LOOP_FINISH ; stage finished ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------

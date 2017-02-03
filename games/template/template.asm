@@ -1,71 +1,51 @@
 
+;
 ; =============================================================================
-; 	MSX cartridge (ROM) header, entry point and initialization
+;	MSXlib core configuration, routines and initialization
+; =============================================================================
+;
+
 ; -----------------------------------------------------------------------------
 ; Enable if the ROM is larger than 16kB (typically, 32kB)
 ; Includes search for page 2 slot/subslot at start
-	CFG_INIT_32KB_ROM	equ 0
+	; CFG_INIT_32KB_ROM:
 
 ; Enable if the game needs 16kB instead of 8kB
 ; RAM will start at the beginning of the page 2 instead of $e000
 ; and availability will be checked at start
-	CFG_INIT_16KB_RAM	equ 0
-
-; MSX cartridge (ROM) header, entry point and initialization
-	.include	"lib/msx_cartridge.asm"
-; =============================================================================
-
-
-; =============================================================================
-;	Input routines (BIOS-based)
-; -----------------------------------------------------------------------------
-; Tabla de valores de cursores o joystick en forma de mapa de bits
-STICK_BITS_TABLE:
-	.db	0						 ; 0
-	.db	(1 << BIT_STICK_UP)				 ; 1
-	.db	(1 << BIT_STICK_UP)	| (1 << BIT_STICK_RIGHT) ; 2
-	.db				  (1 << BIT_STICK_RIGHT) ; 3
-	.db	(1 << BIT_STICK_DOWN)	| (1 << BIT_STICK_RIGHT) ; 4
-	.db	(1 << BIT_STICK_DOWN)				 ; 5
-	.db	(1 << BIT_STICK_DOWN)	| (1 << BIT_STICK_LEFT)	 ; 6
-	.db				  (1 << BIT_STICK_LEFT)	 ; 7
-	.db	(1 << BIT_STICK_UP)	| (1 << BIT_STICK_LEFT)	 ; 8
-
-; Input routines (BIOS-based)
-	.include	"lib/msx_input.asm"
-; =============================================================================
-
-
-; =============================================================================
-;	Generic sprite routines
-; -----------------------------------------------------------------------------
-; Offset de las coordenadas físicas del sprite respecto a las coordenadas lógicas
-	CFG_SPRITES_X_OFFSET	equ -8
-	CFG_SPRITES_Y_OFFSET	equ -16 -1
+	; CFG_INIT_16KB_RAM:
 	
-; Number of fixed sprites reserved at the beginning of the table
-	CFG_SPRITES_RESERVED_BEFORE	equ 0
+; Maximum number of "vpokes" (deferred WRTVRMs) per frame
+	CFG_VRAM_VPOKES:		equ 64
 
-; Number of fixed sprites reserved after the player sprites
-	CFG_SPRITES_RESERVED_AFTER	equ 0
-
-; Generic sprite routines
-	.include	"lib/msx_sprites.asm"
-; =============================================================================
-
-
-; =============================================================================
-;	VRAM buffers routines (NAMTBL and SPRATR)
+; MSXlib core
+	include	"lib/rom.asm"
 ; -----------------------------------------------------------------------------
-	.include	"lib/msx_vram.asm"
-; =============================================================================
 
-	
-; =============================================================================
-; 	Generic Z80 assembly convenience routines
 ; -----------------------------------------------------------------------------
-	.include	"lib/asm.asm"
+; Unpacker routine
+
+; Unpack to RAM routine (optional)
+; param hl: packed data source address
+; param de: destination buffer address
+
+; Pletter (v0.5c1, XL2S Entertainment)
+	; include	"libext/pletter05c/pletter05c-unpackRam.tniasm.asm"
+
+; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
+; "Standard" version (69 bytes only)
+	UNPACK: equ dzx7_standard
+	include	"libext/zx7/dzx7_standard.tniasm.asm"
+
+; Buffer size to check it actually fits before system variables
+	CFG_RAM_RESERVE_BUFFER:	equ 2048
+; -----------------------------------------------------------------------------
+
+;
 ; =============================================================================
+;	MSXlib game-related configuration and routines
+; =============================================================================
+;
 
 ;
 ; =============================================================================
@@ -74,159 +54,122 @@ STICK_BITS_TABLE:
 ;
 
 ; -----------------------------------------------------------------------------
-; Bits de las diferentes propiedades de los tiles
-	BIT_WORLD_SOLID		equ 0
-	BIT_WORLD_FLOOR		equ 1
-	BIT_WORLD_STAIRS	equ 2
-	BIT_WORLD_DEATH		equ 3
-; Bits de extensiones del usuario (UX), detectados en...
-	BIT_WORLD_UX_WALK_ON	equ 0 ; 4 ; ...colisión, un tile (coordenadas concretas)
-	BIT_WORLD_UX_WIDE_ON	equ 0 ; 5 ; ...colisión, tiles (ancho del jugador)
-	BIT_WORLD_UX_WALK_OVER	equ 0 ; 6 ; ...jugador sobre tiles (ancho del jugador)
-	BIT_WORLD_UX_PUSH	equ 0 ; 7 ; ...empujando tiles (alto del jugador)
+; Sprite-tile helper routines
 
+; Tile properties table in pairs (up to char number, tile properties)
 TILE_PROPERTIES_TABLE:
-	.db	$7f, $00 ; [$00..$07] : 0
-	.db	$81, $00 ; [$80..$81] : 0
-	.db	$8f, $03 ; [$82..$8f] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	.db	$91, $00 ; [$90..$91] : 0
-	.db	$9f, $03 ; [$92..$9f] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	.db	$ff, $00 ; [$ac..$af] : 0
+	db	$7f, $00 ; [$00..$07] : 0
+	db	$81, $00 ; [$80..$81] : 0
+	db	$8f, $03 ; [$82..$8f] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	db	$91, $00 ; [$90..$91] : 0
+	db	$9f, $03 ; [$92..$9f] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	db	$ff, $00 ; [$ac..$af] : 0
 
 ; Caracteres que se devolverán al consultar offscreen
-	CFG_TILES_OFFSCREEN_TOP		equ $01 ; BIT_WORLD_SOLID
-	CFG_TILES_OFFSCREEN_BOTTOM	equ $08 ; BIT_WORLD_DEATH
+	CFG_TILES_OFFSCREEN_TOP:	equ $01 ; BIT_WORLD_SOLID
+	CFG_TILES_OFFSCREEN_BOTTOM:	equ $08 ; BIT_WORLD_DEATH
 	
-	.include	"lib/game/tiles.asm"
+; Sprite-tile helper routines
+	include	"lib/game/tiles.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Player related routines
+
 ; Logical sprite sizes (bounding box size) (pixels)
-	CFG_PLAYER_WIDTH	equ 8
-	CFG_PLAYER_HEIGHT	equ 16
+	CFG_PLAYER_WIDTH:		equ 8
+	CFG_PLAYER_HEIGHT:		equ 16
 
 ; Number of player sprites (i.e.: number of colors)
-	CFG_PLAYER_SPRITES	equ 2
+	CFG_PLAYER_SPRITES:		equ 2
 
-; Player and enemies animation delay (frames)
-	CFG_PLAYER_ANIMATION_DELAY	equ 6
+; Player animation delay (frames)
+	CFG_PLAYER_ANIMATION_DELAY:	equ 6
 
-; Estados del jugador por defecto
-	; PLAYER_STATE_FLOOR	equ (0 << 2) ; $00
-	; PLAYER_STATE_STAIRS	equ (1 << 2) ; $04
-	; PLAYER_STATE_AIR	equ (2 << 2) ; $08
-	; PLAYER_STATE_DYING	equ (3 << 2) ; $0c
-; Estados del jugador definidos por el usuario
-	;	...
+; Default player states
+	; PLAYER_STATE_FLOOR:	equ (0 << 2) ; $00
+	; PLAYER_STATE_STAIRS:	equ (1 << 2) ; $04
+	; PLAYER_STATE_AIR:	equ (2 << 2) ; $08
+	; PLAYER_STATE_DYING:	equ (3 << 2) ; $0c
+; Custom player states
+	; ...
 
-; Tabla de mapeo de estado a patrones de sprites
+; Maps player states to sprite patterns
 STATUS_SPRATR_TABLE:
 	;	0	LEFT	ANIM	LEFT|ANIM
-; Estados del jugador por defecto
-	.db	$00,	$10,	$08,	$18	; PLAYER_STATE_FLOOR
-	.db	$20,	$20,	$28,	$28	; PLAYER_STATE_STAIRS
-	.db	$08,	$18,	$08,	$18	; PLAYER_STATE_AIR
-	.db	$30,	$30,	$38,	$38	; PLAYER_STATE_DYING
-; Estados del jugador definidos por el usuario
+	db	$00,	$10,	$08,	$18	; PLAYER_STATE_FLOOR
+	db	$20,	$20,	$28,	$28	; PLAYER_STATE_STAIRS
+	db	$08,	$18,	$08,	$18	; PLAYER_STATE_AIR
+	db	$30,	$30,	$38,	$38	; PLAYER_STATE_DYING
 	;	...
 
-; Tabla de mapeo de estado del jugador a rutinas (0-based)
+; Maps player states to assembly routines
 UPDATE_PLAYER_TABLE:
-; Estados del jugador por defecto
-	.dw	UPDATE_PLAYER_FLOOR	; PLAYER_STATE_FLOOR
-	.dw	UPDATE_PLAYER_STAIRS	; PLAYER_STATE_STAIRS
-	.dw	UPDATE_PLAYER_AIR	; PLAYER_STATE_AIR
-	.dw	UPDATE_PLAYER_DYING	; PLAYER_STATE_DYING
-; Estados del jugador definidos por el usuario
+	dw	UPDATE_PLAYER_FLOOR	; PLAYER_STATE_FLOOR
+	dw	UPDATE_PLAYER_STAIRS	; PLAYER_STATE_STAIRS
+	dw	UPDATE_PLAYER_AIR	; PLAYER_STATE_AIR
+	dw	UPDATE_PLAYER_DYING	; PLAYER_STATE_DYING
 	;	...
-
-; Declaraciones nulas de extensiones del usuario (UX) no utilizadas
-	UPDATE_PLAYER_UX_WALK_ON	equ $0000
-	UPDATE_PLAYER_UX_WIDE_ON	equ $0000
-	UPDATE_PLAYER_UX_WALK_OVER	equ $0000
-	UPDATE_PLAYER_UX_PUSH_RIGHT	equ $0000
-	UPDATE_PLAYER_UX_PUSH_LEFT	equ $0000
 
 ; Terminal falling velocity (pixels/frame)
-	CFG_PLAYER_GRAVITY		equ 4
+	CFG_PLAYER_GRAVITY:		equ 4
 
-; Tabla de dY para los saltos y la caída
+; Delta-Y (dY) table for jumping and falling
 JUMP_DY_TABLE:
-	.db	-4, -4			; (2,-8)
-	.db	-2, -2, -2		; (5,-14)
-	.db	-1, -1, -1, -1, -1, -1	; (11,-20)
-	.db	 0,  0,  0,  0,  0,  0	; (17,-20)
-	JUMP_DY_TABLE_FALL_OFFSET	equ $ - JUMP_DY_TABLE
-	.db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
-	.db	2, 2, 2			; (26,-8) / (9,12)
-	.db	CFG_PLAYER_GRAVITY	; velocidad terminal
-	JUMP_DY_TABLE_SIZE		equ $ - JUMP_DY_TABLE
+	db	-4, -4			; (2,-8)
+	db	-2, -2, -2		; (5,-14)
+	db	-1, -1, -1, -1, -1, -1	; (11,-20)
+	db	 0,  0,  0,  0,  0,  0	; (17,-20)
+	JUMP_DY_TABLE_FALL_OFFSET:	equ $ - JUMP_DY_TABLE
+	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
+	db	2, 2, 2			; (26,-8) / (9,12)
+	db	CFG_PLAYER_GRAVITY	; (terminal falling speed)
+	JUMP_DY_TABLE_SIZE:		equ $ - JUMP_DY_TABLE
 	
-	.include	"lib/game/player.asm"
+; Player related routines
+	include	"lib/game/player.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Enemies related routines
+
 ; Maximum simultaneous number of enemies
-	CFG_ENEMY_COUNT		equ 4
+	CFG_ENEMY_COUNT:		equ 4
 
 ; Logical sprite sizes (bounding box size) (pixels)
-	CFG_ENEMY_WIDTH		equ 8
-	CFG_ENEMY_HEIGHT	equ 16
+	CFG_ENEMY_WIDTH:		equ 8
+	CFG_ENEMY_HEIGHT:		equ 16
 
 ; Player and enemies animation delay (frames)
-	CFG_ENEMY_ANIMATION_DELAY	equ 8	
-	
-; Declaraciones nulas de extensiones del usuario (UX) no utilizadas
-	ON_ENEMY_COLLISION_UX	equ $0000
-	ON_BULLET_COLLISION_UX	equ $0000
+	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
 
-	.include	"lib/game/enemy.asm"
-; -----------------------------------------------------------------------------
-
-;
-; =============================================================================
-; 	ROM: optional MSXlib configuration and includes
-; =============================================================================
-;
-	
-; -----------------------------------------------------------------------------
-	.include	"lib/game/enemy/default_routines.asm"
-	.include	"lib/game/enemy/default_handlers.asm"
-; -----------------------------------------------------------------------------
-	
-; -----------------------------------------------------------------------------
-; Hook-installed PT3 replayer
-	; CFG_OPTIONAL_PT3HOOK equ 0
-	; .include	"lib/optional/pt3hook.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-	; .include	"lib/optional/spriteables.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-msxlib_end:
-	.printtext	" ... msxlib code"
-	.printhex	$
+; Enemies related routines
+	include	"lib/game/enemy.asm"
+; (optional) Default handlers and behavior
+	include	"lib/game/enemy_handlers.asm"
+	include	"lib/game/enemy_routines.asm"
 ; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
-; 	ROM: custom routines
+; 	Custom parameterization and symbolic constants
 ; =============================================================================
 ;
 
 ; -----------------------------------------------------------------------------
-; Custom symbolic constants
-
-; Configuración específica el juego
-	PLAYGROUND_FIRST_ROW	equ 0  ; Define el tamaño del área de juego a procesar
-	PLAYGROUND_LAST_ROW	equ 23
+; 	SYMBOL:	equ value
+;	...
 ; -----------------------------------------------------------------------------
+
+;
+; =============================================================================
+; 	Game main flow
+; =============================================================================
+;
 
 ; -----------------------------------------------------------------------------
 ; Game entry point
-MAIN:
+MAIN_INIT:
 ; Charset (1/2: CHRTBL)
 	ld	hl, CHARSET_CHR_PACKED
 	call	UNPACK_LDIRVM_CHRTBL
@@ -239,6 +182,12 @@ MAIN:
 	ld	de, SPRTBL
 	ld	bc, SPRTBL_SIZE
 	call	UNPACK_LDIRVM
+
+; Initializes global vars
+	ld	hl, GLOBALS_0
+	ld	de, globals
+	ld	bc, GLOBALS_SIZE
+	ldir
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
@@ -255,10 +204,10 @@ MAIN_MENU:
 	call	ENASCR_FADE_IN
 
 ; Main menu loop
-@@LOOP:
+.LOOP:
 	halt
 	;	...TBD...
-	; jr	@@LOOP
+	; jr	.LOOP
 	
 ; Fade out
 	call	DISSCR_FADE_OUT
@@ -267,8 +216,11 @@ MAIN_MENU:
 ; -----------------------------------------------------------------------------
 ; New game entry point
 NEW_GAME:
-; Game vars initialization
-	;	...TBD...
+; Initializes game vars
+	ld	hl, GAME_VARS_0
+	ld	de, game_vars
+	ld	bc, GAME_VARS_SIZE
+	ldir
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -279,23 +231,22 @@ NEW_STAGE:
 	ld	de, namtbl_buffer
 	call	UNPACK
 	
-; Sprite attribute table (SPRATR)
-	ld	hl, SPRATR_0
+; Initializes player vars
+	ld	hl, PLAYER_VARS_0
+	ld	de, player_vars
+	ld	bc, PLAYER_VARS_SIZE
+	ldir
+	
+; Initializes sprite attribute table (SPRATR)
+	ld	hl, PLAYER_SPRATR_0
 	ld	de, spratr_buffer
 	ld	bc, SPRATR_SIZE
 	ldir
 	
-; ; Game vars
-	; ld	hl, PLAYER_VARS_0
-	; ld	de, player_vars
-	; ld	bc, PLAYER_VARS_SIZE
-	; ldir
-	
 ; Game specific initialization
 	call	RESET_DYNAMIC_SPRITES
 	call	RESET_ENEMIES
-	
-	call	INIT_STAGE		; específica
+	call	INIT_STAGE	; (custom)
 	
 ; Fade in
 	call	ENASCR_FADE_IN
@@ -304,11 +255,12 @@ NEW_STAGE:
 ; -----------------------------------------------------------------------------
 ; In-game loop
 GAME_LOOP:
-; Blit buffers to VRAM
+; Prepares next frame (1/2)
 	call	PUT_SPRITE_PLAYER
+; Blit buffers to VRAM
 	halt
 	call	LDIRVM_SPRATR
-; Prepare buffers for the next frames
+; Prepares next frame (2/2)
 	call	RESET_DYNAMIC_SPRITES
 	
 ; Read input devices
@@ -318,7 +270,6 @@ GAME_LOOP:
 ; Game logic
 	call	UPDATE_PLAYER
 	call	UPDATE_ENEMIES
-	; call	CHECK_COLLISIONS_ENEMIES
 	
 ; Check exit condition
 	ld	a, [player_state]
@@ -372,10 +323,10 @@ GAME_OVER:
 	call	ENASCR_FADE_IN
 
 ; Game over loop
-@@LOOP:
+.LOOP:
 	halt
 	;	...
-	; jr	@@LOOP
+	; jr	.LOOP
 	
 ; Fade out
 	call	DISSCR_FADE_OUT
@@ -385,51 +336,49 @@ GAME_OVER:
 
 ;
 ; =============================================================================
-; 	Rutinas específicas
+;	Custom game routines
 ; =============================================================================
 ;
 
 ; -----------------------------------------------------------------------------
 ; Initializes the initial player coordinates, enemies and other special elements
 INIT_STAGE:
-; Travels the playable area
-	ld	hl, namtbl_buffer +PLAYGROUND_FIRST_ROW *SCR_WIDTH
-	ld	bc, (PLAYGROUND_LAST_ROW -PLAYGROUND_FIRST_ROW +1) *SCR_WIDTH
-@@LOOP:
+; Travels the screen
+	ld	hl, namtbl_buffer
+	ld	bc, NAMTBL_SIZE
+.LOOP:
 ; For each character
 	push	bc ; preserves counter
 	push	hl ; preserves pointer
 	ld	a, [hl]
-	call	@@INIT_ELEMENT
+	call	.INIT_ELEMENT
 ; Next element
 	pop	hl ; restores pointer
 	pop	bc ; restores counter
 	cpi	; inc hl, dec bc
 	ret	po
-	jr	@@LOOP
+	jr	.LOOP
 	
-@@INIT_ELEMENT:
+.INIT_ELEMENT:
 ; 0 = Initial player coordinates
 	cp	'0'
-	jr	z, @@INIT_START_POINT
+	jr	z, .INIT_START_POINT
 	ret
 
 ; Initial player coordinates
-@@INIT_START_POINT:
-	call	CLEAR_CHAR_GET_LOGICAL_COORDS
+.INIT_START_POINT:
+	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
 	ld	hl, player_y
 	ld	[hl], d
 	inc	hl ; hl = player_x
 	ld	[hl], e
 	ret
-; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
 ; Rutina de conveniencia que elimina el caracter de control
 ; y devuelve las coordenadas lógicas para ubicar ahí un sprite
 ; param hl: puntero del buffer namtbl del caracter de control
 ; ret de: coordenadas lógicas del sprite
-CLEAR_CHAR_GET_LOGICAL_COORDS:
+.CLEAR_CHAR_GET_LOGICAL_COORDS:
 ; elimina el caracter de control
 	ld	[hl], 0
 ; calcula las coordenadas
@@ -444,44 +393,77 @@ CLEAR_CHAR_GET_LOGICAL_COORDS:
 	ret
 ; -----------------------------------------------------------------------------
 
+;
+; =============================================================================
+;	MSXlib user extensions (UX)
+; =============================================================================
+;
+
 
 ;
 ; =============================================================================
-; 	ROM: main MSXlib data
+;	Game data
 ; =============================================================================
 ;
 
 ; -----------------------------------------------------------------------------
-; Binary data
+; Charset binary data (CHRTBL and CLRTBL)
 CHARSET_CHR_PACKED:
-	.incbin		"games/example/charset.pcx.chr.plet5"
+	incbin	"games/template/charset.pcx.chr.zx7"
+	
 CHARSET_CLR_PACKED:
-	.incbin		"games/example/charset.pcx.clr.plet5"
+	incbin	"games/template/charset.pcx.clr.zx7"
+	
+; Charset-related symbolic constants
+	; ...
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Sprites binary data (SPRTBL)
 SPRTBL_PACKED:
-	.incbin		"games/example/sprites.pcx.spr.plet5"
+	incbin	"games/template/sprites.pcx.spr.zx7"
+	
+; Sprite-related symbolic constants (SPRATR)
+	; ...
+	
+; Sprite-related data (SPRATR)
+PLAYER_SPRATR_0:
+	db	SPAT_OB, 0, 0, 9	; 1st player sprite
+	db	SPAT_OB, 0, 0, 15	; 2nd player sprite
+	db	SPAT_END		; SPAT end marker
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Screens binary data (NAMTBL)
 NAMTBL_PACKED:
-	.incbin		"games/example/screen.tmx.bin.plet5"
+	incbin	"games/template/screen.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; PLAYER_VARS_0:
-	; .db	0, 0, 0, PLAYER_STATE_FLOOR, 0
-; ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; STAGE_VARS_0:
-	; .db	0 ; stage_state
-	; .db	0 ; frames_pushing
-; ; -----------------------------------------------------------------------------
-
 ; -----------------------------------------------------------------------------
-SPRATR_0:
-; jugador
-	.db	SPAT_OB, 0, 0, 9
-	.db	SPAT_OB, 0, 0, 15
-; spat end
-	.db	SPAT_END
-; -----------------------------------------------------------------------------
+; Initial value of the globals, game and stage vars, and player vars
+GLOBALS_0:
+	dw	2500			; hi_score
+	; db	...			; ...
+
+GAME_VARS_0:
+	db	5			; lives_left
+	dw	0			; score
+	; db	...			; ...
+
+STAGE_VARS_0:
+	db	0			; ...
+	; db	...			; ...
+	
+; Initial player vars
+PLAYER_VARS_0:
+	db	0, 0			; player_y, player_x
+	db	0			; player_animation_delay
+	db	0 ; PLAYER_STATE_FLOOR	; player_state
+	db	0			; player_dy_index
+	
+; =============================================================================
+
+ROM_END:
 
 ;
 ; =============================================================================
@@ -490,23 +472,54 @@ SPRATR_0:
 ;
 
 ; -----------------------------------------------------------------------------
-; MSXlib vars
-	.include	"lib/ram_begin.asm"
+; MSXlib core and game-related variables
+	include	"lib/ram.asm"
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Variables durante el bucle principal del juego
-; stage_vars:
-	; STAGE_VARS_SIZE	equ $ - stage_vars
-; ; -----------------------------------------------------------------------------
-
 ; -----------------------------------------------------------------------------
-; Unpack buffer will be at RAM end
-; (declare this value to check it actually fits before system variables)
-	CFG_RAM_RESERVE_BUFFER	equ 2048
+;	User vars
+
+; Global vars (i.e.: initialized only once)
+globals:
+
+hi_score:
+	rw	1
+; ...
+	;	...
 	
-; MSXlib end marker
-	.include	"lib/ram_end.asm"
+	GLOBALS_SIZE:	equ $ - globals
+
+; Game vars (i.e.: vars from start to game over)
+game_vars:
+
+lives_left:
+	rb	1
+score:
+	rw	1
+; ...
+
+	;	...
+	GAME_VARS_SIZE:	equ $ - game_vars
+
+; Stage vars (i.e.: vars inside the main game loop)
+stage_vars:
+
+; ...
+	rb	1
+; ...
+	;	...
+	
+	STAGE_VARS_SIZE:	equ $ - stage_vars
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Unpacker routine buffer
+unpack_buffer:
+IFDEF CFG_RAM_RESERVE_BUFFER
+	ds	CFG_RAM_RESERVE_BUFFER
+ENDIF
+; -----------------------------------------------------------------------------
+
+ram_end:
 
 ; EOF
