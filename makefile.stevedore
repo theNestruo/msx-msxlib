@@ -3,7 +3,7 @@
 # current game name
 #
 
-GAME=template
+GAME=stevedore
 
 #
 # commands
@@ -82,10 +82,24 @@ SPRS_INTERMEDIATE=\
 	$(GAME_PATH)\sprites.pcx.spr
 
 DATAS=\
-	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
+	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\tutorial_01.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\tutorial_02.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\tutorial_03.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\tutorial_04.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\tutorial_05.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\jungle_01.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\vulcan_01.tmx.bin.$(PACK_EXTENSION)
 
 DATAS_INTERMEDIATE=\
-	$(GAME_PATH)\screen.tmx.bin
+	$(GAME_PATH)\screen.tmx.bin \
+	$(GAME_PATH)\tutorial_01.tmx.bin \
+	$(GAME_PATH)\tutorial_02.tmx.bin \
+	$(GAME_PATH)\tutorial_03.tmx.bin \
+	$(GAME_PATH)\tutorial_04.tmx.bin \
+	$(GAME_PATH)\tutorial_05.tmx.bin \
+	$(GAME_PATH)\jungle_01.tmx.bin \
+	$(GAME_PATH)\vulcan_01.tmx.bin
 
 #
 # phony targets
