@@ -9,6 +9,16 @@
 	PLAYER_BOX_X_OFFSET:	equ -(CFG_PLAYER_WIDTH / 2)
 	PLAYER_BOX_Y_OFFSET:	equ -CFG_PLAYER_HEIGHT
 	
+; Bit index for default tile properties
+	BIT_WORLD_SOLID:	equ 0
+	BIT_WORLD_FLOOR:	equ 1
+	BIT_WORLD_STAIRS:	equ 2
+	BIT_WORLD_DEATH:	equ 3
+	BIT_WORLD_WALK_ON:	equ 4 ; Tile collision (single char)
+	BIT_WORLD_WIDE_ON:	equ 5 ; Wide tile collision (player width)
+	BIT_WORLD_WALK_OVER:	equ 6 ; Walking over tiles (player width)
+	BIT_WORLD_PUSHABLE:	equ 7 ; Pushable tiles (player height)
+
 ; Modificadores de estados del jugador (en forma de bits y flags) 
 	BIT_STATE_LEFT:		equ 0
 	BIT_STATE_ANIM:		equ 1
@@ -81,24 +91,24 @@ UPDATE_PLAYER:
 	bit	BIT_WORLD_DEATH, a
 	jp	nz, SET_PLAYER_DYING ; sí
 ; UX: ¿colisión, un tile?
-IF (UPDATE_PLAYER_UX_WALK_ON != $0000)
-	bit	BIT_WORLD_UX_WALK_ON, a
+IFEXIST UPDATE_PLAYER_UX_WALK_ON
+	bit	BIT_WORLD_WALK_ON, a
 	call	nz, UPDATE_PLAYER_UX_WALK_ON ; sí
-ENDIF ; (UPDATE_PLAYER_UX_WALK_ON != $0000)
+ENDIF
 	
 ; UX: ¿colisión, tiles (ancho del jugador)?
-IF (UPDATE_PLAYER_UX_WIDE_ON != $000)
+IFEXIST UPDATE_PLAYER_UX_WIDE_ON
 	call	CHECK_TILES_PLAYER
-	bit	BIT_WORLD_UX_WIDE_ON, a
+	bit	BIT_WORLD_WIDE_ON, a
 	call	nz, UPDATE_PLAYER_UX_WIDE_ON ; sí
-ENDIF ; (UPDATE_PLAYER_UX_WIDE_ON != $000)
+ENDIF
 	
 ; UX: ¿jugador sobre tiles (ancho del jugador)?
-IF (UPDATE_PLAYER_UX_WALK_OVER != $000)
+IFEXIST UPDATE_PLAYER_UX_WALK_OVER
 	call	CHECK_TILES_UNDER_PLAYER
-	bit	BIT_WORLD_UX_WALK_OVER, a
+	bit	BIT_WORLD_WALK_OVER, a
 	call	nz, UPDATE_PLAYER_UX_WALK_OVER ; sí
-ENDIF ; (UPDATE_PLAYER_UX_WALK_OVER != $000)
+ENDIF
 
 	ret
 ; -----------------------------------------------------------------------------
@@ -371,33 +381,33 @@ MOVE_PLAYER_LR_ANIMATE:
 	ld	hl, player_state
 	res	BIT_STATE_ANIM, [hl]
 	
-IF (BIT_WORLD_UX_PUSH = 0)
-	ret
-ELSE
+; IF (BIT_WORLD_PUSHABLE = 0)
+	; ret
+; ELSE
 .RESET_STATE:
 ; resetea el estado si está activa la UX de empujar
 	ld	a, PLAYER_STATE_FLOOR
 	ld	b, $ff XOR FLAGS_STATE
 	jp	SET_PLAYER_STATE_B_OK
-ENDIF ; (BIT_WORLD_UX_PUSH == 0)
+; ENDIF ; (BIT_WORLD_PUSHABLE == 0)
 
 .RIGHT:
 	call	CHECK_TILES_RIGHT_PLAYER_FAST
 	
 ; UX: ¿empujando tiles (alto del jugador)?
-IF (UPDATE_PLAYER_UX_PUSH_RIGHT != $000)
-	bit	BIT_WORLD_UX_PUSH, a
+IFEXIST UPDATE_PLAYER_UX_PUSH_RIGHT
+	bit	BIT_WORLD_PUSHABLE, a
 	jp	nz, UPDATE_PLAYER_UX_PUSH_RIGHT ; sí
-ENDIF ; (BIT_WORLD_UX_PUSH != $0000)
+ENDIF
 
 ; ¿Hay sólido a la derecha?
 	bit	BIT_WORLD_SOLID, a
 	jr	nz, .RESET_ANIMATION ; sí
 
 ; resetea el estado si está activa la UX de empujar
-IF (UPDATE_PLAYER_UX_PUSH_RIGHT != $000)
+IFEXIST UPDATE_PLAYER_UX_PUSH_RIGHT
 	call	.RESET_STATE
-ENDIF ; (UPDATE_PLAYER_UX_PUSH_RIGHT != $000)
+ENDIF
 
 ; no: mueve y anima
 	call	MOVE_PLAYER_RIGHT
@@ -407,19 +417,19 @@ ENDIF ; (UPDATE_PLAYER_UX_PUSH_RIGHT != $000)
 	call	CHECK_TILES_LEFT_PLAYER_FAST
 
 ; UX: ¿empujando tiles (alto del jugador)?
-IF (UPDATE_PLAYER_UX_PUSH_LEFT != $0000)
-	bit	BIT_WORLD_UX_PUSH, a
+IFEXIST UPDATE_PLAYER_UX_PUSH_LEFT
+	bit	BIT_WORLD_PUSHABLE, a
 	jp	nz, UPDATE_PLAYER_UX_PUSH_LEFT ; sí
-ENDIF ; (UPDATE_PLAYER_UX_PUSH_LEFT != $0000)
+ENDIF
 
 ; ¿Hay sólido a la izquierda?
 	bit	BIT_WORLD_SOLID, a
 	jr	nz, .RESET_ANIMATION ; sí
 
 ; resetea el estado si está activa la UX de empujar
-IF (UPDATE_PLAYER_UX_PUSH_LEFT != $0000)
+IFEXIST UPDATE_PLAYER_UX_PUSH_LEFT
 	call	.RESET_STATE
-ENDIF ; (UPDATE_PLAYER_UX_PUSH_LEFT != $0000)
+ENDIF
 
 ; no: mueve y anima
 	call	MOVE_PLAYER_LEFT

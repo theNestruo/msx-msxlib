@@ -9,6 +9,20 @@
 	BIT_STICK_RIGHT:	equ 1
 	BIT_STICK_DOWN:		equ 2
 	BIT_STICK_LEFT:		equ 3
+	
+; Default bit map value table
+IFDEF STICK_BITS_TABLE ELSE
+STICK_BITS_TABLE:
+	db	0						 ; 0
+	db	(1 << BIT_STICK_UP)				 ; 1
+	db	(1 << BIT_STICK_UP)	+ (1 << BIT_STICK_RIGHT) ; 2
+	db				  (1 << BIT_STICK_RIGHT) ; 3
+	db	(1 << BIT_STICK_DOWN)	+ (1 << BIT_STICK_RIGHT) ; 4
+	db	(1 << BIT_STICK_DOWN)				 ; 5
+	db	(1 << BIT_STICK_DOWN)	+ (1 << BIT_STICK_LEFT)	 ; 6
+	db				  (1 << BIT_STICK_LEFT)	 ; 7
+	db	(1 << BIT_STICK_UP)	+ (1 << BIT_STICK_LEFT)	 ; 8
+ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

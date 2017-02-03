@@ -4,18 +4,6 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
-; Bit index for default tile properties
-	BIT_WORLD_SOLID:	equ 0
-	BIT_WORLD_FLOOR:	equ 1
-	BIT_WORLD_STAIRS:	equ 2
-	BIT_WORLD_DEATH:	equ 3
-	BIT_WORLD_UX_WALK_ON:	equ 4 ; Tile collision (single char)
-	BIT_WORLD_UX_WIDE_ON:	equ 5 ; Wide tile collision (player width)
-	BIT_WORLD_UX_WALK_OVER:	equ 6 ; Walking over tiles (player width)
-	BIT_WORLD_UX_PUSH:	equ 7 ; Pushing tiles (player height)
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Translate pixel coordinates to NAMTBL offsets
 ; param de: pixe coordinates (yx pair, two bytes)
 ; ret hl: NAMTBL offset (in bytes)

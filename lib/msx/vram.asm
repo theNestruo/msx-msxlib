@@ -4,6 +4,24 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
+; Default logical-to-physical sprite coordinates offsets (pixels)
+IFDEF CFG_SPRITES_X_OFFSET ELSE
+	CFG_SPRITES_X_OFFSET:		equ -8
+ENDIF
+IFDEF CFG_SPRITES_Y_OFFSET ELSE
+	CFG_SPRITES_Y_OFFSET:		equ -16 -1
+ENDIF
+	
+; Number of reserved sprites at the beginning and after the player sprites
+IFDEF CFG_SPRITES_RESERVED_BEFORE ELSE
+	CFG_SPRITES_RESERVED_BEFORE:	equ 0
+ENDIF
+IFDEF CFG_SPRITES_RESERVED_AFTER ELSE
+	CFG_SPRITES_RESERVED_AFTER:	equ 0
+ENDIF
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Vaciado del buffer de pantalla con el carácter espacio
 CLS_NAMTBL:
 	ld      hl, namtbl_buffer
@@ -197,6 +215,7 @@ LDIRVM_BLOCKS:
 ; param hl: origen de datos (comprimidos)
 ; param de: destino en VRAM
 ; param bc: tamaño a volcar en VRAM
+IFEXIST UNPACK
 UNPACK_LDIRVM:
 	push	de ; preserva la dirección VRAM
 	push	bc ; preserva el tamaño
@@ -209,15 +228,18 @@ UNPACK_LDIRVM:
 	pop	bc ; restaura el tamaño
 	pop	de ; restaura la dirección VRAM
 	jp	LDIRVM
+ENDIF ; UNPACK
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Descomprime y vuelca a los tres bancos de patrones utilizando la BIOS
 ; param hl: origen de datos (comprimidos)
+IFEXIST UNPACK
 UNPACK_LDIRVM_CHRTBL:
 	ld	de, unpack_buffer
 	call	UNPACK
 	; jr	LDIRVM_CHRTBL ; falls through
+ENDIF ; UNPACK
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -235,10 +257,12 @@ LDIRVM_CHRTBL:
 ; -----------------------------------------------------------------------------
 ; Descomprime y vuelca a los tres bancos de colores utilizando la BIOS
 ; param hl: origen de datos (comprimidos)
+IFEXIST UNPACK
 UNPACK_LDIRVM_CLRTBL:
 	ld	de, unpack_buffer
 	call	UNPACK
 	; jr	LDIRVM_CLRTBL ; falls through
+ENDIF ; UNPACK
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -459,9 +483,9 @@ PUT_DYNAMIC_SPRITE:
 ;	Deferred WRTVRM routines (aka VPOKE-like routines)
 ; =============================================================================
 
-	VPOKE_SIZE:	equ 3
+IFDEF CFG_VRAM_VPOKES
 
-IF (CFG_VRAM_VPOKES > 0)
+	VPOKE_SIZE:	equ 3
 
 ; -----------------------------------------------------------------------------
 ; Inicializa la cola de volcados de NAMTBL
@@ -529,6 +553,6 @@ EXECUTE_VPOKES:
 	ret
 ; -----------------------------------------------------------------------------
 
-ENDIF ; (CFG_VRAM_VPOKES > 0)
+ENDIF ; CFG_VRAM_VPOKES
 
 ; EOF
