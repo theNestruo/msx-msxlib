@@ -214,19 +214,20 @@ MAIN_INIT:
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
-; ; Skips the main menu and goes into tutorial stages the first time
-; TUTORIAL_FIRST:
-; ; Is SELECT key pressed?
-	; halt
-	; ld	hl, NEWKEY + 7
-	; bit	6, [hl]
-	; call	z, MAIN_MENU ; yes: skip tutorial
+; Skips the main menu and goes into tutorial stages the first time
+TUTORIAL_FIRST:
+; Is SELECT key pressed?
+	halt
+	ld	hl, NEWKEY + 7
+	bit	6, [hl]
+	call	z, MAIN_MENU ; yes: skip tutorial
 
-; ; no: skip MAIN_MENU and enter tutorial stages
-	; xor	a
-	; ld	[game.current_stage], a
-	; jp	NEW_STAGE
-; ; -----------------------------------------------------------------------------
+; no: skip MAIN_MENU and enter tutorial stages
+	xor	a
+	ld	[game.current_stage], a
+	call	ENASCR_NO_FADE
+	jp	NEW_STAGE
+; -----------------------------------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
 ; Main menu
@@ -294,9 +295,8 @@ NEW_STAGE:
 	ld	[de], a
 
 ; Fade in
-	call	ENASCR_FADE_IN
-	call	TRIGGER_PAUSE_FOUR_SECONDS
-	call	DISSCR_FADE_OUT
+	call	LDIRVM_NAMTBL_FADE_INOUT
+	call	TRIGGER_PAUSE_ONE_SECOND
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -337,7 +337,7 @@ GAME_LOOP_INIT:
 	call	INIT_STAGE	; (custom)
 	
 ; Fade in
-	call	ENASCR_FADE_IN
+	call	LDIRVM_NAMTBL_FADE_INOUT
 	; call	LDIRVM_NAMTBL_FADE_INOUT
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -370,7 +370,7 @@ GAME_LOOP:
 ; Extra input
 	ld	hl, NEWKEY + 7
 	bit	4, [hl]
-	call	z, ON_STOP_KEY
+	call	z, ON_GAME_LOOP_STOP_KEY
 	
 ; Check exit condition
 	ld	a, [player.state]
@@ -378,16 +378,19 @@ GAME_LOOP:
 	jr	z, GAME_LOOP ; no
 	
 ; yes: conditionally jump according the exit status
-	cp	PLAYER_STATE_DEAD
-	jr	z, GAME_LOOP_DEAD ; player is dead
+	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_FINISH
-	jr	z, GAME_LOOP_FINISH ; stage finished ; falls through
-	
-	jr	$
+	jr	z, STAGE_OVER ; stage over
+	cp	PLAYER_STATE_DEAD
+	jr	z, PLAYER_OVER ; player is dead
+
+.THIS_IS_BAD:
+	call	BEEP
+	jr	.THIS_IS_BAD
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-ON_STOP_KEY:
+ON_GAME_LOOP_STOP_KEY:
 ; Has the player already finished?
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
@@ -396,7 +399,7 @@ ON_STOP_KEY:
 ; no: It is a tutorial stage?
 	ld	a, [game.current_stage]
 	cp	TUTORIAL_STAGES
-	jr	c, .SKIP_TUTORIAL ; yes: skip tutorial
+	jr	c, TUTORIAL_OVER ; yes: skip tutorial
 	
 ; no: Is the player already dying?
 	ld	a, [player.state]
@@ -407,22 +410,25 @@ ON_STOP_KEY:
 ; no: kills the player
 	ld	a, PLAYER_STATE_DYING
 	jp	SET_PLAYER_STATE
-
-.SKIP_TUTORIAL:
-; Fade out and go to main menu
-	call	DISSCR_FADE_OUT
-	jp	MAIN_MENU
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; In-game loop finish due stage over
-GAME_LOOP_FINISH:
-; Fade out
-	call	DISSCR_FADE_OUT
-
+STAGE_OVER:
 ; Next stage logic
 	ld	hl, game.current_stage
 	inc	[hl]
+	
+; Is it a tutorial stage?
+	ld	a, [game.current_stage]
+	cp	TUTORIAL_STAGES
+	jp	c, NEW_STAGE ; yes: next stage directly
+	jp	z, TUTORIAL_OVER ; no: tutorial finished
+	
+; Fade out
+	call	DISSCR_FADE_OUT
+
+; Stage over screen
 	;	...
 	
 ; Go to the next stage
@@ -430,12 +436,19 @@ GAME_LOOP_FINISH:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+TUTORIAL_OVER:
+; Fade out and go to main menu
+	call	DISSCR_FADE_OUT
+	jp	MAIN_MENU
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; In-game loop finish due death of the player
-GAME_LOOP_DEAD:
+PLAYER_OVER:
 ; Is it a tutorial stage?
 	ld	a, [game.current_stage]
 	cp	TUTORIAL_STAGES
-	jp	c, .SKIP ; yes: no lives lost
+	jp	c, NEW_STAGE ; .SKIP ; yes: no lives lost
 	
 ; Life loss logic
 	ld	hl, game.lives
@@ -804,7 +817,7 @@ ON_PLAYER_PUSH:
 	call	.CHECK_FRAMES_PUSHING
 	ret	nz ; no
 ; sí: localiza el elemento empujable e inicia su movimiento
-	ld	a, ((CFG_PLAYER_WIDTH /2) +8)
+	ld	a, PLAYER_BOX_X_OFFSET +16 ; tile to the right of the player
 	call	.LOCATE_PUSHABLE
 	jp	MOVE_SPRITEABLE_RIGHT
 	
@@ -828,7 +841,7 @@ ON_PLAYER_PUSH:
 	call	.CHECK_FRAMES_PUSHING
 	ret	nz ; no
 ; sí: localiza el elemento empujable e inicia su movimiento
-	ld	a, -(CFG_PLAYER_WIDTH/2) -8 +$100 ; (+$100 avoids 8-bit overflow)
+	ld	a, PLAYER_BOX_X_OFFSET -1 ; tile to the left of the player
 	call	.LOCATE_PUSHABLE
 	jp	MOVE_SPRITEABLE_LEFT
 ; -----------------------------------------------------------------------------

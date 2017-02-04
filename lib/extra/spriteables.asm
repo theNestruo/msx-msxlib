@@ -70,14 +70,20 @@ SET_SPRITEABLE_FOREGROUND:
 
 ; -----------------------------------------------------------------------------
 ; Localiza un tile convertible
-; param de: coordenadas lógicas (en píxeles) u offset del caracter superior izquierdo
+; param de: coordenadas lógicas (en píxeles)
 ; return ix: puntero al tile convertible cuyas coordenadas coinciden
 GET_SPRITEABLE_COORDS:
 ; Convierte coordenadas lógicas (en píxeles) en offset
 	call	COORDS_TO_OFFSET
-	ld	de, -32 -32 -1 ; -(1,2)
+	ld	de, -SCR_WIDTH -SCR_WIDTH -1 ; -(1,2)
 	add	hl, de
 	ex	de, hl ; offset en de
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Localiza un tile convertible
+; param de: offset del caracter superior izquierdo
+; return ix: puntero al tile convertible cuyas coordenadas coinciden
 GET_SPRITEABLE_OFFSET:
 ; Recorre el array de elementos
 	ld	ix, spriteables.array
