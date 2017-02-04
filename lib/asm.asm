@@ -20,15 +20,6 @@ GET_HL_A_BYTE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Reads a word from a word array (i.e.: "h,l = hl[2*a+1], hl[2*a]" in C syntax)
-; param hl: word array address
-; param a: unsigned 0-based index (0, 1, 2...)
-; ret hl: read word
-GET_HL_A_A_WORD:
-	add	a ; a *= 2
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Reads a word from a word array (i.e.: "h,l = hl[a+1], hl[a]" in C syntax)
 ; param hl: word array address
 ; param a: unsigned 0-based index (0, 2, 4...)
@@ -93,89 +84,31 @@ JP_HL:
 
 ; -----------------------------------------------------------------------------
 ; Adds an element to an array and returns the address of the added element
-; param ix: array address (byte size)
+; param ix: array.count address (byte size)
 ; param bc: size of each array element
-; ret ix: address of the added element
+; ret ix: address of the new element
 ADD_ARRAY_IX:
 ; Reads the size
 	ld	a, [ix]
 	inc	[ix]
 ; Skips the size byte
-	inc	ix ; *_array
+	inc	ix ; *.array
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Locates an element into an array
 ; param ix: array address (skipped the size byte)
 ; param bc: size of each array element
-; param a: 0-based index (0, 2, 4...)
+; param a: 0-based index (0, 1, 2...)
 ; ret ix: address of the element
 GET_ARRAY_IX:
 	or	a
 	ret	z ; element reached
-@@LOOP:
+.LOOP:
 ; Skips one element
 	add	ix, bc
 	dec	a
-	jr	nz, @@LOOP
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "add hl, 4*a" (or "hl += 4*a" in C syntax)
-; param hl: operand
-; param a: usigned operand
-ADD_HL_A_A_A_A:
-	add	a ; a *= 2
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "add hl, 2*a" (or "hl += 2*a" in C syntax)
-; param hl: operand
-; param a: usigned operand
-ADD_HL_A_A:
-	add	a ; a *= 2
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "add hl, a" (or "hl += a" in C syntax)
-; param hl: operand
-; param a: usigned operand
-ADD_HL_A:
-	add	l ; hl += a
-	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "add de, 4*a" (or "de += 4*a" in C syntax)
-; param de: operand
-; param a: usigned operand
-ADD_DE_A_A_A_A:
-	add	a ; a *= 2
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "add de, 2*a" (or "de += 2*a" in C syntax)
-; param de: operand
-; param a: usigned operand
-ADD_DE_A_A:
-	add	a ; a *= 2
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "add de, a" (or "de += a" in C syntax)
-; param de: operand
-; param a: usigned operand
-ADD_DE_A:
-	add	e ; de += a
-	ld	e, a
-	adc	d
-	sub	e
-	ld	d, a
+	jr	nz, .LOOP
 	ret
 ; -----------------------------------------------------------------------------
 

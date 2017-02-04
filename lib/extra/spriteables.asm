@@ -1,4 +1,4 @@
-	
+
 ; Constantes simbólicas de tiles convertibles en sprites
 	MASK_SPRITEABLE_PENDING:	equ $0f ; movimiento en píxeles
 	MASK_SPRITEABLE_DIRECTION:	equ $70
@@ -18,8 +18,8 @@
 ; Resetea toda la información de los tiles convertibles
 RESET_SPRITEABLES:
 ; Vacía el contador y el array
-	ld	hl, spriteables_data
-	ld	de, spriteables_data +1
+	ld	hl, spriteables
+	ld	de, spriteables +1
 	ld	bc, SPRITEABLES_SIZE -1
 	ld	[hl], 0
 	ldir
@@ -37,7 +37,7 @@ INIT_SPRITEABLE:
 	ld	hl, -namtbl_buffer +$10000 ; +$10000: evita 16-bit overflow
 	add	hl, de ; offset en hl
 ; Actualiza el contador de elementos y accede a la última posición
-	ld	ix, spriteables_count
+	ld	ix, spriteables.count
 	ld	bc, SPRITEABLE_SIZE
 	call	ADD_ARRAY_IX
 ; Escribe el estado
@@ -78,7 +78,7 @@ GET_SPRITEABLE_COORDS:
 	ex	de, hl ; offset en de
 GET_SPRITEABLE_OFFSET:
 ; Recorre el array de elementos
-	ld	ix, spriteables_array
+	ld	ix, spriteables.array
 .LOOP:
 ; ¿Coincide la coordenada y?
 	ld	a, [ix +_SPRITEABLE_OFFSET +0]
@@ -98,13 +98,13 @@ GET_SPRITEABLE_OFFSET:
 ; -----------------------------------------------------------------------------
 UPDATE_SPRITEABLES:
 ; Lee el contador de elementos
-	ld	ix, spriteables_count
+	ld	ix, spriteables.count
 	ld	a, [ix]
 	or	a
 	ret	z ; no hay elementos
 ; hay elementos
 	ld	b, a ; inicializa contador
-	inc	ix ; ix = spriteables_array
+	inc	ix ; ix = spriteables.array
 	
 ; Para cada elemento
 .LOOP:
@@ -277,20 +277,24 @@ VPOKE_SPRITEABLE_BACKGROUND:
 	ld	l, [ix +_SPRITEABLE_OFFSET +0]
 	ld	h, [ix +_SPRITEABLE_OFFSET +1]
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +0]
-	call	VPOKE
+	call	.VPOKE
 ; Caracter superior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +1]
-	call	VPOKE
+	call	.VPOKE
 ; Caracter inferior izquierdo
 	ld	de, SCR_WIDTH -1
 	add	hl, de
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +2]
-	call	VPOKE
+	call	.VPOKE
 ; Caracter inferior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +3]
-	jp	VPOKE
+.VPOKE:
+	push	ix ; preserva el valor anterior de IX
+	call	VPOKE
+	pop	ix ; restaura el valor anterior de IX
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -301,20 +305,24 @@ VPOKE_SPRITEABLE_FOREGROUND:
 	ld	l, [ix +_SPRITEABLE_OFFSET +0]
 	ld	h, [ix +_SPRITEABLE_OFFSET +1]
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +0]
-	call	VPOKE
+	call	.VPOKE
 ; Caracter superior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +1]
-	call	VPOKE
+	call	.VPOKE
 ; Caracter inferior izquierdo
 	ld	de, SCR_WIDTH -1
 	add	hl, de
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +2]
-	call	VPOKE
+	call	.VPOKE
 ; Caracter inferior derecho
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +3]
-	jp	VPOKE
+.VPOKE:
+	push	ix ; preserva el valor anterior de IX
+	call	VPOKE
+	pop	ix ; restaura el valor anterior de IX
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -370,8 +378,8 @@ PUT_SPRITEABLE_SPRITE:
 	jr	.DE_OK
 	
 .DE_OK:
-	ld	c, [ix + _SPRITEABLE_SPRATR +0] ; patrón
-	ld	b, [ix + _SPRITEABLE_SPRATR +1] ; color
+	ld	c, [ix + _SPRITEABLE_PATTERN]
+	ld	b, [ix + _SPRITEABLE_COLOR]
 	jp	PUT_DYNAMIC_SPRITE
 ; -----------------------------------------------------------------------------
 

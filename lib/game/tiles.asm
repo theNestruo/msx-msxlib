@@ -22,6 +22,14 @@ COORDS_TO_OFFSET:
 	srl	a
 	srl	a
 ; hl += a
+	; jr	ADD_HL_A ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Emulates the instruction "add hl, a" (or "hl += a" in C syntax)
+; param hl: operand
+; param a: usigned operand
+ADD_HL_A:
 	add	l
 	ld	l, a
 	adc	h

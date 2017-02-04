@@ -6,17 +6,25 @@
 ;
 
 ; -----------------------------------------------------------------------------
-; Enable if the ROM is larger than 16kB (typically, 32kB)
+; Define if the ROM is larger than 16kB (typically, 32kB)
 ; Includes search for page 2 slot/subslot at start
 	; CFG_INIT_32KB_ROM:
 
-; Enable if the game needs 16kB instead of 8kB
+; Define if the game needs 16kB instead of 8kB
 ; RAM will start at the beginning of the page 2 instead of $e000
 ; and availability will be checked at start
 	; CFG_INIT_16KB_RAM:
 	
-; Maximum number of "vpokes" (deferred WRTVRMs) per frame
-	CFG_VRAM_VPOKES:		equ 64
+; Logical-to-physical sprite coordinates offsets (pixels)
+	CFG_SPRITES_X_OFFSET:		equ -8
+	CFG_SPRITES_Y_OFFSET:		equ -17
+	
+	CFG_SPRITES_RESERVED_BEFORE:	equ 0
+	CFG_SPRITES_RESERVED_AFTER:	equ 0
+
+; Define to enable the "vpoke" routines (deferred WRTVRMs)
+; Maximum number of "vpokes" per frame
+	CFG_VPOKES: equ 64
 
 ; MSXlib core
 	include	"lib/rom.asm"
@@ -200,7 +208,7 @@ MAIN_INIT:
 ; Initializes global vars
 	ld	hl, GLOBALS_0
 	ld	de, globals
-	ld	bc, GLOBALS_SIZE
+	ld	bc, GLOBALS_0.SIZE
 	ldir
 ; ------VVVV----falls through--------------------------------------------------
 	
@@ -211,7 +219,7 @@ MAIN_MENU:
 	;	...TBD...
 	
 ; Main menu draw
-	call	CLS_NAMTBL
+	; call	CLS_NAMTBL
 	;	...TBD...
 	
 ; Fade in
@@ -231,9 +239,9 @@ MAIN_MENU:
 ; New game entry point
 NEW_GAME:
 ; Initializes game vars
-	ld	hl, GAME_VARS_0
-	ld	de, game_vars
-	ld	bc, GAME_VARS_SIZE
+	ld	hl, GAME_0
+	ld	de, game
+	ld	bc, GAME_0.SIZE
 	ldir
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -246,19 +254,19 @@ NEW_STAGE:
 	call	UNPACK
 	
 ; Initializes stage vars
-	ld	hl, STAGE_VARS_0
-	ld	de, stage_vars
-	ld	bc, STAGE_VARS_SIZE
+	ld	hl, STAGE_0
+	ld	de, stage
+	ld	bc, STAGE_0.SIZE
 	ldir
 
 ; Initializes player vars
-	ld	hl, PLAYER_VARS_0
-	ld	de, player_vars
-	ld	bc, PLAYER_VARS_SIZE
+	ld	hl, PLAYER_0
+	ld	de, player
+	ld	bc, PLAYER_0.SIZE
 	ldir
 	
 ; Initializes sprite attribute table (SPRATR)
-	ld	hl, PLAYER_SPRATR_0
+	ld	hl, SPRATR_0
 	ld	de, spratr_buffer
 	ld	bc, SPRATR_SIZE
 	ldir
@@ -296,13 +304,13 @@ GAME_LOOP:
 	call	UPDATE_BOXES_AND_ROCKS	; (custom)
 	call	UPDATE_PLAYER
 	call	UPDATE_ENEMIES
-	; ; call	UPDATE_BULLETS		; específica
-	; ; call	CHECK_COLLISIONS_ENEMIES
+	; call	UPDATE_BULLETS		; específica
+	; call	CHECK_COLLISIONS_ENEMIES
 	
 	call	UPDATE_FRAMES_PUSHING	; (custom)
 	
 ; Check exit condition
-	ld	a, [player_state]
+	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
 	jr	z, GAME_LOOP ; no
 ; yes: conditionally jump according the exit status
@@ -374,8 +382,8 @@ GAME_OVER:
 ; Initializes the initial player coordinates, enemies and other special elements
 INIT_STAGE:
 ; Travels the playable area
-	ld	hl, namtbl_buffer +PLAYGROUND_FIRST_ROW *SCR_WIDTH
-	ld	bc, ((PLAYGROUND_LAST_ROW -PLAYGROUND_FIRST_ROW +1) *SCR_WIDTH)
+	ld	hl, namtbl_buffer
+	ld	bc, NAMTBL_SIZE
 .LOOP:
 ; For each character
 	push	bc ; preserves counter
@@ -409,23 +417,23 @@ INIT_STAGE:
 ; Inicializa un tile sprite de una caja
 .INIT_BOX:
 	call	INIT_SPRITEABLE
-	ld	[ix + _SPRITEABLE_SPRATR +0], BOX_SPRITE_PATTERN ; patrón caja
-	ld	[ix + _SPRITEABLE_SPRATR +1], BOX_SPRITE_COLOR ; color caja
+	ld	[ix + _SPRITEABLE_PATTERN], BOX_SPRITE_PATTERN
+	ld	[ix + _SPRITEABLE_COLOR], BOX_SPRITE_COLOR
 	ret
 
 ; Inicializa el tile sprite de una roca
 .INIT_ROCK:
 	call	INIT_SPRITEABLE
-	ld	[ix + _SPRITEABLE_SPRATR +0], ROCK_SPRITE_PATTERN ; patrón roca
-	ld	[ix + _SPRITEABLE_SPRATR +1], ROCK_SPRITE_COLOR ; color roca
+	ld	[ix + _SPRITEABLE_PATTERN], ROCK_SPRITE_PATTERN
+	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
 	ret
 
 ; Initial player coordinates
 .INIT_START_POINT:
 	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
-	ld	hl, player_y
+	ld	hl, player.y
 	ld	[hl], d
-	inc	hl ; hl = player_x
+	inc	hl ; hl = player.x
 	ld	[hl], e
 	ret
 
@@ -470,12 +478,12 @@ INIT_STAGE:
 ; (esto es: inicia su movimiento de caída)
 UPDATE_BOXES_AND_ROCKS:
 ; ¿Hay pushables?
-	ld	a, [spriteables_count]
+	ld	a, [spriteables.count]
 	or	a
 	ret	z ; no
 ; sí
 	ld	b, a ; b = contador
-	ld	ix, spriteables_array
+	ld	ix, spriteables.array
 .LOOP:
 	push	bc ; preserva el contador
 ; ¿Está activo?
@@ -490,7 +498,7 @@ UPDATE_BOXES_AND_ROCKS:
 	cp	CHAR_WATER_SURFACE
 	jr	nz, .NO_WATER ; no
 ; sí: ¿es una caja?
-	ld	a, [ix +_SPRITEABLE_SPRATR]
+	ld	a, [ix +_SPRITEABLE_PATTERN]
 	cp	BOX_SPRITE_PATTERN
 	jr	z, .BOX_ON_WATER ; sí
 	jr	.ROCK_ON_WATER ; no (es una roca)
@@ -500,7 +508,7 @@ UPDATE_BOXES_AND_ROCKS:
 	cp	CHAR_LAVA_SURFACE
 	jr	nz, .NO_LAVA ; no
 ; sí: ¿es una caja?
-	ld	a, [ix +_SPRITEABLE_SPRATR]
+	ld	a, [ix +_SPRITEABLE_PATTERN]
 	cp	BOX_SPRITE_PATTERN
 	jr	z, .BOX_ON_LAVA ; sí
 	jr	.ROCK_ON_LAVA ; no (es una roca)
@@ -562,7 +570,7 @@ UPDATE_BOXES_AND_ROCKS:
 	call	SET_SPRITEABLE_FOREGROUND
 ; Cambia el color del sprite
 	ld	a, ROCK_SPRITE_COLOR_WATER
-	ld	[ix + _SPRITEABLE_SPRATR +1], a
+	ld	[ix + _SPRITEABLE_COLOR], a
 ; continúa procesando la caída
 	jr	.CHECK
 	
@@ -572,7 +580,7 @@ UPDATE_BOXES_AND_ROCKS:
 	call	SET_SPRITEABLE_FOREGROUND
 ; Cambia el color del sprite
 	ld	a, ROCK_SPRITE_COLOR_LAVA
-	ld	[ix + _SPRITEABLE_SPRATR +1], a
+	ld	[ix + _SPRITEABLE_COLOR], a
 ; continúa procesando la caída
 	jr	.CHECK
 ; -----------------------------------------------------------------------------
@@ -582,13 +590,13 @@ UPDATE_BOXES_AND_ROCKS:
 ; si no está empujando
 UPDATE_FRAMES_PUSHING:
 ; ¿Está empujando?
-	ld	a, [player_state]
+	ld	a, [player.state]
 	and	$ff - FLAGS_STATE
 	cp	PLAYER_STATE_PUSH
 	ret	z ; sí
  ; no: resetea el contador
 	xor	a
-	ld	[frames_pushing], a
+	ld	[player.pushing], a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -601,32 +609,33 @@ UPDATE_FRAMES_PUSHING:
 ; -----------------------------------------------------------------------------
 ; UX colisión, un tile (coordenadas concretas)
 UPDATE_PLAYER_UX_WALK_ON:
-; obtiene el tile, el offset y el puntero al buffer
+; Reads the tile index and NAMTBL offset and buffer pointer
 	call	GET_TILE_AT_PLAYER
-	push	de ; preserva el offset
-	push	hl ; preserva el puntero
+	push	de ; preserves NAMTBL offset
+	push	hl ; preserves NAMTBL buffer pointer
 	
-; ¿es un item?
+; Is it an item?
 	; cp	CHAR_FIRST_OPEN_DOOR
 	; jr	nc, .DOOR ; no
-; sí: realiza la acción que corresponda al item
+; yes: executes item action
 	sub	CHAR_FIRST_ITEM
 	ld	hl, .ITEM_JUMP_TABLE
 	call	JP_TABLE
-; elimina el item en el buffer y en la VRAM
+; Removes the item in the NAMTBL buffer
 	xor	a
-	pop	hl ; restaura el puntero
+	pop	hl ; restores NAMTBL buffer pointer
 	ld	[hl], a
-	pop	hl ; restaura el offset
+; Removes the item in VRAM
+	pop	hl ; restores NAMTBL offset
 	jp	VPOKE
 
 .ITEM_JUMP_TABLE:
-	dw	PLAYER_GETS_KEY		; llave
-	dw	PLAYER_GETS_STAR	; estrella
-	dw	PLAYER_GETS_BONUS	; moneda
-	dw	PLAYER_GETS_BONUS	; cereza
-	dw	PLAYER_GETS_BONUS	; fresa
-	dw	PLAYER_GETS_BONUS	; manzana
+	dw	PLAYER_GETS_KEY		; key
+	dw	PLAYER_GETS_STAR	; star
+	dw	PLAYER_GETS_BONUS	; coin
+	dw	PLAYER_GETS_BONUS	; fruit: cherry
+	dw	PLAYER_GETS_BONUS	; fruit: strawberry
+	dw	PLAYER_GETS_BONUS	; fruit: apple
 	dw	PLAYER_GETS_BONUS	; octopus
 
 ; .DOOR:	
@@ -643,24 +652,21 @@ UPDATE_PLAYER_UX_WALK_ON:
 
 ; -----------------------------------------------------------------------------
 PLAYER_GETS_KEY:
-; Recorre todo el buffer de namtbl
-	ld	hl, namtbl_buffer + PLAYGROUND_FIRST_ROW * SCR_WIDTH
-	ld	bc, ((PLAYGROUND_LAST_ROW - PLAYGROUND_FIRST_ROW + 1) * SCR_WIDTH)
+; Travels the NAMTBL buffer
+	ld	hl, namtbl_buffer
+	ld	bc, NAMTBL_SIZE
 .LOOP:
-; ¿Es un caracter de puerta cerrada?
+; Is a closed-door char?
 	ld	a, [hl]
 	cp	CHAR_FIRST_CLOSED_DOOR
-	jr	c, .NEXT ; no
+	jr	c, .NEXT ; no (< CHAR_FIRST_CLOSED_DOOR)
 	cp	CHAR_LAST_CLOSED_DOOR + 1
-	jr	nc, .NEXT ; no
-; sí: lo convierte en caracter de puerta abierta
-	push	bc ; preserva contador
-	push	hl ; preserva puntero 
+	jr	nc, .NEXT ; no (> CHAR_LAST_CLOSED_DOOR)
+; yes: make it an open-door char
+	push	bc ; preserves counter
+	push	hl ; preserves offset
 	add	CHAR_FIRST_OPEN_DOOR - CHAR_FIRST_CLOSED_DOOR
-	ld	[hl], a
-	ld	de, -namtbl_buffer + $10000
-	add	hl, de ; hl = offset
-	call	VPOKE
+	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE
 	pop	hl ; restaura puntero
 	pop	bc ; restaura contador
 .NEXT:
@@ -692,7 +698,7 @@ UPDATE_PLAYER_UX_PUSH_RIGHT:
 	ret	nz ; no
 ; sí: cambia el estado
 	ld	a, PLAYER_STATE_PUSH
-	ld	[player_state], a
+	ld	[player.state], a
 ; ¿hay hueco para empujar?
 	ld	a, PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH +16
 	call	CHECK_V_TILES_PLAYER
@@ -716,7 +722,7 @@ UPDATE_PLAYER_UX_PUSH_LEFT:
 	ret	nz ; no
 ; sí: cambia el estado
 	ld	a, PLAYER_STATE_PUSH OR FLAG_STATE_LEFT
-	ld	[player_state], a
+	ld	[player.state], a
 ; ¿hay hueco para empujar?
 	ld	a, PLAYER_BOX_X_OFFSET -1 -16
 	call	CHECK_V_TILES_PLAYER
@@ -735,7 +741,7 @@ UPDATE_PLAYER_UX_PUSH_LEFT:
 ; Lee el tile (parte baja) que se está empujando
 ; param a: dx
 PUSH_GET_PUSHED_TILE:
-	ld	de, [player_xy]
+	ld	de, [player.xy]
 	add	d ; x += dx
 	ld	d, a
 	dec	e ; y -= 1
@@ -745,7 +751,7 @@ PUSH_GET_PUSHED_TILE:
 ; ret nz: insuficientes
 ; ret z: suficientes
 CHECK_FRAMES_PUSHING:
-	ld	hl, frames_pushing
+	ld	hl, player.pushing
 	inc	[hl]
 	ld	a, [hl]
 	cp	FRAMES_TO_PUSH
@@ -756,7 +762,7 @@ CHECK_FRAMES_PUSHING:
 ; return ix: puntero al tile convertible
 PUSH_LOCATE_PUSHABLE:
 ; Calcula las coordenadas que tiene que buscar
-	ld	de, [player_xy]
+	ld	de, [player.xy]
 	add	d ; x += dx
 	ld	d, a
 	jp	GET_SPRITEABLE_COORDS
@@ -832,12 +838,6 @@ SPRTBL_PACKED:
 	; ENEMY_PATTERN_SKELETON	equ $60
 	; ENEMY_COLOR_SNAKE	equ 2
 	; ENEMY_COLOR_SKELETON	equ 15
-
-; Sprite-related data (SPRATR)
-PLAYER_SPRATR_0:
-	db	SPAT_OB, 0, 0, 9	; 1st player sprite
-	db	SPAT_OB, 0, 0, 15	; 2nd player sprite
-	db	SPAT_END		; SPAT end marker
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -847,24 +847,35 @@ NAMTBL_PACKED:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Initial value of the globals, game and stage vars, and player vars
+; Initial value of the globals
 GLOBALS_0:
-	dw	2500			; hi_score
-
-GAME_VARS_0:
-	db	5			; lives_left
-	dw	0			; score
-
-STAGE_VARS_0:
-	db	0			; frames_pushing
+	dw	2500			; .hi_score
+	.SIZE:	equ $ - GLOBALS_0
 	
-; Initial player vars
-PLAYER_VARS_0:
-	db	0, 0			; player_y, player_x
-	db	0			; player_animation_delay
-	db	0 ; PLAYER_STATE_FLOOR	; player_state
-	db	0			; player_dy_index
+; Initial value of the game-scope vars
+GAME_0:
+	db	5			; .lives
+	dw	0			; .score
+	.SIZE:	equ $ - GAME_0
+
+; Initial value of the stage-scoped vars
+STAGE_0:
+	db	0			; player.pushing
+	.SIZE:	equ $ - STAGE_0
+
+; Initial (per stage) sprite attributes table
+SPRATR_0:
+	db	SPAT_OB, 0, 0, 9	; Player 1st sprite
+	db	SPAT_OB, 0, 0, 15	; Player 2nd sprite
+	db	SPAT_END		; SPAT end marker
 	
+; Initial (per stage) player vars
+PLAYER_0:
+	db	0, 0			; .y, .x
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
+	.SIZE:	equ $ - PLAYER_0
 ; =============================================================================
 
 ROM_END:
@@ -886,29 +897,25 @@ ROM_END:
 ; Global vars (i.e.: initialized only once)
 globals:
 
-hi_score:
+.hi_score:
 	rw	1
-	
-	GLOBALS_SIZE:	equ $ - globals
 
 ; Game vars (i.e.: vars from start to game over)
-game_vars:
+game:
 
-lives_left:
+.continues:
 	rb	1
-score:
+.lives:
+	rb	1
+.score:
 	rw	1
-	
-	GAME_VARS_SIZE:	equ $ - game_vars
 
 ; Stage vars (i.e.: vars inside the main game loop)
-stage_vars:
+stage:
 
 ; Number of consecutive frames the player has been pushing an object
-frames_pushing:
+player.pushing:
 	rb	1
-	
-	STAGE_VARS_SIZE:	equ $ - stage_vars
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

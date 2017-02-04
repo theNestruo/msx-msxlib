@@ -4,24 +4,6 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
-; Default logical-to-physical sprite coordinates offsets (pixels)
-IFDEF CFG_SPRITES_X_OFFSET ELSE
-	CFG_SPRITES_X_OFFSET:		equ -8
-ENDIF
-IFDEF CFG_SPRITES_Y_OFFSET ELSE
-	CFG_SPRITES_Y_OFFSET:		equ -16 -1
-ENDIF
-	
-; Number of reserved sprites at the beginning and after the player sprites
-IFDEF CFG_SPRITES_RESERVED_BEFORE ELSE
-	CFG_SPRITES_RESERVED_BEFORE:	equ 0
-ENDIF
-IFDEF CFG_SPRITES_RESERVED_AFTER ELSE
-	CFG_SPRITES_RESERVED_AFTER:	equ 0
-ENDIF
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Vaciado del buffer de pantalla con el carácter espacio
 CLS_NAMTBL:
 	ld      hl, namtbl_buffer
@@ -370,10 +352,10 @@ CLEAR_LINE:
 ;	Logical coordinates sprite routines
 ; =============================================================================
 
-; -----------------------------------------------------------------------------
-; Número de sprites gestionados dinámicamente (por ejemplo: enemigos, balas)
-	CFG_SPRITES_DYNAMIC:	equ 32 -CFG_SPRITES_RESERVED_BEFORE -CFG_PLAYER_SPRITES -CFG_SPRITES_RESERVED_AFTER
-; -----------------------------------------------------------------------------
+; ; -----------------------------------------------------------------------------
+; ; Número de sprites gestionados dinámicamente (por ejemplo: enemigos, balas)
+	; CFG_SPRITES_DYNAMIC:	equ 32 -CFG_SPRITES_RESERVED_BEFORE -CFG_PLAYER_SPRITES -CFG_SPRITES_RESERVED_AFTER
+; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Modifica las coordenadas de un sprite en el buffer de spratr
@@ -480,41 +462,53 @@ PUT_DYNAMIC_SPRITE:
 
 
 ; =============================================================================
-;	Deferred WRTVRM routines (aka VPOKE-like routines)
+;	"vpoke" routines (deferred WRTVRMs routines)
 ; =============================================================================
 
-IFDEF CFG_VRAM_VPOKES
+IFDEF CFG_VPOKES
 
-	VPOKE_SIZE:	equ 3
+	_VPOKE_ADDRESS_L:	equ 0
+	_VPOKE_ADDRESS_H:	equ 1
+	_VPOKE_VALUE:		equ 2
+	VPOKE_SIZE:		equ 3
 
 ; -----------------------------------------------------------------------------
 ; Inicializa la cola de volcados de NAMTBL
 RESET_VPOKES:
 	xor	a
-	ld	[vpoke_count], a
+	ld	[vpokes.count], a
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Añade un elemento a la cola de volcados de NAMTBL
-; param hl: offset de NAMTBL
-; param a: valor a escribir
-; ret hl: offset de NAMTBL
-; ret a: valor escrito
-; touches bc
+; Updates the NAMTBL buffer and queues the "vpoke"
+; param hl: NAMTBL buffer pointer
+; param a: value to set
+; ret hl: NAMTBL offet
+UPDATE_NAMTBL_BUFFER_AND_VPOKE:
+; Updates the NAMTBL buffer
+	ld	[hl], a
+; Queues the "vpoke"
+	ld	de, -namtbl_buffer + $10000
+	add	hl, de ; hl = NAMTBL offset
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Queues a "vpoke"
+; param hl: NAMTBL offet
+; param a: value to write
+; touches: ix, bc
 VPOKE:
-	push	ix ; preserva el valor anterior de IX
 	push	af ; preserva el valor a escribir
 ; Añade un elemento al array
-	ld	ix, vpoke_count
+	ld	ix, vpokes.count
 	ld	bc, VPOKE_SIZE
 	call	ADD_ARRAY_IX
 ; Informa el elemento añadido
 	pop	af ; restaura el valor a escribir
-	ld	[ix +0], l
-	ld	[ix +1], h
-	ld	[ix +2], a
-	pop	ix ; restaura el valor anterior de IX
+	ld	[ix + _VPOKE_ADDRESS_L], l
+	ld	[ix + _VPOKE_ADDRESS_H], h
+	ld	[ix + _VPOKE_VALUE], a
 	ret
 ; -----------------------------------------------------------------------------
 	
@@ -522,7 +516,7 @@ VPOKE:
 ; Ejecuta los volcados de NAMTBL encolados y vacía la cola
 EXECUTE_VPOKES:
 ; Comprueba si hay elementos encolados
-	ld	ix, vpoke_count
+	ld	ix, vpokes.count
 	ld	a, [ix]
 	or	a
 	ret	z ; no hay elementos
@@ -530,7 +524,7 @@ EXECUTE_VPOKES:
 	ld	b, a
 	xor	a ; resetea el contador para la próxima ejecución
 	ld	[ix], a
-	inc	ix ; ix = delayed_wrtvrm_array
+	inc	ix ; ix = vpokes.array
 	ld	de, NAMTBL ; para convertir offsets en NAMTBL
 
 ; Para cada elemento
@@ -538,9 +532,9 @@ EXECUTE_VPOKES:
 	push	bc ; preserva el contador
 	
 ; Lee el offset en bc
-	ld	l, [ix +0]
-	ld	h, [ix +1]
-	ld	a, [ix +2]
+	ld	l, [ix + _VPOKE_ADDRESS_L]
+	ld	h, [ix + _VPOKE_ADDRESS_H]
+	ld	a, [ix + _VPOKE_VALUE]
 ; Vuelca el byte en VRAM
 	add	hl, de
 	call	WRTVRM
@@ -553,6 +547,5 @@ EXECUTE_VPOKES:
 	ret
 ; -----------------------------------------------------------------------------
 
-ENDIF ; CFG_VRAM_VPOKES
-
+ENDIF ; CFG_VPOKES
 ; EOF

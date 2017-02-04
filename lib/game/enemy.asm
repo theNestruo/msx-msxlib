@@ -164,7 +164,7 @@ TURN_ENEMY:
 ; param ix: puntero al enemigo
 ; ret c/nc: c = derecha, nc = izquierda
 TURN_ENEMY_TOWARDS_PLAYER:
-	ld	a, [player_x]
+	ld	a, [player.x]
 	cp	[ix +_ENEMY_X]
 	jr	c, .AIM_LEFT
 	
@@ -342,7 +342,7 @@ CHECK_TILE_UNDER_ENEMY_A_OK:
 ; ; param ix
 ; CHECK_COLLISION_ENEMY:
 ; ; sí: compara la diferencia horizontal
-	; ld	a, [player_x]
+	; ld	a, [player.x]
 	; sub	[ix + _ENEMY_X]
 ; ; (valor absoluto)
 	; jp	p, .ELSE_X
@@ -353,7 +353,7 @@ CHECK_TILE_UNDER_ENEMY_A_OK:
 	; ret	nc ; no
 	
 ; ; Compara la diferencia vertical
-	; ld	a, [player_y]
+	; ld	a, [player.y]
 	; sub	[ix + _ENEMY_Y]
 ; ; (valor absoluto)
 	; jp	p, .ELSE_Y
