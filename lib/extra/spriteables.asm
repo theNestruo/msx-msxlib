@@ -1,4 +1,10 @@
 
+; =============================================================================
+;	Spriteables routines (2x2 chars that eventually become a sprite)
+; =============================================================================
+
+IFDEF CFG_MAX_SPRITEABLES
+
 ; Constantes simbólicas de tiles convertibles en sprites
 	MASK_SPRITEABLE_PENDING:	equ $0f ; movimiento en píxeles
 	MASK_SPRITEABLE_DIRECTION:	equ $70
@@ -9,10 +15,6 @@
 	SPRITEABLE_DIR_RIGHT:		equ $30
 	SPRITEABLE_DIR_LEFT:		equ $40
 	SPRITEABLE_STOPPED:		equ $80
-
-; =============================================================================
-;	Subrutinas para tiles convertibles en sprites
-; =============================================================================
 
 ; -----------------------------------------------------------------------------
 ; Resetea toda la información de los tiles convertibles
@@ -382,5 +384,7 @@ PUT_SPRITEABLE_SPRITE:
 	ld	b, [ix + _SPRITEABLE_COLOR]
 	jp	PUT_DYNAMIC_SPRITE
 ; -----------------------------------------------------------------------------
+
+ENDIF ; CFG_MAX_SPRITEABLES
 
 ; EOF

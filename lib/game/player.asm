@@ -36,8 +36,8 @@
 
 ; Condiciones de salida por defecto (estados del jugador especiales)
 	BIT_STATE_FINISH:	equ 7
-	PLAYER_STATE_DEAD:	equ (1 << BIT_STATE_FINISH) + 0; $80 
-	PLAYER_STATE_FINISH:	equ (1 << BIT_STATE_FINISH) + 1; $81
+	PLAYER_STATE_DEAD:	equ (1 << BIT_STATE_FINISH) + (0 << 2); $80
+	PLAYER_STATE_FINISH:	equ (1 << BIT_STATE_FINISH) + (1 << 2); $84
 ; Condiciones de salida definidas por el usuario
 	; ...
 ; -----------------------------------------------------------------------------
@@ -91,23 +91,23 @@ UPDATE_PLAYER:
 	bit	BIT_WORLD_DEATH, a
 	jp	nz, SET_PLAYER_DYING ; sí
 ; UX: ¿colisión, un tile?
-IFEXIST UPDATE_PLAYER_UX_WALK_ON
+IFEXIST ON_PLAYER_WALK_ON
 	bit	BIT_WORLD_WALK_ON, a
-	call	nz, UPDATE_PLAYER_UX_WALK_ON ; sí
+	call	nz, ON_PLAYER_WALK_ON ; sí
 ENDIF
 	
 ; UX: ¿colisión, tiles (ancho del jugador)?
-IFEXIST UPDATE_PLAYER_UX_WIDE_ON
+IFEXIST ON_PLAYER_WIDE_ON
 	call	CHECK_TILES_PLAYER
 	bit	BIT_WORLD_WIDE_ON, a
-	call	nz, UPDATE_PLAYER_UX_WIDE_ON ; sí
+	call	nz, ON_PLAYER_WIDE_ON ; sí
 ENDIF
 	
 ; UX: ¿jugador sobre tiles (ancho del jugador)?
-IFEXIST UPDATE_PLAYER_UX_WALK_OVER
+IFEXIST ON_PLAYER_WALK_OVER
 	call	CHECK_TILES_UNDER_PLAYER
 	bit	BIT_WORLD_WALK_OVER, a
-	call	nz, UPDATE_PLAYER_UX_WALK_OVER ; sí
+	call	nz, ON_PLAYER_WALK_OVER ; sí
 ENDIF
 
 	ret
@@ -395,9 +395,9 @@ MOVE_PLAYER_LR_ANIMATE:
 	call	CHECK_TILES_RIGHT_PLAYER_FAST
 	
 ; UX: ¿empujando tiles (alto del jugador)?
-IFEXIST UPDATE_PLAYER_UX_PUSH_RIGHT
+IFEXIST ON_PLAYER_PUSH.RIGHT
 	bit	BIT_WORLD_PUSHABLE, a
-	jp	nz, UPDATE_PLAYER_UX_PUSH_RIGHT ; sí
+	jp	nz, ON_PLAYER_PUSH.RIGHT ; sí
 ENDIF
 
 ; ¿Hay sólido a la derecha?
@@ -405,7 +405,7 @@ ENDIF
 	jr	nz, .RESET_ANIMATION ; sí
 
 ; resetea el estado si está activa la UX de empujar
-IFEXIST UPDATE_PLAYER_UX_PUSH_RIGHT
+IFEXIST ON_PLAYER_PUSH
 	call	.RESET_STATE
 ENDIF
 
@@ -417,9 +417,9 @@ ENDIF
 	call	CHECK_TILES_LEFT_PLAYER_FAST
 
 ; UX: ¿empujando tiles (alto del jugador)?
-IFEXIST UPDATE_PLAYER_UX_PUSH_LEFT
+IFEXIST ON_PLAYER_PUSH.LEFT
 	bit	BIT_WORLD_PUSHABLE, a
-	jp	nz, UPDATE_PLAYER_UX_PUSH_LEFT ; sí
+	jp	nz, ON_PLAYER_PUSH.LEFT ; sí
 ENDIF
 
 ; ¿Hay sólido a la izquierda?
@@ -427,7 +427,7 @@ ENDIF
 	jr	nz, .RESET_ANIMATION ; sí
 
 ; resetea el estado si está activa la UX de empujar
-IFEXIST UPDATE_PLAYER_UX_PUSH_LEFT
+IFEXIST ON_PLAYER_PUSH
 	call	.RESET_STATE
 ENDIF
 

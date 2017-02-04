@@ -61,8 +61,9 @@
 ; Tile properties table in pairs (up to char number, tile properties)
 TILE_PROPERTIES_TABLE:
 	db	$00, $00 ; [     $00] : 0
-	db	$0f, $10 ; [$01..$0f] : BIT_WORLD_UX_WALK_ON (items and doors)
-	db	$17, $83 ; [$10..$17] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID | BIT_WORLD_UX_PUSH
+	db	$07, $10 ; [$01..$0f] : BIT_WORLD_WALK_ON (items)
+	db	$0f, $20 ; [$01..$0f] : BIT_WORLD_WIDE_ON (open doors)
+	db	$17, $83 ; [$10..$17] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID | BIT_WORLD_PUSH
 	db	$1f, $08 ; [$18..$1f] : BIT_WORLD_DEATH
 	db	$ab, $00 ; [$00..$ab] : 0 (chars and backgrounds)
 	db	$af, $04 ; [$ac..$af] : BIT_WORLD_STAIRS
@@ -213,17 +214,32 @@ MAIN_INIT:
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
+; ; Skips the main menu and goes into tutorial stages the first time
+; TUTORIAL_FIRST:
+; ; Is SELECT key pressed?
+	; halt
+	; ld	hl, NEWKEY + 7
+	; bit	6, [hl]
+	; call	z, MAIN_MENU ; yes: skip tutorial
+
+; ; no: skip MAIN_MENU and enter tutorial stages
+	; xor	a
+	; ld	[game.current_stage], a
+	; jp	NEW_STAGE
+; ; -----------------------------------------------------------------------------
+	
+; -----------------------------------------------------------------------------
 ; Main menu
 MAIN_MENU:
 ; Main menu entry point and initialization
 	;	...TBD...
 	
 ; Main menu draw
-	; call	CLS_NAMTBL
+	call	CLS_NAMTBL
 	;	...TBD...
 	
 ; Fade in
-	; call	ENASCR_FADE_IN
+	call	ENASCR_FADE_IN
 
 ; Main menu loop
 .LOOP:
@@ -248,8 +264,49 @@ NEW_GAME:
 ; -----------------------------------------------------------------------------
 ; New stage / new life entry point
 NEW_STAGE:
-; Name table memory buffer
-	ld	hl, NAMTBL_PACKED
+; Skip this section in tutorial stages
+	ld	a, [game.current_stage]
+	cp	TUTORIAL_STAGES
+	jr	c, GAME_LOOP_INIT
+	
+; Prepares the "new stage" screen
+	call	CLS_NAMTBL
+	
+; "STAGE 0"
+	ld	hl, TXT_STAGE
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_STAGE.CENTER
+	call	PRINT_TXT_DE_OK
+; "stage N"
+	dec	de
+	ld	a, [game.current_stage]
+	add	$31 - TUTORIAL_STAGES ; "1"
+	ld	[de], a
+	
+; "LIVES 0"
+	ld	hl, TXT_LIVES
+	ld	de, namtbl_buffer + 10 * SCR_WIDTH + TXT_LIVES.CENTER
+	push	de
+	call	PRINT_TXT_DE_OK
+; "lives N"
+	pop	de
+	ld	a, [game.lives]
+	add	$30 ; "0"
+	ld	[de], a
+
+; Fade in
+	call	ENASCR_FADE_IN
+	call	TRIGGER_PAUSE_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; New stage / new life entry point
+GAME_LOOP_INIT:
+; Name table memory buffer (from the current stage)
+	ld	hl, NAMTBL_PACKED_TABLE
+	ld	a, [game.current_stage]
+	add	a ; a *= 2
+	call	GET_HL_A_WORD
 	ld	de, namtbl_buffer
 	call	UNPACK
 	
@@ -281,6 +338,7 @@ NEW_STAGE:
 	
 ; Fade in
 	call	ENASCR_FADE_IN
+	; call	LDIRVM_NAMTBL_FADE_INOUT
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -309,65 +367,104 @@ GAME_LOOP:
 	
 	call	UPDATE_FRAMES_PUSHING	; (custom)
 	
+; Extra input
+	ld	hl, NEWKEY + 7
+	bit	4, [hl]
+	call	z, ON_STOP_KEY
+	
 ; Check exit condition
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
 	jr	z, GAME_LOOP ; no
+	
 ; yes: conditionally jump according the exit status
 	cp	PLAYER_STATE_DEAD
 	jr	z, GAME_LOOP_DEAD ; player is dead
-	; cp	PLAYER_STATE_FINISH
-	; jr	z, GAME_LOOP_FINISH ; stage finished ; falls through
-; ------VVVV----falls through--------------------------------------------------
+	cp	PLAYER_STATE_FINISH
+	jr	z, GAME_LOOP_FINISH ; stage finished ; falls through
+	
+	jr	$
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+ON_STOP_KEY:
+; Has the player already finished?
+	ld	a, [player.state]
+	bit	BIT_STATE_FINISH, a
+	ret	nz ; yes: do nothing
+
+; no: It is a tutorial stage?
+	ld	a, [game.current_stage]
+	cp	TUTORIAL_STAGES
+	jr	c, .SKIP_TUTORIAL ; yes: skip tutorial
+	
+; no: Is the player already dying?
+	ld	a, [player.state]
+	and	$ff XOR FLAGS_STATE
+	cp	PLAYER_STATE_DYING
+	ret	z ; yes: do nothing
+	
+; no: kills the player
+	ld	a, PLAYER_STATE_DYING
+	jp	SET_PLAYER_STATE
+
+.SKIP_TUTORIAL:
+; Fade out and go to main menu
+	call	DISSCR_FADE_OUT
+	jp	MAIN_MENU
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; In-game loop finish due stage over
 GAME_LOOP_FINISH:
 ; Fade out
-	call	DISSCR_FADE_OUT		; shared/helper/vram
+	call	DISSCR_FADE_OUT
 
 ; Next stage logic
+	ld	hl, game.current_stage
+	inc	[hl]
 	;	...
 	
-; Next screen
+; Go to the next stage
 	jp	NEW_STAGE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; In-game loop finish due death of the player
 GAME_LOOP_DEAD:
-; Fade out
-	call	DISSCR_FADE_OUT		; shared/helper/vram
-
+; Is it a tutorial stage?
+	ld	a, [game.current_stage]
+	cp	TUTORIAL_STAGES
+	jp	c, .SKIP ; yes: no lives lost
+	
 ; Life loss logic
-	;	...
+	ld	hl, game.lives
 	xor	a
-	
-; Enough lifes?
-	jp	nz, NEW_STAGE ; yes
-	
-; no: game over
-	; jr	GAME_OVER ; falls through
-; ------VVVV----falls through--------------------------------------------------
+	cp	[hl]
+	jr	z, GAME_OVER ; no lives left
+	dec	[hl]
+
+.SKIP:	
+; Fade out
+	call	DISSCR_FADE_OUT
+; Re-enter current stage
+	jp	NEW_STAGE
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Game over
 GAME_OVER:
-; Game over screen draw
+; Prepares game over screen
 	call	CLS_NAMTBL
-	;	...
+; "GAME OVER"
+	ld	hl, TXT_GAME_OVER
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_GAME_OVER.CENTER
+	call	PRINT_TXT_DE_OK
 	
 ; Fade in
-	call	ENASCR_FADE_IN		; shared/helper/vram
-
-; Game over loop
-.LOOP:
-	halt
-	;	...
-	; jr	.LOOP
-	
-; Fade out
-	call	DISSCR_FADE_OUT		; shared/helper/vram
+	call	LDIRVM_NAMTBL_FADE_INOUT
+	call	TRIGGER_PAUSE_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
 	
 	jp	MAIN_MENU
 ; -----------------------------------------------------------------------------
@@ -607,17 +704,13 @@ UPDATE_FRAMES_PUSHING:
 ;
 
 ; -----------------------------------------------------------------------------
-; UX colisión, un tile (coordenadas concretas)
-UPDATE_PLAYER_UX_WALK_ON:
+; Tile collision (single char): Items
+ON_PLAYER_WALK_ON:
 ; Reads the tile index and NAMTBL offset and buffer pointer
 	call	GET_TILE_AT_PLAYER
 	push	de ; preserves NAMTBL offset
 	push	hl ; preserves NAMTBL buffer pointer
-	
-; Is it an item?
-	; cp	CHAR_FIRST_OPEN_DOOR
-	; jr	nc, .DOOR ; no
-; yes: executes item action
+; Executes item action
 	sub	CHAR_FIRST_ITEM
 	ld	hl, .ITEM_JUMP_TABLE
 	call	JP_TABLE
@@ -630,28 +723,17 @@ UPDATE_PLAYER_UX_WALK_ON:
 	jp	VPOKE
 
 .ITEM_JUMP_TABLE:
-	dw	PLAYER_GETS_KEY		; key
-	dw	PLAYER_GETS_STAR	; star
-	dw	PLAYER_GETS_BONUS	; coin
-	dw	PLAYER_GETS_BONUS	; fruit: cherry
-	dw	PLAYER_GETS_BONUS	; fruit: strawberry
-	dw	PLAYER_GETS_BONUS	; fruit: apple
-	dw	PLAYER_GETS_BONUS	; octopus
-
-; .DOOR:	
-	; pop	hl ; restaura el puntero
-	; pop	hl ; restaura el offset
-; ; sí: ¿cursor arriba?
-	; ld	hl, stick
-	; bit	BIT_STICK_UP, [hl]
-	; ret	z ; no
-; ; sí: cambia el estado para que el juego finalice
-	; ld	a, PLAYER_STATE_FINISH
-	; jp	SET_PLAYER_STATE
+	dw	.KEY		; key
+	dw	.STAR	; star
+	dw	.BONUS	; coin
+	dw	.BONUS	; fruit: cherry
+	dw	.BONUS	; fruit: strawberry
+	dw	.BONUS	; fruit: apple
+	dw	.BONUS	; octopus
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-PLAYER_GETS_KEY:
+.KEY:
 ; Travels the NAMTBL buffer
 	ld	hl, namtbl_buffer
 	ld	bc, NAMTBL_SIZE
@@ -677,21 +759,35 @@ PLAYER_GETS_KEY:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-PLAYER_GETS_STAR:
+.STAR:
 	ret
 ; -----------------------------------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
-PLAYER_GETS_BONUS:
+.BONUS:
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Wide tile collision (player width)
+ON_PLAYER_WIDE_ON:
+; Cursor down?
+	ld	hl, stick
+	bit	BIT_STICK_DOWN, [hl]
+	ret	z ; no
+; yes: set "stage finish" state
+	ld	a, PLAYER_STATE_FINISH
+	jp	SET_PLAYER_STATE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; UX empujando tiles
-UPDATE_PLAYER_UX_PUSH_RIGHT:
+ON_PLAYER_PUSH:
+
+.RIGHT:
 ; lee el tile bajo que se está empujando
 	ld	a, PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH ; x += offset + width
-	call	PUSH_GET_PUSHED_TILE
+	call	.GET_PUSHED_TILE
 ; ¿es la parte baja izquierda?
 	and	3 ; (porque están alienados a $?0 y $?4)
 	cp	2
@@ -705,17 +801,17 @@ UPDATE_PLAYER_UX_PUSH_RIGHT:
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; no
 ; sí: ¿ha empujado suficiente?
-	call	CHECK_FRAMES_PUSHING
+	call	.CHECK_FRAMES_PUSHING
 	ret	nz ; no
 ; sí: localiza el elemento empujable e inicia su movimiento
-	ld	a, ((CFG_PLAYER_WIDTH +16) /2)
-	call	PUSH_LOCATE_PUSHABLE
+	ld	a, ((CFG_PLAYER_WIDTH /2) +8)
+	call	.LOCATE_PUSHABLE
 	jp	MOVE_SPRITEABLE_RIGHT
 	
-UPDATE_PLAYER_UX_PUSH_LEFT:
+.LEFT:
 ; lee el tile bajo que se está empujando
 	ld	a, PLAYER_BOX_X_OFFSET -1 ; x += offset -1
-	call	PUSH_GET_PUSHED_TILE
+	call	.GET_PUSHED_TILE
 ; ¿es la parte baja derecha?
 	and	3 ; (porque están alienados a $?0 y $?4)
 	cp	3
@@ -729,18 +825,18 @@ UPDATE_PLAYER_UX_PUSH_LEFT:
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; no
 ; sí: ¿ha empujado suficiente?
-	call	CHECK_FRAMES_PUSHING
+	call	.CHECK_FRAMES_PUSHING
 	ret	nz ; no
 ; sí: localiza el elemento empujable e inicia su movimiento
-	ld	a, -(CFG_PLAYER_WIDTH/2) -8 +$100 ; +$100 evita 8-bit overflow
-	call	PUSH_LOCATE_PUSHABLE
+	ld	a, -(CFG_PLAYER_WIDTH/2) -8 +$100 ; (+$100 avoids 8-bit overflow)
+	call	.LOCATE_PUSHABLE
 	jp	MOVE_SPRITEABLE_LEFT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Lee el tile (parte baja) que se está empujando
 ; param a: dx
-PUSH_GET_PUSHED_TILE:
+.GET_PUSHED_TILE:
 	ld	de, [player.xy]
 	add	d ; x += dx
 	ld	d, a
@@ -750,7 +846,7 @@ PUSH_GET_PUSHED_TILE:
 ; Actualiza y comprueba el contador de frames que lleva empujando el jugador
 ; ret nz: insuficientes
 ; ret z: suficientes
-CHECK_FRAMES_PUSHING:
+.CHECK_FRAMES_PUSHING:
 	ld	hl, player.pushing
 	inc	[hl]
 	ld	a, [hl]
@@ -760,7 +856,7 @@ CHECK_FRAMES_PUSHING:
 ; Localiza el elemento que se está empujando y lo activa
 ; param a: dx
 ; return ix: puntero al tile convertible
-PUSH_LOCATE_PUSHABLE:
+.LOCATE_PUSHABLE:
 ; Calcula las coordenadas que tiene que buscar
 	ld	de, [player.xy]
 	add	d ; x += dx
@@ -842,20 +938,52 @@ SPRTBL_PACKED:
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
-NAMTBL_PACKED:
+NAMTBL_PACKED_TABLE:
+	dw	.TUTORIAL_01
+	; dw	.TUTORIAL_02
+	dw	.TUTORIAL_03
+	dw	.TUTORIAL_04
+	dw	.TUTORIAL_05
+	dw	.JUNGLE_01
+	dw	.VOLCANO_01
+	dw	.TEST
+	
+.TEST:
 	incbin	"games/stevedore/screen.tmx.bin.zx7"
+	
+.TUTORIAL_01:
+	incbin	"games/stevedore/tutorial_01.tmx.bin.zx7"
+; .TUTORIAL_02:
+	; incbin	"games/stevedore/tutorial_02.tmx.bin.zx7"
+.TUTORIAL_03:
+	incbin	"games/stevedore/tutorial_03.tmx.bin.zx7"
+.TUTORIAL_04:
+	incbin	"games/stevedore/tutorial_04.tmx.bin.zx7"
+.TUTORIAL_05:
+	incbin	"games/stevedore/tutorial_05.tmx.bin.zx7"
+	
+.JUNGLE_01:
+	incbin	"games/stevedore/jungle_01.tmx.bin.zx7"
+	
+.VOLCANO_01:
+	incbin	"games/stevedore/volcano_01.tmx.bin.zx7"
+	
+	TUTORIAL_STAGES:	equ 4 ; 5
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
 	dw	2500			; .hi_score
+	db	0			; game.current_stage (tutorial)
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
-	db	5			; .lives
+	db	TUTORIAL_STAGES		; .current_stage
+	db	3			; .continues
 	dw	0			; .score
+	db	5			; .lives
 	.SIZE:	equ $ - GAME_0
 
 ; Initial value of the stage-scoped vars
@@ -876,9 +1004,32 @@ PLAYER_0:
 	db	PLAYER_STATE_FLOOR	; .state
 	db	0			; .dy_index
 	.SIZE:	equ $ - PLAYER_0
-; =============================================================================
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Literals
+TXT_STAGE:
+	db	"STAGE 00", $00
+	.SIZE:		equ $ - TXT_STAGE
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	
+TXT_LIVES:
+	db	"0 LIVES LEFT", $00
+	.SIZE: equ $ - TXT_LIVES
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	
+TXT_GAME_OVER:
+	db	"GAME OVER", $00
+	.SIZE: equ $ - TXT_GAME_OVER
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+; -----------------------------------------------------------------------------
 
 ROM_END:
+
+; -----------------------------------------------------------------------------
+; Padding to a 8kB boundary
+	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
+; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
@@ -903,12 +1054,14 @@ globals:
 ; Game vars (i.e.: vars from start to game over)
 game:
 
-.continues:
+.current_stage:
 	rb	1
-.lives:
+.continues:
 	rb	1
 .score:
 	rw	1
+.lives:
+	rb	1
 
 ; Stage vars (i.e.: vars inside the main game loop)
 stage:
@@ -922,7 +1075,7 @@ player.pushing:
 ; Unpacker routine buffer
 unpack_buffer:
 IFDEF CFG_RAM_RESERVE_BUFFER
-	ds	CFG_RAM_RESERVE_BUFFER
+	rb	CFG_RAM_RESERVE_BUFFER
 ENDIF
 ; -----------------------------------------------------------------------------
 
