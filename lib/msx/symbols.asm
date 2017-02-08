@@ -1,138 +1,130 @@
 
 ; =============================================================================
-; 	MSX symbolic constants
+;	MSX symbolic constants
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
-; BIOS entry points and constants
-; -----------------------------------------------------------------------------
-; RST-and other routines
-	CHKRAM:	equ $0000 ; Tests RAM and sets RAM slot for the system
-	CGTABL:	equ $0004
-	VDP_DR:	equ $0006 ; Base port address for VDP data read
-	VDP_DW:	equ $0007 ; Base port address for VDP data write
-;	SYNCHR:	equ $0008 ; BASIC
-	RDSLT:	equ $000C ; Reads the value of an address in another slot
-;	CHRGTR:	equ $0010 ; BASIC
-	WRSLT:	equ $0014 ; Writes a value to an address in another slot.
-;	OUTDO:	equ $0018 ; BASIC
-	CALSLT:	equ $001C ; xecutes inter-slot call
-	DCOMPR:	equ $0020 ; Compares HL with DE
-	ENASLT:	equ $0024 ; Switches indicated slot at indicated page on perpetual
-	GETYPR:	equ $0028 ; Returns Type of DAC
+; MSX BIOS entry points and constants
+
+; MSX BIOS
+	CHKRAM:	equ $0000 ; Power-up, check RAM
+	CGTABL:	equ $0004 ; Two bytes, address of ROM character set
+	VDP_DR:	equ $0006 ; One byte, VDP Data Port number (read)
+	VDP_DW:	equ $0007 ; One byte, VDP Data Port number (write)
+	SYNCHR:	equ $0008 ; Check BASIC program character
+	RDSLT:	equ $000c ; Read RAM in any slot
+	CHRGTR:	equ $0010 ; Get next BASIC program character
+	WRSLT:	equ $0014 ; Write to RAM in any slot
+	OUTDO:	equ $0018 ; Output to current device
+	CALSLT:	equ $001c ; Call routine in any slot
+	DCOMPR:	equ $0020 ; Compare register pairs HL and DE
+	ENASLT:	equ $0024 ; Enable any slot permanently
+	GETYPR:	equ $0028 ; Get BASIC operand type
 	MSXID1:	equ $002b ; Frecuency (1b), date format (3b) and charset (4b)
 	MSXID2:	equ $002c ; Basic version (4b) and Keybaord type (4b)
 	MSXID3:	equ $002d ; MSX version number
 	MSXID4:	equ $002e ; Bit 0: if 1 then MSX-MIDI is present internally (MSX turbo R only)
 	MSXID5:	equ $002f ; Reserved
-	CALLF:	equ $0030 ; Executes an interslot call
-	KEYINT:	equ $0038 ; Executes the timer interrupt process routine
-; Initialization routines
-	INITIO:	equ $003B ; Initialises the device
-	INIFNK:	equ $003E ; Initialises the contents of the function keys
-; VDP routines
-	DISSCR:	equ $0041 ; Inhibits the screen display
-	ENASCR:	equ $0044 ; Displays the screen
-	WRTVDP:	equ $0047 ; Write data in the VDP-register
-	RDVRM:	equ $004A ; Reads the content of VRAM
-	WRTVRM:	equ $004D ; Writes data in VRAM
-	SETRD:	equ $0050 ; Enable VDP to read
-	SETWRT:	equ $0053 ; Enable VDP to write
-	FILVRM:	equ $0056 ; Fill VRAM with value
-	LDIRMV:	equ $0059 ; Block transfer to memory from VRAM
-	LDIRVM:	equ $005C ; Block transfer to VRAM from memory
-	CHGMOD:	equ $005F ; Switches to given screenmode
-	CHGCLR:	equ $0062 ; Changes the screencolors
-	NMI:	equ $0066 ; Executes (non-maskable interupt) handling routine
-	CLRSPR:	equ $0069 ; Initialises all sprites
-	INITXT:	equ $006C ; Switches to SCREEN 0 (text screen with 40*24 characters)
-	INIT32:	equ $006F ; Switches to SCREEN 1 (text screen with 32*24 characters)
-	INIGRP:	equ $0072 ; Switches to SCREEN 2 (high resolution screen with 256*192 pixels)
-	INIMLT:	equ $0075 ; Switches to SCREEN 3 (multi-color screen 64*48 pixels)
-	SETTXT:	equ $0078 ; Switches to VDP in SCREEN 0 mode
-	SETT32:	equ $007B ; Switches to VDP in SCREEN 1 mode
-	SETGRP:	equ $007E ; Switches to VDP in SCREEN 2 mode
-	SETMLT:	equ $0081 ; Switches to VDP in SCREEN 3 mode
-	CALPAT:	equ $0084 ; Returns the address of the sprite pattern table
-	CALATR:	equ $0087 ; Returns the address of the sprite attribute table
-	GSPSIZ:	equ $008A ; Returns current sprite size
-	GRPPRT:	equ $008D ; Displays a character on the graphic screen
-; PSG routines
-	GICINI:	equ $0090 ; Initialises PSG and sets initial value for the PLAY statement
-	WRTPSG:	equ $0093 ; Writes data to PSG-register
-	RDPSG:	equ $0096 ; Reads value from PSG-register
-;	STRTMS:	equ $0099 ; BASIC
-; Console routines
-	CHSNS:	equ $009C ; Tests the status of the keyboard buffer
-	CHGET:	equ $009F ; One character input (waiting)
-	CHPUT:	equ $00A2 ; Displays one character
-	LPTOUT:	equ $00A5
-	LPTSTT:	equ $00A8
-	CNVCHR:	equ $00AB
-	PINLIN:	equ $00AE
-	INLIN:	equ $00B1
-	QINLIN:	equ $00B4
-	BREAKX:	equ $00B7
-	ISCNTC:	equ $00BA
-	CKCNTC:	equ $00BD
-	BEEP:	equ $00C0
-	CLS:	equ $00C3
-	POSIT:	equ $00C6
-	FNKSB:	equ $00C9
-	ERAFNK:	equ $00CC
-	DSPFNK:	equ $00CF
-	TOTEXT:	equ $00D2
-; Controller routines
-	GTSTCK:	equ $00D5
-	GTTRIG:	equ $00D8
-	GTPAD:	equ $00DB
-	GTPDL:	equ $00DE
-; Tape device routines
-	TAPION:	equ $00E1
-	TAPIN:	equ $00E4
-	TAPIOF:	equ $00E7
-	TAPOON:	equ $00EA
-	TAPOUT:	equ $00ED
-	TAPOOF:	equ $00F0
-	STMOTR:	equ $00F3
-; Queue routines	
-	LFTQ:	equ $00F6
-	PUTQ:	equ $00F9
-; Graphic routines
-	RIGHTC:	equ $00FC
-	LEFTC:	equ $00FF
-	UPC:	equ $0102
-	TUPC:	equ $0105
-	DOWNC:	equ $0108
-	TDOWNC:	equ $010B
-	SCALXY:	equ $010E
-	MAPXY:	equ $0111
-	FETCHC:	equ $0114
-	STOREC:	equ $0117
-	SETATR:	equ $011A
-	READC:	equ $011D
-	SETC:	equ $0120
-	NSETCX:	equ $0123
-	GTASPC:	equ $0126
-	PNTINI:	equ $0129
-	SCANR:	equ $012C
-	SCANL:	equ $012F
-; Misc routines
-	CHGCAP:	equ $0132
-	CHGSND:	equ $0135
-	RSLREG:	equ $0138 ; Reads the primary slot register
-	WSLREG:	equ $013B ; Writes value to the primary slot register
-	RDVDP:	equ $013E ; Reads VDP status register
-	SNSMAT:	equ $0141 ; Returns the value of the specified line from the keyboard matrix
-	PHYDIO:	equ $0144 ; Executes I/O for mass-storage media like diskettes
-	FORMAT:	equ $0147 ; Initialises mass-storage media like formatting of diskettes
-	ISFLIO:	equ $014A ; Tests if I/O to device is taking place
-	OUTDLP:	equ $014D ; Printer output
-	GETVCP:	equ $0150 ; Returns pointer to play queue
-	GETVC2:	equ $0153 ; Returns pointer to variable in queue number VOICEN (byte op #FB38)
+	CALLF:	equ $0030 ; Call routine in any slot
+	KEYINT:	equ $0038 ; Interrupt handler, keyboard scan
+	INITIO:	equ $003b ; Initialize I/O devices
+	INIFNK:	equ $003e ; Initialize function key strings
+	DISSCR:	equ $0041 ; Disable screen
+	ENASCR:	equ $0044 ; Enable screen
+	WRTVDP:	equ $0047 ; Write to any VDP register
+	RDVRM:	equ $004a ; Read byte from VRAM
+	WRTVRM:	equ $004d ; Write byte to VRAM
+	SETRD:	equ $0050 ; Set up VDP for read
+	SETWRT:	equ $0053 ; Set up VDP for write
+	FILVRM:	equ $0056 ; Fill block of VRAM with data byte
+	LDIRMV:	equ $0059 ; Copy block to memory from VRAM
+	LDIRVM:	equ $005c ; Copy block to VRAM, from memory
+	CHGMOD:	equ $005f ; Change VDP mode
+	CHGCLR:	equ $0062 ; Change VDP colours
+	NMI:	equ $0066 ; Non Maskable Interrupt handler
+	CLRSPR:	equ $0069 ; Clear all sprites
+	INITXT:	equ $006c ; Initialize VDP to 40x24 Text Mode
+	INIT32:	equ $006f ; Initialize VDP to 32x24 Text Mode
+	INIGRP:	equ $0072 ; Initialize VDP to Graphics Mode
+	INIMLT:	equ $0075 ; Initialize VDP to Multicolour Mode
+	SETTXT:	equ $0078 ; Set VDP to 40x24 Text Mode
+	SETT32:	equ $007b ; Set VDP to 32x24 Text Mode
+	SETGRP:	equ $007e ; Set VDP to Graphics Mode
+	SETMLT:	equ $0081 ; Set VDP to Multicolour Mode
+	CALPAT:	equ $0084 ; Calculate address of sprite pattern
+	CALATR:	equ $0087 ; Calculate address of sprite attribute
+	GSPSIZ:	equ $008a ; Get sprite size
+	GRPPRT:	equ $008d ; Print character on graphic screen
+	GICINI:	equ $0090 ; Initialize PSG (GI Chip)
+	WRTPSG:	equ $0093 ; Write to any PSG register
+	RDPSG:	equ $0096 ; Read from any PSG register
+	STRTMS:	equ $0099 ; Start music dequeueing
+	CHSNS:	equ $009c ; Sense keyboard buffer for character
+	CHGET:	equ $009f ; Get character from keyboard buffer (wait)
+	CHPUT:	equ $00a2 ; Screen character output
+	LPTOUT:	equ $00a5 ; Line printer character output
+	LPTSTT:	equ $00a8 ; Line printer status test
+	CNVCHR:	equ $00ab ; Convert character with graphic header
+	PINLIN:	equ $00ae ; Get line from console (editor)
+	INLIN:	equ $00b1 ; Get line from console (editor)
+	QINLIN:	equ $00b4 ; Display "?", get line from console (editor)
+	BREAKX:	equ $00b7 ; Check CTRL-STOP key directly
+	ISCNTC:	equ $00ba ; Check CRTL-STOP key
+	CKCNTC:	equ $00bd ; Check CTRL-STOP key
+	BEEP:	equ $00c0 ; Go beep
+	CLS:	equ $00c3 ; Clear screen
+	POSIT:	equ $00c6 ; Set cursor position
+	FNKSB:	equ $00c9 ; Check if function key display on
+	ERAFNK:	equ $00cc ; Erase function key display
+	DSPFNK:	equ $00cf ; Display function keys
+	TOTEXT:	equ $00d2 ; Return VDP to text mode
+	GTSTCK:	equ $00d5 ; Get joystick status
+	GTTRIG:	equ $00d8 ; Get trigger status
+	GTPAD:	equ $00db ; Get touch pad status
+	GTPDL:	equ $00de ; Get paddle status
+	TAPION:	equ $00e1 ; Tape input ON
+	TAPIN:	equ $00e4 ; Tape input
+	TAPIOF:	equ $00e7 ; Tape input OFF
+	TAPOON:	equ $00ea ; Tape output ON
+	TAPOUT:	equ $00ed ; Tape output
+	TAPOOF:	equ $00f0 ; Tape output OFF
+	STMOTR:	equ $00f3 ; Turn motor ON/OFF
+	LFTQ:	equ $00f6 ; Space left in music queue
+	PUTQ:	equ $00f9 ; Put byte in music queue
+	RIGHTC:	equ $00fc ; Move current pixel physical address right
+	LEFTC:	equ $00ff ; Move current pixel physical address left
+	UPC:	equ $0102 ; Move current pixel physical address up
+	TUPC:	equ $0105 ; Test then UPC if legal
+	DOWNC:	equ $0108 ; Move current pixel physical address down
+	TDOWNC:	equ $010b ; Test then DOWNC if legal
+	SCALXY:	equ $010e ; Scale graphics coordinates
+	MAPXYC:	equ $0111 ; Map graphic coordinates to physical address
+	FETCHC:	equ $0114 ; Fetch current pixel physical address
+	STOREC:	equ $0117 ; Store current pixel physical address
+	SETATR:	equ $011a ; Set attribute byte
+	READC:	equ $011d ; Read attribute of current pixel
+	SETC:	equ $0120 ; Set attribute of current pixel
+	NSETCX:	equ $0123 ; Set attribute of number of pixels
+	GTASPC:	equ $0126 ; Get aspect ratio
+	PNTINI:	equ $0129 ; Paint initialize
+	SCANR:	equ $012c ; Scan pixels to right
+	SCANL:	equ $012f ; Scan pixels to left
+	CHGCAP:	equ $0132 ; Change Caps Lock LED
+	CHGSND:	equ $0135 ; Change Key Click sound output
+	RSLREG:	equ $0138 ; Read Primary Slot Register
+	WSLREG:	equ $013b ; Write to Primary Slot Register
+	RDVDP:	equ $013e ; Read VDP Status Register
+	SNSMAT:	equ $0141 ; Read row of keyboard matrix
+	PHYDIO:	equ $0144 ; Disk, no action
+	FORMAT:	equ $0147 ; Disk, no action
+	ISFLIO:	equ $014a ; Check for file I/O
+	OUTDLP:	equ $014d ; Formatted output to line printer
+	GETVCP:	equ $0150 ; Get music voice pointer
+	GETVC2:	equ $0153 ; Get music voice pointer
 	KILBUF:	equ $0156 ; Clear keyboard buffer
-	CALBAS:	equ $0159 ; Executes inter-slot call to the routine in BASIC interpreter
-; MSX 2 BIOS Entries
+	CALBAS:	equ $0159 ; Call to BASIC from any slot
+
+; MSX 2 BIOS
 	SUBROM:	equ $015c ; Calls a routine in SUB-ROM
 	EXTROM:	equ $015f ; Calls a routine in SUB-ROM. Most common way
 	CHKSLZ:	equ $0162 ; Search slots for SUB-ROM
@@ -143,50 +135,57 @@
 	NSTWRT:	equ $0171
 	NRDVRM:	equ $0174
 	NWRVRM:	equ $0177
-; MSX 2+ BIOS Entries
+	
+; MSX 2+ BIOS
 	RDBTST:	equ $017a
 	WRBTST:	equ $017d
-; MSX turbo R BIOS Entries
+	
+; MSX turbo R BIOS
 	CHGCPU:	equ $0180 ; Changes CPU mode
 	GETCPU:	equ $0183 ; Returns current CPU mode
 	PCMPLY:	equ $0186 ; Plays specified memory area through the PCM chip
 	PCMREC:	equ $0189 ; Records audio using the PCM chip into the specified memory area
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; BIOS system variables
-; -----------------------------------------------------------------------------
+; MSX system variables
 	CLIKSW:	equ $f3db ; Keyboard click sound
+	RG0SAV:	equ $f3df ; Content of VDP(0) register (R#0)
 	RG1SAV:	equ $f3e0 ; Content of VDP(1) register (R#1)
+	RG2SAV:	equ $f3e1 ; Content of VDP(2) register (R#2)
+	RG3SAV:	equ $f3e2 ; Content of VDP(3) register (R#3)
+	RG4SAV:	equ $f3e3 ; Content of VDP(4) register (R#4)
+	RG5SAV:	equ $f3e4 ; Content of VDP(5) register (R#5)
+	RG6SAV:	equ $f3e5 ; Content of VDP(6) register (R#6)
+	RG7SAV:	equ $f3e6 ; Content of VDP(7) register (R#7)
+	TRGFLG:	equ $f3e8 ; State of the four joystick trigger inputs and the space key
 	FORCLR:	equ $f3e9 ; Foreground colour
 	BAKCLR:	equ $f3ea ; Background colour
 	BDRCLR:	equ $f3eb ; Border colour
-	NEWKEY:	equ $fbe5 ; Current state of the keyboard matrix ($fbe5-$fbef)
+	OLDKEY:	equ $fbda ; Previous state of the keyboard matrix (11b)
+	NEWKEY:	equ $fbe5 ; Current state of the keyboard matrix (11b)
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
-	EXPTBL:	equ $fcc1 ; Slot [0..3]: #80 = expanded, 0 = not expanded.
-	SLTTBL: equ $fcc5 ; Mirror of slot [0..3] secondary slot selection register.
-; -----------------------------------------------------------------------------
+	EXPTBL:	equ $fcc1 ; Set to $80 during power-up if Primary Slot is expanded (4b)
+	SLTTBL:	equ $fcc5 ; Mirror of the four possible Secondary Slot Registers (4b)
 
-; -----------------------------------------------------------------------------
-; BIOS hooks
-; -----------------------------------------------------------------------------
+; MSX system hooks
 	HKEYI:	equ $fd9a ; Interrupt handler
 	HTIMI:	equ $fd9f ; Interrupt handler
+	
 	HOOK_SIZE:	equ HTIMI - HKEYI
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; VDP
+
 ; VRAM addresses
-; -----------------------------------------------------------------------------
 	CHRTBL:	equ $0000 ; Pattern table
 	NAMTBL:	equ $1800 ; Name table
 	CLRTBL:	equ $2000 ; Color table
 	SPRATR:	equ $1B00 ; Sprite attributes table
 	SPRTBL:	equ $3800 ; Sprite pattern table
-; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; VRAM symbolic constants
-; -----------------------------------------------------------------------------
+; VDP symbolic constants
 	SCR_WIDTH:	equ 32
 	SCR_HEIGHT:	equ 24
 	NAMTBL_SIZE:	equ 32 * 24

@@ -60,7 +60,7 @@ PUT_SPRITE_PLAYER:
 	ld	de, [player.xy]
 	ld	hl, spratr_player
 	ld	b, CFG_PLAYER_SPRITES
-	jp	MOVE_SPRITE_XY
+	jp	MOVE_SPRITES
 ; -----------------------------------------------------------------------------
 
 ;

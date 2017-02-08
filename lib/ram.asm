@@ -38,7 +38,10 @@ stick_edge:
 
 
 ; -----------------------------------------------------------------------------
-;	VRAM buffers (NAMTBL and SPRATR)
+;	VRAM routines (BIOS-based)
+;	NAMBTL and SPRATR buffer routines (BIOS-based)
+;	NAMTBL buffer text routines
+;	Logical coordinates sprite routines
 
 ; NAMTBL buffer in RAM
 namtbl_buffer:
@@ -51,8 +54,14 @@ spratr_buffer_end:
 	rb	1	; to store one SPAT_END when the buffer is full
 
 ; (direct pointers inside SPRATR buffer)
-	spratr_player:		equ spratr_buffer + 4* CFG_SPRITES_RESERVED_BEFORE
-	dynamic_sprites:	equ spratr_buffer + 4* (CFG_SPRITES_RESERVED_BEFORE + CFG_PLAYER_SPRITES + CFG_SPRITES_RESERVED_AFTER)
+	spratr_player:		equ spratr_buffer
+	volatile_sprites:	equ spratr_buffer + 4* CFG_SPRITES_RESERVED
+; -----------------------------------------------------------------------------
+
+
+; -----------------------------------------------------------------------------
+;	"vpoke" routines (deferred WRTVRMs routines)
+;	Spriteables routines (2x2 chars that eventually become a sprite)
 
 ; "vpoke" routines (deferred WRTVRMs routines)
 IFDEF CFG_VPOKES
@@ -61,7 +70,41 @@ vpokes:
 	rb	1
 .array:
 	rb	CFG_VPOKES * VPOKE_SIZE
-ENDIF ; (CFG_VPOKES > 0)
+ENDIF
+
+
+IFDEF CFG_SPRITEABLES
+spriteables:
+.count:
+	rb	1
+.array:
+; estado (0 = reposo, [MASK_TILE_SPRITE_DIRECTION | MASK_TILE_SPRITE_PENDING] = movimiento pendiente)
+	_SPRITEABLE_STATUS:	equ $ - spriteables.array
+	rb	1
+; offset del caracter superior izquierdo
+	_SPRITEABLE_OFFSET_L:	equ $ - spriteables.array
+	rb	1
+	_SPRITEABLE_OFFSET_H:	equ $ - spriteables.array
+	rb	1
+; caracteres que definen el tile convertible
+	_SPRITEABLE_FOREGROUND:	equ $ - spriteables.array
+	rb	1
+; caracteres de fondo cubiertos por el tile convertible
+	_SPRITEABLE_BACKGROUND:	equ $ - spriteables.array
+	rb	4
+; atributos del sprite equivalente (patrón, color)
+	_SPRITEABLE_PATTERN:	equ $ - spriteables.array
+	rb	1	; patrón
+	_SPRITEABLE_COLOR:	equ $ - spriteables.array
+	rb	1	; color
+	SPRITEABLE_SIZE:	equ $ - spriteables.array
+; (resto del array)
+IF (CFG_SPRITEABLES > 1)
+	rb	(CFG_SPRITEABLES -1) * ($ - spriteables.array)
+ENDIF
+	SPRITEABLES_SIZE:	equ $ - spriteables.array
+	
+ENDIF
 ; -----------------------------------------------------------------------------
 
 
@@ -117,42 +160,6 @@ IF (CFG_ENEMY_COUNT > 1)
 	rb	(CFG_ENEMY_COUNT -1) * ENEMY_SIZE
 ENDIF
 	ENEMIES_SIZE:	equ $ - enemies_array
-; -----------------------------------------------------------------------------
-
-
-; -----------------------------------------------------------------------------
-;	Spriteable tiles routines
-
-IFDEF CFG_MAX_SPRITEABLES
-spriteables:
-.count:
-	rb	1
-.array:
-; estado (0 = reposo, [MASK_TILE_SPRITE_DIRECTION | MASK_TILE_SPRITE_PENDING] = movimiento pendiente)
-	_SPRITEABLE_STATUS:	equ $ - spriteables.array
-	rb	1
-; offset del caracter superior izquierdo
-	_SPRITEABLE_OFFSET:	equ $ - spriteables.array
-	rw	1
-; caracteres que definen el tile convertible
-	_SPRITEABLE_FOREGROUND:	equ $ - spriteables.array
-	rb	4
-; caracteres de fondo cubiertos por el tile convertible
-	_SPRITEABLE_BACKGROUND:	equ $ - spriteables.array
-	rb	4
-; atributos del sprite equivalente (patrón, color)
-	_SPRITEABLE_PATTERN:	equ $ - spriteables.array
-	rb	1	; patrón
-	_SPRITEABLE_COLOR:	equ $ - spriteables.array
-	rb	1	; color
-	SPRITEABLE_SIZE:	equ $ - spriteables.array
-; (resto del array)
-IF (CFG_MAX_SPRITEABLES > 1)
-	rb	(CFG_MAX_SPRITEABLES -1) * ($ - spriteables.array)
-ENDIF
-	SPRITEABLES_SIZE:	equ $ - spriteables.array
-	
-ENDIF ; CFG_MAX_SPRITEABLES
 ; -----------------------------------------------------------------------------
 
 

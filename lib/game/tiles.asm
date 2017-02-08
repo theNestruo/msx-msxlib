@@ -22,20 +22,7 @@ COORDS_TO_OFFSET:
 	srl	a
 	srl	a
 ; hl += a
-	; jr	ADD_HL_A ; falls through
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "add hl, a" (or "hl += a" in C syntax)
-; param hl: operand
-; param a: usigned operand
-ADD_HL_A:
-	add	l
-	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
-	ret
+	jp	ADD_HL_A
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -54,11 +41,11 @@ NAMTBL_POINTER_TO_COORDS:
 ; Translates NAMTBL offsets to pixel coordinates
 ; Convierte coordenadas en bytes en coordenadas en píxeles
 ; param de: NAMTBL offset (in bytes)
-; ret de: pixel coordinates (yx pair, two bytes)
+; ret de: pixel coordinates (y, x)
 ; touches a
 OFFSET_TO_COORDS:
 ; y = (de / 32) *8 = (de / 4) mod 8
-	ld	a, e; a instead of e to preserve e
+	ld	a, e ; a instead of e to preserve e
 	srl	d
 	rr	a
 	srl	d

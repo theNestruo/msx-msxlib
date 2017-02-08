@@ -4,14 +4,13 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
-; Bit of the return values of GET_STICK_BITS
+; Bits returned by GET_STICK_BITS
 	BIT_STICK_UP:		equ 0
 	BIT_STICK_RIGHT:	equ 1
 	BIT_STICK_DOWN:		equ 2
 	BIT_STICK_LEFT:		equ 3
-	
-; Default bit map value table
-IFDEF STICK_BITS_TABLE ELSE
+
+; Bit map values table
 STICK_BITS_TABLE:
 	db	0						 ; 0
 	db	(1 << BIT_STICK_UP)				 ; 1
@@ -22,7 +21,6 @@ STICK_BITS_TABLE:
 	db	(1 << BIT_STICK_DOWN)	+ (1 << BIT_STICK_LEFT)	 ; 6
 	db				  (1 << BIT_STICK_LEFT)	 ; 7
 	db	(1 << BIT_STICK_UP)	+ (1 << BIT_STICK_LEFT)	 ; 8
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -49,11 +47,7 @@ GET_STICK_BITS:
 	call	GET_STICK
 ; Reads the bit map value
 	ld	hl, STICK_BITS_TABLE
-	add	l ; hl += a
-	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	call	ADD_HL_A
 	ld	b, [hl] ; b = level
 ; Builts edge value from level value
 	ld	hl, stick
@@ -93,28 +87,32 @@ GET_TRIGGER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Pausa de uno, dos y cuatro segundos
-; touches b, hl
+; Four seconds pause
+; touches: b, hl
 WAIT_FOUR_SECONDS:
 	call	WAIT_TWO_SECONDS
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Two seconds pause
+; touches: b, hl
 WAIT_TWO_SECONDS:
 	call	WAIT_ONE_SECOND
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; One second pause
+; touches: b, hl
 WAIT_ONE_SECOND:
 	ld	hl, frame_rate
 	ld	b, [hl]
-	; jr	WAIT_FRAMES ; falls through
+	; jr	WAIT_FRAMES ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Pausa de un número determinado de frames
-; param b: número de frames de duración de la pausa
-; touches b, hl
+; Pause
+; param b: pause length (in frames)
+; touches: b, hl
 WAIT_FRAMES:
 	halt
 	djnz	WAIT_FRAMES
@@ -122,8 +120,10 @@ WAIT_FRAMES:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Pausa de cuatro segundos abortable pulsando el disparador
-; (ver TRIGGER_PAUSE)
+; Skippable four seconds pause
+; ret nz: if the trigger went from off to on (edge)
+; ret z: if the pause timed out
+; touches: a, bc, de, hl
 TRIGGER_PAUSE_FOUR_SECONDS:
 	ld	a, [frame_rate]
 	add	a
@@ -132,32 +132,39 @@ TRIGGER_PAUSE_FOUR_SECONDS:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Pausa de un segundo abortable pulsando el disparador
-; (ver TRIGGER_PAUSE)
+; Skippable one second pause
+; ret nz: if the trigger went from off to on (edge)
+; ret z: if the pause timed out
+; touches: a, bc, de, hl
 TRIGGER_PAUSE_ONE_SECOND:
 	ld	a, [frame_rate]
-	; jr	TRIGGER_PAUSE_A ; falls through
+	; jr	TRIGGER_PAUSE_A ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Pausa abortable pulsando el disparador
-; param a/b: número de frames de duración de la pausa
-; touches a, bc, de, hl
-; ret nz: se ha pulsado el disparador
-; ret z: se ha agotado la pausa
+; Skippable pause
+; param a: pause length (in frames)
+; ret nz: if the trigger went from off to on (edge)
+; ret z: if the pause timed out
+; touches: a, bc, de, hl
 TRIGGER_PAUSE_A:
 	ld	b, a
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Skippable pause
+; param b: pause length (in frames)
+; ret nz: if the trigger went from off to on (edge)
+; ret z: if the pause timed out
+; touches: a, bc, de, hl
 TRIGGER_PAUSE:
-	push	bc
+	push	bc ; preserves counter
 	halt
 	call	GET_TRIGGER
-	pop	bc
+	pop	bc ; restores counter
 	ret	nz ; trigger
 	djnz	TRIGGER_PAUSE
-	ret	; z = no trigger
+	ret	; no trigger (z)
 ; -----------------------------------------------------------------------------
 
 ; EOF

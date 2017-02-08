@@ -4,17 +4,26 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
+; Emulates the instruction "add hl, a" (or "hl += a" in C syntax)
+; param hl: operand
+; param a: usigned operand
+ADD_HL_A:
+	add	l
+	ld	l, a
+	adc	h
+	sub	l
+	ld	h, a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Reads a byte from a byte array (i.e.: "a = hl[a]" in C syntax)
 ; param hl: byte array address
 ; param a: usigned 0-based index
 ; ret hl: pointer to the byte (i.e.: hl + a)
 ; ret a: read byte
 GET_HL_A_BYTE:
-	add	l ; hl += a
-	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	call	ADD_HL_A
 	ld	a, [hl] ; a = [hl]
 	ret
 ; -----------------------------------------------------------------------------
@@ -25,11 +34,8 @@ GET_HL_A_BYTE:
 ; param a: unsigned 0-based index (0, 2, 4...)
 ; ret hl: read word
 GET_HL_A_WORD:
-	add	l ; hl += a
-	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	call	ADD_HL_A
+	; jr	LD_HL_HL ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -57,11 +63,8 @@ JP_TABLE:
 ; param hl: jump table address
 ; param a: unsigned 0-based index (0, 2, 4...)
 JP_TABLE_2:
-	add	l ; hl += a
-	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	call	ADD_HL_A
+	; jr	JP_HL_INDIRECT ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -69,10 +72,8 @@ JP_TABLE_2:
 ; param hl: pointer to the address
 ; touches a
 JP_HL_INDIRECT:
-	ld	a, [hl] ; hl = [hl]
-	inc	hl
-	ld	h, [hl]
-	ld	l, a
+	call	LD_HL_HL
+	; jr	JP_HL ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -80,6 +81,32 @@ JP_HL_INDIRECT:
 ; param hl: address
 JP_HL:
 	jp	[hl]
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Emulates the instruction "ld bc, a"
+; param a: signed 8-bit value
+; ret bc: signed 16-bit value
+LD_BC_A:
+	ld	c, a
+	rlca ; or rla
+	sbc	a, a
+	ld	b, a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Loads a in [hl], masked with b (keeps the other bits of [hl])
+; param hl: address
+; param a: value
+; param b: mask
+; ret a: loaded value
+LD_HL_A_MASK:
+	xor	[hl]	; a    = status0 ^ status1 | flag
+	and	b	; a    = status0 ^ status1
+	xor	[hl]	; a    =           status1 | flag
+	ld	[hl], a	; [hl] =           status1 | flag
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -109,32 +136,6 @@ GET_ARRAY_IX:
 	add	ix, bc
 	dec	a
 	jr	nz, .LOOP
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Loads a in [hl], masked with b (keeps the other bits of [hl])
-; param hl: address
-; param a: value
-; param b: mask
-; ret a: loaded value
-LD_HL_A_MASK:
-	xor	[hl]	; a    = status0 ^ status1 | flag
-	and	b	; a    = status0 ^ status1
-	xor	[hl]	; a    =           status1 | flag
-	ld	[hl], a	; [hl] =           status1 | flag
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "ld bc, a"
-; param a: signed 8-bit value
-; ret bc: signed 16-bit value
-LD_BC_A:
-	ld	c, a
-	rlca ; or rla
-	sbc	a, a
-	ld	b, a
 	ret
 ; -----------------------------------------------------------------------------
 

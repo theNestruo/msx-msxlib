@@ -35,7 +35,7 @@ EH_PUT_SPRITE:
 	ld	d, [ix + _ENEMY_Y]
 	ld	c, [ix + _ENEMY_PATTERN]
 	ld	b, [ix + _ENEMY_COLOR]
-	call	PUT_DYNAMIC_SPRITE_LOGICAL
+	call	PUT_SPRITE
 ; ret z (continue with next handler)
 	cp	a
 	ret

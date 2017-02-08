@@ -8,14 +8,36 @@
 	org	$4000, $bfff
 ROM_START:
 	db	"AB"		; ID ("AB")
-	dw	CARTRIDGE_INIT	; INIT
+	dw	.INIT		; INIT
 	ds	$4010 - $, $00	; STATEMENT, DEVICE, TEXT, Reserved
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Data
+
+; RAM check warning text
+IFDEF CFG_INIT_16KB_RAM
+.TXT:
+	db	"16KB RAM REQUIRED"
+	.TXT_SIZE:	equ $ - .TXT
+ENDIF ; CFG_INIT_16KB_RAM
+
+; Frame rate related values
+.FRAME_RATE_50HZ_0:
+	db	50	; frame rate
+	db	5	; frames per tenth
+	
+.FRAME_RATE_60HZ_0:
+	db	60	; frame rate
+	db	6	; frames per tenth
+	
+	.FRAME_RATE_SIZE:	equ $ - .FRAME_RATE_60HZ_0
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Cartridge entry point
 ; System initialization: stack pointer, slots, RAM, CPU, VDP, PSG, etc.
-CARTRIDGE_INIT:
+.INIT:
 ; Ensures interrupt mode and stack pointer
 ; (perhaps this ROM is not the first thing to be loaded)
 	di
@@ -24,7 +46,7 @@ CARTRIDGE_INIT:
 
 IFDEF CFG_INIT_32KB_ROM
 ; Reads the primary slot of the page 1
-	call    RSLREG ; a = 33221100
+	call    RSLREG	; a = 33221100
 	rrca
 	rrca
 	and	$03	; a = xxxxxxPP
@@ -64,23 +86,21 @@ IFDEF CFG_INIT_16KB_RAM
 ; no: screen 1 and warning text
 	call	INIT32
 	ld	hl, .TXT
-	ld	de, NAMTBL + (SCR_WIDTH - 17) /2 + 11 *SCR_WIDTH
+	ld	de, NAMTBL + (SCR_WIDTH-.TXT_SIZE)/2 + 11*SCR_WIDTH
 	ld	bc, 17
 	call	LDIRVM
 ; halts the execution
 	di
 	halt
-.TXT:
-	db	"16KB RAM REQUIRED" ; 17 bytes
 .RAM_OK:
-ENDIF
+ENDIF ; CFG_INIT_16KB_RAM
 
 ; CPU: Ensures Z80 mode
 	ld	a, [MSXID3]
 	cp	3 ; 3 = MSX turbo R
 	jr	nz, .CPU_OK
 ; MSX turbo R: switches to Z80 mode
-	ld	a, $80 ; also disables the LED (besides the R800)
+	ld	a, $80 ; also disables the LED
 	call	CHGCPU
 .CPU_OK:
 
@@ -110,41 +130,23 @@ ENDIF
 	ld	[hl], 0
 	ldir
 
-; Frame rate dependant variables
+; Frame rate related variables
 ; Chooses the proper source (50Hz or 60Hz)
 	ld	a, [MSXID1]
 	bit	7, a ; 0=60Hz, 1=50Hz
-	ld	hl, FRAME_RATE_50HZ_0
-	ld	bc, FRAME_RATE_SIZE
+	ld	hl, .FRAME_RATE_50HZ_0
+	ld	bc, .FRAME_RATE_SIZE
 	jr	nz, .HL_OK
 ; skips the 50Hz entry and goes to the 60Hz entry
 	add	hl, bc
 .HL_OK:
 ; blits the correct entry
 	ld	de, frame_rate
-	ld	bc, FRAME_RATE_SIZE
+	; ld	bc, .FRAME_RATE_SIZE ; (unecessary)
 	ldir
-
-; IF (CFG_OPTIONAL_PT3HOOK > 0)
-; ; preserva la rutina de interrupción que pudiera existir
-	; ld	hl, HTIMI
-	; ld	de, old_htimi_hook
-	; ld	bc, HOOK_SIZE
-	; ldir
-; ENDIF ; (CFG_OPTIONAL_PT3HOOK > 0)
 
 ; salta hasta el punto de entrada principal del juego
 	jp	MAIN_INIT
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; frame_rate / frames_per_tenth
-FRAME_RATE_50HZ_0:
-	db	50, 5
-	FRAME_RATE_SIZE:	equ $ - FRAME_RATE_50HZ_0
-	
-FRAME_RATE_60HZ_0:
-	db	60, 6
 ; -----------------------------------------------------------------------------
 
 ; EOF
