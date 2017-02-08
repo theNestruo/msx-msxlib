@@ -6,6 +6,8 @@
 ;
 
 ; -----------------------------------------------------------------------------
+; MSX cartridge (ROM) header, entry point and initialization
+
 ; Define if the ROM is larger than 16kB (typically, 32kB)
 ; Includes search for page 2 slot/subslot at start
 	; CFG_INIT_32KB_ROM:
@@ -15,19 +17,15 @@
 ; and availability will be checked at start
 	; CFG_INIT_16KB_RAM:
 	
-; Logical-to-physical sprite coordinates offsets (pixels)
-	CFG_SPRITES_X_OFFSET:		equ -8
-	CFG_SPRITES_Y_OFFSET:		equ -17
-	
-	CFG_SPRITES_RESERVED_BEFORE:	equ 0
-	CFG_SPRITES_RESERVED_AFTER:	equ 0
+; MSX symbolic constants
+	include	"lib/msx/symbols.asm"
+; MSX cartridge (ROM) header, entry point and initialization
+	include "lib/msx/cartridge.asm"
+; -----------------------------------------------------------------------------
 
-; Define to enable the "vpoke" routines (deferred WRTVRMs)
-; Maximum number of "vpokes" per frame
-	CFG_VPOKES: equ 64
-
-; MSXlib core
-	include	"lib/rom.asm"
+; -----------------------------------------------------------------------------
+; Generic Z80 assembly convenience routines
+	include "lib/asm.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -48,6 +46,50 @@
 ; Buffer size to check it actually fits before system variables
 	CFG_RAM_RESERVE_BUFFER:	equ 2048
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Input, timing & pause routines (BIOS-based)
+	include "lib/msx/input.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; VRAM routines (BIOS-based)
+; NAMBTL and SPRATR buffer routines (BIOS-based)
+; NAMTBL buffer text routines
+; Logical coordinates sprite routines
+	
+; Logical-to-physical sprite coordinates offsets (pixels)
+	CFG_SPRITES_X_OFFSET:	equ -8
+	CFG_SPRITES_Y_OFFSET:	equ -17
+	
+; Number of sprites reserved at the beginning of the SPRATR buffer
+; (i.e.: first sprite number for the "volatile" sprites)
+	CFG_SPRITES_RESERVED:	equ 2
+
+; VRAM routines (BIOS-based)
+; NAMBTL and SPRATR buffer routines (BIOS-based)
+; NAMTBL buffer text routines
+; Logical coordinates sprite routines
+	include "lib/msx/vram.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; "vpoke" routines (deferred WRTVRMs routines)
+; Spriteables routines (2x2 chars that eventually become a sprite)
+
+; Define to enable the "vpoke" routines (deferred WRTVRMs)
+; Maximum number of "vpokes" per frame
+	CFG_VPOKES: 		equ 64
+
+; Define to enable the spriteable routines
+; Maximum number of simultaneous spriteables
+	CFG_SPRITEABLES:	equ 16
+
+; "vpoke" routines (deferred WRTVRMs routines)
+; Spriteables routines (2x2 chars that eventually become a sprite)
+	include "lib/msx/vram_x.asm"
+; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
@@ -159,16 +201,6 @@ JUMP_DY_TABLE:
 	include	"lib/game/enemy_routines.asm"
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Spriteables routines (2x2 chars that eventually become a sprite)
-
-; Maximum simultaneous number of spriteables
-	CFG_MAX_SPRITEABLES:	equ 16
-
-; (optional) Spriteables routines
-	include	"lib/extra/spriteables.asm"
-; -----------------------------------------------------------------------------
-
 ;
 ; =============================================================================
 ; 	Custom parameterization and symbolic constants
@@ -276,7 +308,7 @@ NEW_STAGE:
 ; "STAGE 0"
 	ld	hl, TXT_STAGE
 	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_STAGE.CENTER
-	call	PRINT_TXT_DE_OK
+	call	PRINT_TXT
 ; "stage N"
 	dec	de
 	ld	a, [game.current_stage]
@@ -287,7 +319,7 @@ NEW_STAGE:
 	ld	hl, TXT_LIVES
 	ld	de, namtbl_buffer + 10 * SCR_WIDTH + TXT_LIVES.CENTER
 	push	de
-	call	PRINT_TXT_DE_OK
+	call	PRINT_TXT
 ; "lives N"
 	pop	de
 	ld	a, [game.lives]
@@ -329,7 +361,7 @@ GAME_LOOP_INIT:
 	ldir
 	
 ; In-game loop preamble and initialization
-	call	RESET_DYNAMIC_SPRITES
+	call	RESET_SPRITES
 	call	RESET_ENEMIES
 	call	RESET_VPOKES
 	call	RESET_SPRITEABLES
@@ -351,7 +383,7 @@ GAME_LOOP:
 	call	EXECUTE_VPOKES
 	call	LDIRVM_SPRATR
 ; Prepares next frame (2/2)
-	call	RESET_DYNAMIC_SPRITES
+	call	RESET_SPRITES
 	
 ; Read input devices
 	call	GET_STICK_BITS
@@ -472,7 +504,7 @@ GAME_OVER:
 ; "GAME OVER"
 	ld	hl, TXT_GAME_OVER
 	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_GAME_OVER.CENTER
-	call	PRINT_TXT_DE_OK
+	call	PRINT_TXT
 	
 ; Fade in
 	call	LDIRVM_NAMTBL_FADE_INOUT
@@ -627,8 +659,8 @@ UPDATE_BOXES_AND_ROCKS:
 .CHECK:
 ; Lee el caracter bajo la parte izquierda del spriteable
 	ld	hl, namtbl_buffer +SCR_WIDTH *2 ; (+2,+0)
-	ld	e, [ix +_SPRITEABLE_OFFSET +0]
-	ld	d, [ix +_SPRITEABLE_OFFSET +1]
+	ld	e, [ix +_SPRITEABLE_OFFSET_L]
+	ld	d, [ix +_SPRITEABLE_OFFSET_H]
 	add	hl, de
 	push	hl ; preserva el puntero al buffer namtbl
 	ld	a, [hl]
@@ -659,12 +691,12 @@ UPDATE_BOXES_AND_ROCKS:
 .BOX_ON_WATER:
 ; Cambia los caracteres que se volcarán y los vuelca inmediatamente
 	ld	a, BOX_FIRST_CHAR_WATER
-	call	SET_SPRITEABLE_FOREGROUND
+	ld	[ix + _SPRITEABLE_FOREGROUND], a
 	call	VPOKE_SPRITEABLE_FOREGROUND
 	jr	.STOP_BOX
 .BOX_ON_LAVA:
 ; Elimina los caracteres de la caja y recupera el fondo inmediatamente
-	call	NAMTBL_BUFFER_ERASE
+	call	NAMTBL_BUFFER_SPRITEABLE_BACKGROUND
 	call	VPOKE_SPRITEABLE_BACKGROUND
 	; jr	.STOP_BOX ; falls through
 .STOP_BOX:
@@ -677,7 +709,7 @@ UPDATE_BOXES_AND_ROCKS:
 .ROCK_ON_WATER:
 ; Cambia los caracteres que se volcarán
 	ld	a, ROCK_FIRST_CHAR_WATER
-	call	SET_SPRITEABLE_FOREGROUND
+	ld	[ix + _SPRITEABLE_FOREGROUND], a
 ; Cambia el color del sprite
 	ld	a, ROCK_SPRITE_COLOR_WATER
 	ld	[ix + _SPRITEABLE_COLOR], a
@@ -687,7 +719,7 @@ UPDATE_BOXES_AND_ROCKS:
 .ROCK_ON_LAVA:
 ; Cambia los caracteres que se volcarán
 	ld	a, ROCK_FIRST_CHAR_LAVA
-	call	SET_SPRITEABLE_FOREGROUND
+	ld	[ix + _SPRITEABLE_FOREGROUND], a
 ; Cambia el color del sprite
 	ld	a, ROCK_SPRITE_COLOR_LAVA
 	ld	[ix + _SPRITEABLE_COLOR], a
@@ -721,19 +753,15 @@ UPDATE_FRAMES_PUSHING:
 ON_PLAYER_WALK_ON:
 ; Reads the tile index and NAMTBL offset and buffer pointer
 	call	GET_TILE_AT_PLAYER
-	push	de ; preserves NAMTBL offset
 	push	hl ; preserves NAMTBL buffer pointer
 ; Executes item action
 	sub	CHAR_FIRST_ITEM
 	ld	hl, .ITEM_JUMP_TABLE
 	call	JP_TABLE
-; Removes the item in the NAMTBL buffer
+; Removes the item in the NAMTBL buffer and VRAM
 	xor	a
 	pop	hl ; restores NAMTBL buffer pointer
-	ld	[hl], a
-; Removes the item in VRAM
-	pop	hl ; restores NAMTBL offset
-	jp	VPOKE
+	jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
 
 .ITEM_JUMP_TABLE:
 	dw	.KEY		; key
@@ -952,7 +980,7 @@ SPRTBL_PACKED:
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
-	dw	.TUTORIAL_01
+	; dw	.TUTORIAL_01
 	; dw	.TUTORIAL_02
 	dw	.TUTORIAL_03
 	dw	.TUTORIAL_04
