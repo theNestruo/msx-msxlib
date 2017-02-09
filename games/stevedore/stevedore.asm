@@ -100,29 +100,31 @@
 ; -----------------------------------------------------------------------------
 ; Sprite-tile helper routines
 
-; Tile properties table in pairs (up to char number, tile properties)
-TILE_PROPERTIES_TABLE:
+; Tile indexes (values) to be returned by GET_TILE_VALUE
+; when the coordinates are over and under visible screen
+	CFG_TILES_VALUE_OVER:	equ $ff ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	CFG_TILES_VALUE_UNDER:	equ $1f ; BIT_WORLD_DEATH
+
+; Table of tile flags in pairs (up to index, tile flags)
+TILE_FLAGS_TABLE:
 	db	$00, $00 ; [     $00] : 0
-	db	$07, $10 ; [$01..$0f] : BIT_WORLD_WALK_ON (items)
+	db	$07, $10 ; [$01..$07] : BIT_WORLD_WALK_ON (items)
 	db	$0f, $20 ; [$01..$0f] : BIT_WORLD_WIDE_ON (open doors)
 	db	$17, $83 ; [$10..$17] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID | BIT_WORLD_PUSH
 	db	$1f, $08 ; [$18..$1f] : BIT_WORLD_DEATH
-	db	$ab, $00 ; [$00..$ab] : 0 (chars and backgrounds)
+	db	$ab, $00 ; [$20..$ab] : 0 (chars and backgrounds)
 	db	$af, $04 ; [$ac..$af] : BIT_WORLD_STAIRS
 	db	$b7, $02 ; [$b0..$b7] : BIT_WORLD_FLOOR
-	db	$bf, $06 ; [$ba..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_STAIRS
+	db	$bf, $06 ; [$b8..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_STAIRS
 	db	$ff, $03 ; [$c0..$ff] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
 
-; Offscreen tile properties
-	CFG_TILES_OFFSCREEN_TOP:	equ $01 ; BIT_WORLD_SOLID
-	CFG_TILES_OFFSCREEN_BOTTOM:	equ $08 ; BIT_WORLD_DEATH
-	
 ; Sprite-tile helper routines
 	include	"lib/game/tiles.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Player related routines
+; Player related routines (generic)
+; Default player control routines (platformer game)
 
 ; Logical sprite sizes (bounding box size) (pixels)
 	CFG_PLAYER_WIDTH:		equ 8
@@ -134,27 +136,22 @@ TILE_PROPERTIES_TABLE:
 ; Player animation delay (frames)
 	CFG_PLAYER_ANIMATION_DELAY:	equ 6
 
-; Default player states
-	; PLAYER_STATE_FLOOR:	equ (0 << 2) ; $00
-	; PLAYER_STATE_STAIRS:	equ (1 << 2) ; $04
-	; PLAYER_STATE_AIR:	equ (2 << 2) ; $08
-	; PLAYER_STATE_DYING:	equ (3 << 2) ; $0c
-; Custom player states
+; Custom player states (starting from 4 << 2)
 	PLAYER_STATE_PUSH:	equ (4 << 2) ; $10
 	;	...
 
 ; Maps player states to sprite patterns
-STATUS_SPRATR_TABLE:
-	;	0	LEFT	ANIM	LEFT|ANIM
-	db	$00,	$10,	$08,	$18	; PLAYER_STATE_FLOOR
-	db	$20,	$20,	$28,	$28	; PLAYER_STATE_STAIRS
-	db	$08,	$18,	$08,	$18	; PLAYER_STATE_AIR
-	db	$30,	$30,	$38,	$38	; PLAYER_STATE_DYING
-	db	$40,	$48,	$40,	$48	; PLAYER_STATE_PUSH
+PLAYER_SPRATR_TABLE:
+	;	0	ANIM	LEFT	LEFT|ANIM
+	db	$00,	$08,	$10,	$18	; PLAYER_STATE_FLOOR
+	db	$20,	$28,	$20,	$28	; PLAYER_STATE_STAIRS
+	db	$08,	$08,	$18,	$18	; PLAYER_STATE_AIR
+	db	$30,	$38,	$30,	$38	; PLAYER_STATE_DYING
+	db	$40,	$40,	$48,	$48	; PLAYER_STATE_PUSH
 	;	...
 
 ; Maps player states to assembly routines
-UPDATE_PLAYER_TABLE:
+PLAYER_UPDATE_TABLE:
 	dw	UPDATE_PLAYER_FLOOR	; PLAYER_STATE_FLOOR
 	dw	UPDATE_PLAYER_STAIRS	; PLAYER_STATE_STAIRS
 	dw	UPDATE_PLAYER_AIR	; PLAYER_STATE_AIR
@@ -177,12 +174,16 @@ JUMP_DY_TABLE:
 	db	CFG_PLAYER_GRAVITY	; (terminal falling speed)
 	JUMP_DY_TABLE_SIZE:		equ $ - JUMP_DY_TABLE
 
-; Player related routines
+; Player related routines (generic)
 	include	"lib/game/player.asm"
+
+; Default player control routines (platformer game)
+	include	"lib/game/player_x.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Enemies related routines
+; Default enemy behavior routines (platformer game)
 
 ; Maximum simultaneous number of enemies
 	CFG_ENEMY_COUNT:		equ 8
@@ -194,9 +195,10 @@ JUMP_DY_TABLE:
 ; Enemies animation delay (frames)
 	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
 	
-; Enemies related routines
+; Enemies related routines (generic)
 	include	"lib/game/enemy.asm"
-; (optional) Default handlers and behavior
+	
+; Default enemy behavior routines (platformer game)
 	include	"lib/game/enemy_handlers.asm"
 	include	"lib/game/enemy_routines.asm"
 ; -----------------------------------------------------------------------------
@@ -377,7 +379,7 @@ GAME_LOOP_INIT:
 ; In-game loop
 GAME_LOOP:
 ; Prepares next frame (1/2)
-	call	PUT_SPRITE_PLAYER
+	call	PUT_PLAYER_SPRITE
 ; Blit buffers to VRAM
 	halt
 	call	EXECUTE_VPOKES
@@ -664,13 +666,13 @@ UPDATE_BOXES_AND_ROCKS:
 	add	hl, de
 	push	hl ; preserva el puntero al buffer namtbl
 	ld	a, [hl]
-	call	GET_TILE_PROPERTIES
+	call	GET_TILE_FLAGS
 	ld	c, a ; preserva el valor
 ; Lee el caracter bajo la parte derecha del spriteable
 	pop	hl ; restaura puntero al buffer namtbl
 	inc	hl
 	ld	a, [hl]
-	call	GET_TILE_PROPERTIES
+	call	GET_TILE_FLAGS
 	or	c ; combina el valor
 ; ¿Es sólido?
 	bit	BIT_WORLD_SOLID, a
@@ -752,7 +754,7 @@ UPDATE_FRAMES_PUSHING:
 ; Tile collision (single char): Items
 ON_PLAYER_WALK_ON:
 ; Reads the tile index and NAMTBL offset and buffer pointer
-	call	GET_TILE_AT_PLAYER
+	call	GET_PLAYER_TILE_VALUE
 	push	hl ; preserves NAMTBL buffer pointer
 ; Executes item action
 	sub	CHAR_FIRST_ITEM
@@ -838,7 +840,7 @@ ON_PLAYER_PUSH:
 	ld	[player.state], a
 ; ¿hay hueco para empujar?
 	ld	a, PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH +16
-	call	CHECK_V_TILES_PLAYER
+	call	GET_PLAYER_V_TILE_FLAGS
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; no
 ; sí: ¿ha empujado suficiente?
@@ -862,7 +864,7 @@ ON_PLAYER_PUSH:
 	ld	[player.state], a
 ; ¿hay hueco para empujar?
 	ld	a, PLAYER_BOX_X_OFFSET -1 -16
-	call	CHECK_V_TILES_PLAYER
+	call	GET_PLAYER_V_TILE_FLAGS
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; no
 ; sí: ¿ha empujado suficiente?
@@ -882,7 +884,7 @@ ON_PLAYER_PUSH:
 	add	d ; x += dx
 	ld	d, a
 	dec	e ; y -= 1
-	jp	GET_TILE_AT_XY
+	jp	GET_TILE_VALUE
 	
 ; Actualiza y comprueba el contador de frames que lleva empujando el jugador
 ; ret nz: insuficientes

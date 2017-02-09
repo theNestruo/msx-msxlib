@@ -96,20 +96,6 @@ LD_BC_A:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Loads a in [hl], masked with b (keeps the other bits of [hl])
-; param hl: address
-; param a: value
-; param b: mask
-; ret a: loaded value
-LD_HL_A_MASK:
-	xor	[hl]	; a    = status0 ^ status1 | flag
-	and	b	; a    = status0 ^ status1
-	xor	[hl]	; a    =           status1 | flag
-	ld	[hl], a	; [hl] =           status1 | flag
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Adds an element to an array and returns the address of the added element
 ; param ix: array.count address (byte size)
 ; param bc: size of each array element

@@ -4,18 +4,6 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
-; Bit index for the default tile properties
-	BIT_WORLD_SOLID:	equ 0
-	BIT_WORLD_FLOOR:	equ 1
-	BIT_WORLD_STAIRS:	equ 2
-	BIT_WORLD_DEATH:	equ 3
-	BIT_WORLD_WALK_ON:	equ 4 ; Tile collision (single char)
-	BIT_WORLD_WIDE_ON:	equ 5 ; Wide tile collision (player width)
-	BIT_WORLD_WALK_OVER:	equ 6 ; Walking over tiles (player width)
-	BIT_WORLD_PUSHABLE:	equ 7 ; Pushable tiles (player height)
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Translate pixel coordinates to NAMTBL offsets
 ; param de: pixel coordinates (x, y)
 ; ret hl: NAMTBL offset
@@ -125,7 +113,7 @@ GET_TILE_FLAGS:
 ; param de: upper pixel coordinates (x, y)
 ; param b: height in pixels
 ; ret a: OR-ed tile flags
-CHECK_V_TILES:
+GET_V_TILE_FLAGS:
 ; Calculates how many pixels to check
 	ld	a, e
 	and	$07	; y mod 8 (sub tile)
@@ -173,7 +161,7 @@ CHECK_V_TILES:
 ; param de: left pixel coordinates (x, y)
 ; param b: width in pixels
 ; ret a: OR-ed tile flags
-CHECK_H_TILES:
+GET_H_TILE_FLAGS:
 ; Calculates how many pixels to check
 	ld	a, d
 	and	$07	; x mod 8 (sub tile)

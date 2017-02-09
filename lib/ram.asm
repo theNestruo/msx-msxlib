@@ -52,9 +52,6 @@ spratr_buffer:
 	rb	SPRATR_SIZE
 spratr_buffer_end:
 	rb	1	; to store one SPAT_END when the buffer is full
-
-; (direct pointers inside SPRATR buffer)
-	spratr_player:		equ spratr_buffer
 ; -----------------------------------------------------------------------------
 
 
