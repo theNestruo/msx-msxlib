@@ -55,7 +55,6 @@ spratr_buffer_end:
 
 ; (direct pointers inside SPRATR buffer)
 	spratr_player:		equ spratr_buffer
-	volatile_sprites:	equ spratr_buffer + 4* CFG_SPRITES_RESERVED
 ; -----------------------------------------------------------------------------
 
 

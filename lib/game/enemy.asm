@@ -312,8 +312,8 @@ CHECK_TILE_UNDER_ENEMY_A_OK:
 	add	[ix + _ENEMY_X]
 	ld	d, a
 ; Lee el tile
-	call	GET_TILE_AT_XY
-	jp	GET_TILE_PROPERTIES
+	call	GET_TILE_VALUE
+	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; ;

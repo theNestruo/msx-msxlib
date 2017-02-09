@@ -375,6 +375,13 @@ CLEAR_LINE:
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
+; (direct pointers inside SPRATR buffer)
+IFDEF CFG_SPRITES_RESERVED
+	volatile_sprites:	equ spratr_buffer + CFG_SPRITES_RESERVED *4
+ENDIF
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; param de: logical coordinates (x, y)
 ; ret de: physical coordinates (x, y)
 LOGICAL_TO_PHYSICAL_COORDINATES:
@@ -391,9 +398,15 @@ LOGICAL_TO_PHYSICAL_COORDINATES:
 ; Resets the volatile sprites
 RESET_SPRITES:
 ; Fills with Y = SPAT_END
+IFDEF CFG_SPRITES_RESERVED
 	ld	hl, volatile_sprites
 	ld	de, 4
-	ld	b, (spratr_buffer_end - volatile_sprites) / 4
+	ld	b, (spratr_buffer_end - volatile_sprites) /4
+ELSE
+	ld	hl, spratr_buffer
+	ld	de, 4
+	ld	b, (spratr_buffer_end - spratr_buffer) /4
+ENDIF
 .LOOP:
 	ld	[hl], SPAT_END
 ; Skip to the next sprite
@@ -416,7 +429,11 @@ PUT_SPRITE:
 ; param cb: attributes (pattern, color)
 PUT_SPRITE_NO_OFFSET:
 ; Locates the SPAT_END
+IFDEF CFG_SPRITES_RESERVED
 	ld	hl, volatile_sprites
+ELSE
+	ld	hl, spratr_buffer
+ENDIF
 	ld	a, SPAT_END
 .LOOP:
 	cp	[hl]

@@ -1,45 +1,41 @@
 ;
 ; =============================================================================
-;	Player related constants and routines
+;	Player related routines (platformer game)
 ; =============================================================================
 ;
 
 ; -----------------------------------------------------------------------------
-; Offset de las coordenadas del bounding box de los sprites
+; Bounding box offset (based on the logical sprite sizes)
 	PLAYER_BOX_X_OFFSET:	equ -(CFG_PLAYER_WIDTH / 2)
-	PLAYER_BOX_Y_OFFSET:	equ -CFG_PLAYER_HEIGHT
+	PLAYER_BOX_Y_OFFSET:	equ -(CFG_PLAYER_HEIGHT)
 	
-; Bit index for default tile properties
-	BIT_WORLD_SOLID:	equ 0
-	BIT_WORLD_FLOOR:	equ 1
-	BIT_WORLD_STAIRS:	equ 2
-	BIT_WORLD_DEATH:	equ 3
-	BIT_WORLD_WALK_ON:	equ 4 ; Tile collision (single char)
-	BIT_WORLD_WIDE_ON:	equ 5 ; Wide tile collision (player width)
-	BIT_WORLD_WALK_OVER:	equ 6 ; Walking over tiles (player width)
-	BIT_WORLD_PUSHABLE:	equ 7 ; Pushable tiles (player height)
-
-; Modificadores de estados del jugador (en forma de bits y flags) 
+; Player state modifiers (as bit indexes)
 	BIT_STATE_LEFT:		equ 0
 	BIT_STATE_ANIM:		equ 1
+	BIT_STATE_FINISH:	equ 7 ; (special state marker: exit state)
+	
+; Player state modifiers (as flags)
 	FLAG_STATE_LEFT:	equ (1 << BIT_STATE_LEFT) ; $01
 	FLAG_STATE_ANIM:	equ (1 << BIT_STATE_ANIM) ; $02
-	FLAGS_STATE:		equ FLAG_STATE_LEFT + FLAG_STATE_ANIM ; $03
+	FLAGS_STATE:		equ FLAG_STATE_LEFT OR FLAG_STATE_ANIM ; $03
 
-; Estados del jugador por defecto
+; Default player states
 	PLAYER_STATE_FLOOR:	equ (0 << 2) ; $00
 	PLAYER_STATE_STAIRS:	equ (1 << 2) ; $04
 	PLAYER_STATE_AIR:	equ (2 << 2) ; $08
 	PLAYER_STATE_DYING:	equ (3 << 2) ; $0c
-; Estados del jugador definidos por el usuario
-	; ...
+	PLAYER_STATE_DEAD:	equ (0 << 2) + (1 << BIT_STATE_FINISH) ; $80
+	PLAYER_STATE_FINISH:	equ (1 << 2) + (1 << BIT_STATE_FINISH) ; $84
+; -----------------------------------------------------------------------------
 
-; Condiciones de salida por defecto (estados del jugador especiales)
-	BIT_STATE_FINISH:	equ 7
-	PLAYER_STATE_DEAD:	equ (1 << BIT_STATE_FINISH) + (0 << 2); $80
-	PLAYER_STATE_FINISH:	equ (1 << BIT_STATE_FINISH) + (1 << 2); $84
-; Condiciones de salida definidas por el usuario
-	; ...
+; -----------------------------------------------------------------------------
+; Convenience routine to read no properties
+; (usually used in _FAST version of the checks)
+; ret a: 0
+; ret z
+CHECK_NO_TILES:
+	xor	a
+	ret
 ; -----------------------------------------------------------------------------
 
 ;
@@ -530,7 +526,7 @@ MOVE_PLAYER_DY:
 GET_TILE_AT_PLAYER:
 	ld	de, [player.xy]
 	dec	e
-	jp	GET_TILE_AT_XY
+	jp	GET_TILE_VALUE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -538,7 +534,7 @@ GET_TILE_AT_PLAYER:
 ; (comprueba la parte baja del jugador)
 CHECK_TILE_PLAYER:
 	call	GET_TILE_AT_PLAYER
-	jp	GET_TILE_PROPERTIES
+	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
