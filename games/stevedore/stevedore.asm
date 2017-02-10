@@ -279,11 +279,11 @@ MAIN_MENU:
 	;	...TBD...
 	
 ; Main menu draw
-	call	CLS_NAMTBL
+	; call	CLS_NAMTBL
 	;	...TBD...
 	
 ; Fade in
-	call	ENASCR_FADE_IN
+	; call	ENASCR_FADE_IN
 
 ; Main menu loop
 .LOOP:
