@@ -33,7 +33,7 @@ UPDATE_PLAYER:
 	ld	a, [player.state] ; a = player.state without flags
 	srl	a
 	srl	a
-	ld	hl, UPDATE_PLAYER_TABLE
+	ld	hl, PLAYER_UPDATE_TABLE
 	call	JP_TABLE
 	
 ; Finished?
@@ -324,19 +324,19 @@ MOVE_PLAYER_LR_ANIMATE:
 ; apaga el bit de animación
 	ld	hl, player.state
 	res	BIT_STATE_ANIM, [hl]
-	
-; IF (BIT_WORLD_PUSHABLE = 0)
-	; ret
-; ELSE
+
+IFEXIST ON_PLAYER_PUSH
 .RESET_STATE:
 ; resetea el estado si está activa la UX de empujar
 	ld	a, PLAYER_STATE_FLOOR
 	ld	b, $ff XOR FLAGS_STATE
 	jp	SET_PLAYER_STATE.MASK
-; ENDIF ; (BIT_WORLD_PUSHABLE == 0)
+ELSE
+	ret
+ENDIF
 
 .RIGHT:
-	call	GET_PLAYER_TILE_FLAGS_RIGHT_FAST
+	call	GET_PLAYER_TILE_FLAGS_RIGHT ; _FAST
 	
 ; UX: ¿empujando tiles (alto del jugador)?
 IFEXIST ON_PLAYER_PUSH.RIGHT
@@ -358,7 +358,7 @@ ENDIF
 	jp	UPDATE_PLAYER_ANIMATION
 
 .LEFT:
-	call	GET_PLAYER_TILE_FLAGS_LEFT_FAST
+	call	GET_PLAYER_TILE_FLAGS_LEFT ; _FAST
 
 ; UX: ¿empujando tiles (alto del jugador)?
 IFEXIST ON_PLAYER_PUSH.LEFT

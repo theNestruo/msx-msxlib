@@ -22,7 +22,16 @@ COORDS_TO_OFFSET:
 	srl	a
 	srl	a
 ; hl += a
+IFDEF CFG_OPT_SPEED
+	add	l
+	ld	l, a
+	adc	h
+	sub	l
+	ld	h, a
+	ret
+ELSE
 	jp	ADD_HL_A
+ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -102,7 +111,12 @@ GET_TILE_FLAGS:
 	jr	z, .OK ; yes (equal)
 ; no
 	inc	hl ; hl = up to index (next group)
+IFDEF CFG_OPT_SPEED
+	jp	.LOOP
+ELSE
 	jr	.LOOP
+ENDIF
+
 .OK:
 	ld	a, [hl]
 	ret
@@ -116,14 +130,14 @@ GET_TILE_FLAGS:
 GET_V_TILE_FLAGS:
 ; Calculates how many pixels to check
 	ld	a, e
-	and	$07	; y mod 8 (sub tile)
-	add	b	;     ... +height
-	dec	a	;     ... -1
+	and	$07	; pixels = y mod 8 (sub tile)
+	add	b	;	... +height
+	dec	a	;	... -1
 ; Calculates how many tiles to check
+	srl	a ; tiles = pixels / 8
 	srl	a
 	srl	a
-	srl	a
-	inc	a
+	inc	a ;	... +1
 	ld	b, a ; number of tiles in b
 ; First tile
 	call	GET_TILE_VALUE ; also: NAMTBL buffer pointer in hl
@@ -164,15 +178,14 @@ GET_V_TILE_FLAGS:
 GET_H_TILE_FLAGS:
 ; Calculates how many pixels to check
 	ld	a, d
-	and	$07	; x mod 8 (sub tile)
+	and	$07	; pixels = x mod 8 (sub tile)
 	add	b	;     ... +height
 	dec	a	;     ... -1
 ; Calculates how many tiles to check
+	srl	a ; tiles = pixels / 8
 	srl	a
 	srl	a
-	srl	a
-	inc	a
-	ld	b, a ; almacena en b
+	inc	a ;	... +1
 	ld	b, a ; number of tiles in b
 ; First tile
 	call	GET_TILE_VALUE ; also: NAMTBL buffer pointer in hl
@@ -188,7 +201,7 @@ GET_H_TILE_FLAGS:
 	ld	c, a ; current flags in c
 	push	bc ; preserves counter and current flags
 ; Moves pointer one tile right
-	inc	hl
+	inc	de
 ; Reads other tile
 	ld	a, [de]
 	call	GET_TILE_FLAGS

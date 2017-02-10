@@ -66,6 +66,7 @@ SRCS_MSXLIB=\
 	lib\msx\vram_x.asm \
 	lib\game\tiles.asm \
 	lib\game\player.asm \
+	lib\game\player_x.asm \
 	lib\game\enemy.asm \
 	lib\game\enemy_routines.asm \
 	lib\game\enemy_handlers.asm

@@ -221,10 +221,6 @@ ENASCR_NO_FADE:
 ENASCR_FADE_IN:
 ; Clears NAMTBL
 	halt	; (sync in case screen was enabled)
-	; ld	hl, NAMTBL
-	; ld	bc, NAMTBL_SIZE
-	; ld	a, $20 ; " " ASCII
-	; call	FILVRM
 	call	CLS
 ; Disables sprites
 	ld	hl, SPRATR
@@ -505,6 +501,19 @@ MOVE_SPRITES.MULTI:
 	ld	[hl], a
 	djnz	.LOOP
 	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+IFDEF CFG_DEBUG_BDRCLR
+; Instantly changes border color
+; param b: color
+SET_BDRCLR:
+	push	bc
+	ld	c, $07
+	call	WRTVDP
+	pop	bc
+	ret
+ENDIF
 ; -----------------------------------------------------------------------------
 
 ; EOF

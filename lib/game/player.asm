@@ -157,11 +157,13 @@ GET_PLAYER_TILE_FLAGS:
 ; when aligned to the tile boundary
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_LEFT_FAST:
+IFDEF CFG_OPT_SPEED
 ; Aligned to tile boundary?
 	ld	a, [player.x]
 	add	PLAYER_BOX_X_OFFSET
 	and	$07
 	jr	nz, CHECK_NO_TILES ; no: return no flags
+ENDIF
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -177,11 +179,13 @@ GET_PLAYER_TILE_FLAGS_LEFT:
 ; when aligned to the tile boundary
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_RIGHT_FAST:
+IFDEF CFG_OPT_SPEED
 ; Aligned to tile boundary?
 	ld	a, [player.x]
 	add	PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH
 	and	$07
 	jr	nz, CHECK_NO_TILES ; no: return no flags
+ENDIF
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -217,11 +221,13 @@ GET_PLAYER_V_TILE_FLAGS:
 ; when aligned to the tile boundary
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_OVER_FAST:
+IFDEF CFG_OPT_SPEED
 ; Aligned to tile boundary?
 	ld	a, [player.y]
 	add	PLAYER_BOX_Y_OFFSET
 	and	$07
 	jr	nz, CHECK_NO_TILES ; no: return no flags
+ENDIF
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -245,6 +251,7 @@ GET_PLAYER_TILE_FLAGS_WIDE:
 ; when aligned to a tile boundary
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_UNDER_FAST:
+IFDEF CFG_OPT_SPEED
 ; Aligned to tile boundary?
 ; (or falling fast enough to cross the tile boundary?)
 	ld	a, [player.y]
@@ -255,6 +262,7 @@ IFDEF CFG_PLAYER_GRAVITY
 ELSE
 	and	$07
 	jr	nz, CHECK_NO_TILES ; no: return no flags
+ENDIF
 ENDIF
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -288,7 +296,7 @@ GET_PLAYER_H_TILE_FLAGS:
 
 ; -----------------------------------------------------------------------------
 ; Convenience routine to read no flags
-; (used in _FAST version of the checks)
+; (used in GET_PLAYER_TILE_FLAGS_*_FAST)
 ; ret a: 0
 ; ret z
 CHECK_NO_TILES:

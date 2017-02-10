@@ -33,6 +33,7 @@ TMX2BIN=tmx2bin
 # PACK_EXTENSION=plet5
 
 # Uncomment for ZX7
+# (please note that ZX7 does not overwrite output)
 PACK=zx7.exe
 PACK_EXTENSION=zx7
 
@@ -51,21 +52,24 @@ ROM=\
 	
 ROM_INTERMEDIATE=\
 	$(GAME_PATH)\$(GAME).rom
+	
+SYM_INTERMEDIATE=\
+	$(GAME_PATH)\$(GAME).sym
 
 SRCS_MSXLIB=\
-	lib\rom.asm \
 	lib\ram.asm \
 	lib\asm.asm \
 	lib\msx\symbols.asm \
 	lib\msx\cartridge.asm \
 	lib\msx\input.asm \
 	lib\msx\vram.asm \
+	lib\msx\vram_x.asm \
 	lib\game\tiles.asm \
 	lib\game\player.asm \
+	lib\game\player_x.asm \
 	lib\game\enemy.asm \
 	lib\game\enemy_routines.asm \
-	lib\game\enemy_handlers.asm \
-	lib\extra\spriteables.asm
+	lib\game\enemy_handlers.asm
 
 GFXS=\
 	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
@@ -95,20 +99,24 @@ DATAS_INTERMEDIATE=\
 default: compile
 
 clean:
-	$(REMOVE) tniasm.sym tniasm.tmp
+	$(REMOVE) $(ROM_INTERMEDIATE)
+	$(REMOVE) $(SYM_INTERMEDIATE) tniasm.sym tniasm.tmp
+
+cleandata:
 	$(REMOVE) $(GFXS) $(GFXS_INTERMEDIATE)
 	$(REMOVE) $(SPRS) $(SPRS_INTERMEDIATE)
 	$(REMOVE) $(DATAS) $(DATAS_INTERMEDIATE)
 
-cleanrom:
-	$(REMOVE) $(ROM_INTERMEDIATE)
+cleanall: clean cleandata
 
 compile: $(ROM_INTERMEDIATE)
 
 test: $(ROM_INTERMEDIATE)
+	cmd /c dir $(GAME_PATH)\$(GAME).*
 	$(EMULATOR) $<
 
-debug: $(ROM_INTERMEDIATE)
+debug: $(ROM_INTERMEDIATE) $(SYM_INTERMEDIATE)
+	cmd /c dir $(GAME_PATH)\$(GAME).*
 	$(DEBUGGER) $<
 
 deploy: $(ROM)
@@ -125,12 +133,11 @@ $(GAME_PATH):
 	$(COPY) $(TEMPLATE_PATH) $@
 	$(RENAME) $(GAME_PATH)\template.asm $(GAME).asm
 	
-$(ROM_INTERMEDIATE): $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(GFXS) $(SPRS) $(DATAS)
+$(ROM_INTERMEDIATE) tniasm.sym: $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(GFXS) $(SPRS) $(DATAS)
 	$(ASM) $< $@
-	@findstr /C:"ROM_START"	tniasm.sym
-	@findstr /C:"ROM_END"	tniasm.sym
-	@findstr /C:"ram_start"	tniasm.sym
-	@findstr /C:"ram_end"	tniasm.sym
+
+$(SYM_INTERMEDIATE): tniasm.sym
+	$(COPY) $< $@
 
 $(ROM): $(ROM_INTERMEDIATE)
 	$(COPY) $< $@
@@ -140,15 +147,18 @@ $(ROM): $(ROM_INTERMEDIATE)
 #
 
 %.pcx.chr.$(PACK_EXTENSION): %.pcx.chr
+	$(REMOVE) $@
 	$(PACK) $<
 
 %.pcx.clr.$(PACK_EXTENSION): %.pcx.clr
+	$(REMOVE) $@
 	$(PACK) $<
 
 %.pcx.nam.$(PACK_EXTENSION): %.pcx.nam
+	$(REMOVE) $@
 	$(PACK) $<
 
-# -lh by default as packing produces smaller binaries
+# -lh by default because packing usally produces smaller binaries
 %.pcx.chr %.pcx.clr: %.pcx
 	$(PCX2MSX) -lh $<
 
@@ -157,6 +167,7 @@ $(ROM): $(ROM_INTERMEDIATE)
 #
 
 %.pcx.spr.$(PACK_EXTENSION): %.pcx.spr
+	$(REMOVE) $@
 	$(PACK) $<
 
 %.pcx.spr: %.pcx
@@ -167,6 +178,7 @@ $(ROM): $(ROM_INTERMEDIATE)
 #
 
 %.tmx.bin.$(PACK_EXTENSION): %.tmx.bin
+	$(REMOVE) $@
 	$(PACK) $<
 
 %.tmx.bin: %.tmx

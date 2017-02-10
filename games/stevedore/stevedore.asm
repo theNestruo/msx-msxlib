@@ -6,6 +6,15 @@
 ;
 
 ; -----------------------------------------------------------------------------
+; Define to visually debug frame timing
+	; CFG_DEBUG_BDRCLR:
+	
+; Define to prefer speed over size wherever speed does matter
+; (e.g.: jp instead of jr, inline routines, etc.)
+	; CFG_OPT_SPEED:
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; MSX cartridge (ROM) header, entry point and initialization
 
 ; Define if the ROM is larger than 16kB (typically, 32kB)
@@ -127,7 +136,7 @@ TILE_FLAGS_TABLE:
 ; Default player control routines (platformer game)
 
 ; Logical sprite sizes (bounding box size) (pixels)
-	CFG_PLAYER_WIDTH:		equ 8
+	CFG_PLAYER_WIDTH:		equ 10
 	CFG_PLAYER_HEIGHT:		equ 16
 
 ; Number of player sprites (i.e.: number of colors)
@@ -380,17 +389,33 @@ GAME_LOOP_INIT:
 GAME_LOOP:
 ; Prepares next frame (1/2)
 	call	PUT_PLAYER_SPRITE
-; Blit buffers to VRAM
+	
+; Synchronization (halt)
+IFDEF CFG_DEBUG_BDRCLR
+	ld	b, 1
+	call	SET_BDRCLR ; black: free frame time
 	halt
+	ld	b, 4
+	call	SET_BDRCLR ; blue: VDP busy
+ELSE
+	halt
+ENDIF
+
+; Blit buffers to VRAM
 	call	EXECUTE_VPOKES
 	call	LDIRVM_SPRATR
+IFDEF CFG_DEBUG_BDRCLR
+	ld	b, 12 ; green: game logic
+	call	SET_BDRCLR
+ENDIF
+
 ; Prepares next frame (2/2)
 	call	RESET_SPRITES
-	
+
 ; Read input devices
 	call	GET_STICK_BITS
 	call	GET_TRIGGER
-	
+
 ; Game logic
 	call	UPDATE_SPRITEABLES
 	call	UPDATE_BOXES_AND_ROCKS	; (custom)
@@ -418,7 +443,12 @@ GAME_LOOP:
 	cp	PLAYER_STATE_DEAD
 	jr	z, PLAYER_OVER ; player is dead
 
+IFDEF CFG_DEBUG_BDRCLR
+	ld	b, 6
+	call	SET_BDRCLR ; red: this is bad
+ENDIF
 .THIS_IS_BAD:
+	halt
 	call	BEEP
 	jr	.THIS_IS_BAD
 ; -----------------------------------------------------------------------------
@@ -829,7 +859,7 @@ ON_PLAYER_PUSH:
 
 .RIGHT:
 ; lee el tile bajo que se está empujando
-	ld	a, PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH ; x += offset + width
+	ld	a, PLAYER_BOX_X_OFFSET +CFG_PLAYER_WIDTH ; x += offset + width
 	call	.GET_PUSHED_TILE
 ; ¿es la parte baja izquierda?
 	and	3 ; (porque están alienados a $?0 y $?4)
@@ -839,7 +869,7 @@ ON_PLAYER_PUSH:
 	ld	a, PLAYER_STATE_PUSH
 	ld	[player.state], a
 ; ¿hay hueco para empujar?
-	ld	a, PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH +16
+	ld	a, PLAYER_BOX_X_OFFSET +CFG_PLAYER_WIDTH +16
 	call	GET_PLAYER_V_TILE_FLAGS
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; no
@@ -847,7 +877,7 @@ ON_PLAYER_PUSH:
 	call	.CHECK_FRAMES_PUSHING
 	ret	nz ; no
 ; sí: localiza el elemento empujable e inicia su movimiento
-	ld	a, PLAYER_BOX_X_OFFSET +16 ; tile to the right of the player
+	ld	a, PLAYER_BOX_X_OFFSET +CFG_PLAYER_WIDTH +8
 	call	.LOCATE_PUSHABLE
 	jp	MOVE_SPRITEABLE_RIGHT
 	
@@ -871,7 +901,7 @@ ON_PLAYER_PUSH:
 	call	.CHECK_FRAMES_PUSHING
 	ret	nz ; no
 ; sí: localiza el elemento empujable e inicia su movimiento
-	ld	a, PLAYER_BOX_X_OFFSET -1 ; tile to the left of the player
+	ld	a, PLAYER_BOX_X_OFFSET -8
 	call	.LOCATE_PUSHABLE
 	jp	MOVE_SPRITEABLE_LEFT
 ; -----------------------------------------------------------------------------
@@ -982,22 +1012,23 @@ SPRTBL_PACKED:
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
-	; dw	.TUTORIAL_01
-	; dw	.TUTORIAL_02
+	; dw	.TEST
+	
+	dw	.TUTORIAL_01
+	dw	.TUTORIAL_02
 	dw	.TUTORIAL_03
 	dw	.TUTORIAL_04
 	dw	.TUTORIAL_05
 	dw	.JUNGLE_01
 	dw	.VOLCANO_01
-	dw	.TEST
 	
 .TEST:
 	incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
 .TUTORIAL_01:
 	incbin	"games/stevedore/tutorial_01.tmx.bin.zx7"
-; .TUTORIAL_02:
-	; incbin	"games/stevedore/tutorial_02.tmx.bin.zx7"
+.TUTORIAL_02:
+	incbin	"games/stevedore/tutorial_02.tmx.bin.zx7"
 .TUTORIAL_03:
 	incbin	"games/stevedore/tutorial_03.tmx.bin.zx7"
 .TUTORIAL_04:
