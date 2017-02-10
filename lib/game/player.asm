@@ -89,6 +89,18 @@ MOVE_PLAYER_LEFT:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Moves the player n pixels up or down
+; parm a: dy value
+MOVE_PLAYER_V:
+; player.y += dy
+	ld	hl, player.y
+	add	[hl]
+	ld	[hl], a
+	ret
+; -----------------------------------------------------------------------------
+
+
+; -----------------------------------------------------------------------------
 ; Sets the player state, but keeping the "left" flag
 ; param a: new player state
 ; ret a: new player state with previous left flag
@@ -131,7 +143,7 @@ LD_HL_A_MASK:
 
 ; -----------------------------------------------------------------------------
 ; Reads the tile index (value) at the player coordinates
-; (one pixel over the player logical coordinates)
+; (one pixel above the player logical coordinates)
 ; ret hl: NAMTBL buffer pointer
 ; ret a: tile index (value)
 ; touches: de
@@ -143,7 +155,7 @@ GET_PLAYER_TILE_VALUE:
 
 ; -----------------------------------------------------------------------------
 ; Reads the tile flags at the player coordinates
-; (one pixel over the player logical coordinates)
+; (one pixel above the player logical coordinates)
 ; ret hl: NAMTBL buffer pointer
 ; ret a: tile flags
 ; touches: de
@@ -157,13 +169,11 @@ GET_PLAYER_TILE_FLAGS:
 ; when aligned to the tile boundary
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_LEFT_FAST:
-IFDEF CFG_OPT_SPEED
 ; Aligned to tile boundary?
 	ld	a, [player.x]
 	add	PLAYER_BOX_X_OFFSET
 	and	$07
-	jr	nz, CHECK_NO_TILES ; no: return no flags
-ENDIF
+	jp	nz, CHECK_NO_TILES ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -179,13 +189,11 @@ GET_PLAYER_TILE_FLAGS_LEFT:
 ; when aligned to the tile boundary
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_RIGHT_FAST:
-IFDEF CFG_OPT_SPEED
 ; Aligned to tile boundary?
 	ld	a, [player.x]
 	add	PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH
 	and	$07
-	jr	nz, CHECK_NO_TILES ; no: return no flags
-ENDIF
+	jp	nz, CHECK_NO_TILES ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -217,30 +225,28 @@ GET_PLAYER_V_TILE_FLAGS:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles over the player
+; Returns the OR-ed flags of the tiles above the player
 ; when aligned to the tile boundary
 ; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_OVER_FAST:
-IFDEF CFG_OPT_SPEED
+GET_PLAYER_TILE_FLAGS_ABOVE_FAST:
 ; Aligned to tile boundary?
 	ld	a, [player.y]
 	add	PLAYER_BOX_Y_OFFSET
 	and	$07
-	jr	nz, CHECK_NO_TILES ; no: return no flags
-ENDIF
+	jp	nz, CHECK_NO_TILES ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles over the player
+; Returns the OR-ed flags of the tiles above the player
 ; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_OVER:
+GET_PLAYER_TILE_FLAGS_ABOVE:
 	ld	a, PLAYER_BOX_Y_OFFSET - 1
 	jr	GET_PLAYER_H_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles at the player coordinates
-; (one pixel over the player logical coordinates, full width)
+; (one pixel above the player logical coordinates, full width)
 GET_PLAYER_TILE_FLAGS_WIDE:
 	ld	a, -1
 	jr	GET_PLAYER_H_TILE_FLAGS
@@ -251,7 +257,6 @@ GET_PLAYER_TILE_FLAGS_WIDE:
 ; when aligned to a tile boundary
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_UNDER_FAST:
-IFDEF CFG_OPT_SPEED
 ; Aligned to tile boundary?
 ; (or falling fast enough to cross the tile boundary?)
 	ld	a, [player.y]
@@ -262,7 +267,6 @@ IFDEF CFG_PLAYER_GRAVITY
 ELSE
 	and	$07
 	jr	nz, CHECK_NO_TILES ; no: return no flags
-ENDIF
 ENDIF
 ; ------VVVV----falls through--------------------------------------------------
 

@@ -53,7 +53,7 @@ IFEXIST ON_PLAYER_WALK_ON
 ENDIF
 	
 IFEXIST ON_PLAYER_WIDE_ON
-; Returns the OR-ed flags of the tiles at the player coordinates
+; Reads the OR-ed flags of the tiles at the player coordinates
 	call	GET_PLAYER_TILE_FLAGS_WIDE
 ; Has wide tile collision (player width) bit?
 	bit	BIT_WORLD_WIDE_ON, a
@@ -61,7 +61,7 @@ IFEXIST ON_PLAYER_WIDE_ON
 ENDIF
 	
 IFEXIST ON_PLAYER_WALK_OVER
-; Returns the OR-ed flags of the tiles under the player
+; Reads the OR-ed flags of the tiles under the player
 	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
 ; Has walking over tiles (player width) bit?
 	bit	BIT_WORLD_WALK_OVER, a
@@ -72,7 +72,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Set the player on the floor
+; Set the player to be on the floor in the next frame
 SET_PLAYER_FLOOR:
 ; Y adjust
 	ld	a, [player.y]
@@ -90,44 +90,47 @@ UPDATE_PLAYER_FLOOR:
 ; Trying to get on stairs?
 	ld	hl, stick
 	bit	BIT_STICK_UP, [hl]
-	jr	z, .NO_UPSTAIRS ; no
-; yes (upstairs)
+	jr	nz, .CHECK_UPSTAIRS ; yes (upstairs)
+	bit	BIT_STICK_DOWN, [hl]
+	jr	nz, .CHECK_DOWNSTAIRS ; yes (downstairs)
+
+.NO_STAIRS:
+; Jumping?
+	ld	hl, stick_edge
+	bit	BIT_STICK_UP, [hl]
+	jr	nz, SET_PLAYER_JUMPING ; yes
+	
+; Moves horizontally with animation
+	call	MOVE_PLAYER_LR_ANIMATE
+	
+; Is there floor under the player?
+	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
+	bit	BIT_WORLD_FLOOR, a
+	jr	z, SET_PLAYER_FALLING ; no
+; yes	
+	ret
+	
+.CHECK_UPSTAIRS:
+; Trying to get on stairs upstairs
 	call	GET_PLAYER_TILE_FLAGS
 	jr	.CHECK_STAIRS
 	
-.NO_UPSTAIRS:
-	ld	hl, stick
-	bit	BIT_STICK_DOWN, [hl]
-	jr	z, .NO_STAIRS ; no
-; yes (downstairs)
+.CHECK_DOWNSTAIRS:
+; Trying to get on stairs downstairs
 	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
 	; jr	.CHECK_STAIRS ; falls through
 	
 .CHECK_STAIRS:
-; Are there stairs? (i.e.:Stairs flags, but not solid flag)
+; Are there stairs? (i.e.: stairs flags, but not solid flag)
 	and	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_STAIRS)
 	cp	(1 << BIT_WORLD_STAIRS)
-	jr	z, SET_PLAYER_STAIRS ; yes
-
-.NO_STAIRS:
-; No: Jumping?
-	ld	hl, stick_edge
-	bit	BIT_STICK_UP, [hl]
-	jp	nz, SET_PLAYER_JUMPING ; yes
-	
-; no: Moves horizontally with animation
-	call	MOVE_PLAYER_LR_ANIMATE
-	
-; Floor under the player?
-	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
-	bit	BIT_WORLD_FLOOR, a
-	ret	nz ; yes
-; no
-	jp	SET_PLAYER_FALLING
-; -----------------------------------------------------------------------------
+	jr	nz, .NO_STAIRS ; no
+; yes
+	; jr	SET_PLAYER_STAIRS ; falls through
+; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
-; Set the player on stairs
+; Set the player on stairs in the next frame
 SET_PLAYER_STAIRS:
 ; Sets the player state
 	ld	a, PLAYER_STATE_STAIRS
@@ -135,199 +138,203 @@ SET_PLAYER_STAIRS:
 	
 ; Moves horizontally and vertically
 	call	MOVE_PLAYER_LR
-	jr	UPDATE_PLAYER_STAIRS_0
+	jr	UPDATE_PLAYER_STAIRS.ON
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Rutina de control de jugador cuando el jugador está en unas escaleras
+; Control routine when the player is on stairs
 UPDATE_PLAYER_STAIRS:
-; Gestiona el desplazamiento lateral
+; Moves horizontally (no animation)
 	call	MOVE_PLAYER_LR
-; ¿Ha salido de la escalera?
+; Moved out of the stairs? (sides)
 	call	GET_PLAYER_TILE_FLAGS
 	bit	BIT_WORLD_STAIRS, a
-	jp	z, SET_PLAYER_OFF_STAIRS ; sí
+	jr	z, .OFF ; yes
 	
-UPDATE_PLAYER_STAIRS_0:
-; no: ¿desplazamiento vertical?
+.ON:
+; Manages vertical movement
 	ld	hl, stick
+	bit	BIT_STICK_DOWN, [hl]
+	jr	nz, .DOWN
 	bit	BIT_STICK_UP, [hl]
-	jr	z, .NO_UP
-; sí (arriba): ¿Hay sólido?
-	call	GET_PLAYER_TILE_FLAGS_OVER_FAST
+	ret	z
+	
+.UP:
+; Is there solid above the player?
+	call	GET_PLAYER_TILE_FLAGS_ABOVE_FAST
 	bit	BIT_WORLD_SOLID, a
-	ret	nz ; sí
-; no
+	ret	nz ; yes
+; no: keep moving
 	ld	hl, player.y
 	dec	[hl]
 	jp	UPDATE_PLAYER_ANIMATION
 
-.NO_UP:
-	bit	BIT_STICK_DOWN, [hl]
-	ret	z ; no
-; sí (abajo): ¿Sigue habiendo escaleras?
-	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
+.DOWN:
+; Moved out of the stairs? (down)
+	call	GET_PLAYER_TILE_FLAGS_UNDER
 	bit	BIT_WORLD_STAIRS, a
-	jr	z, SET_PLAYER_OFF_STAIRS ; no
-; sí: ¿Hay sólido?
+	jr	z, .OFF ; yes
+; no: Is there solid under the player?
 	bit	BIT_WORLD_SOLID, a
-	ret	nz ; sí
-; no
+	ret	nz ; yes
+; no: keep moving
 	ld	hl, player.y
 	inc	[hl]
 	jp	UPDATE_PLAYER_ANIMATION
 	
-SET_PLAYER_OFF_STAIRS:
-; ¿hay suelo por abajo?
+.OFF:
+; Is there floor under the player?
 	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
 	bit	BIT_WORLD_FLOOR, a
-	jp	nz, SET_PLAYER_FLOOR ; sí
-	jp	SET_PLAYER_FALLING ; no
+	jp	nz, SET_PLAYER_FLOOR ; yes
+	; jp	SET_PLAYER_FALLING ; no ; falls through
+; ------VVVV----falls through--------------------------------------------------
+	
 ; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Hace que el jugador empiece a caer
+; Set the player to be falling in the next frame
 SET_PLAYER_FALLING:
-; cambia el estado
+; Sets the player state
 	ld	a, PLAYER_STATE_AIR
 	call	SET_PLAYER_STATE
-; inicializa el puntero a la tabla de dy
-	ld	a, JUMP_DY_TABLE_FALL_OFFSET
+; Initializes Delta-Y (dY) table index
+	ld	a, PLAYER_DY_TABLE.FALL_OFFSET
 	ld	[player.dy_index], a
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Hace que el jugador salte
+; Set the player to be jumping in the next frame
 SET_PLAYER_JUMPING:
-; cambia el estado
+; Sets the player state
 	ld	a, PLAYER_STATE_AIR
 	call	SET_PLAYER_STATE
-; inicializa el puntero a la tabla de dy
+; Initializes Delta-Y (dY) table index
 	xor	a
 	ld	[player.dy_index], a
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Rutina de control de jugador cuando el jugador está saltando o cayendo
+; Control routine when the player is on air (either jumping or falling)
 UPDATE_PLAYER_AIR:
-; Gestiona el desplazamiento lateral
+; Moves horizontally (no animation)
 	call	MOVE_PLAYER_LR
 	
-; Gestiona el desplazamiento vertical
-	call	UPDATE_PLAYER_DY
+; Updates Delta-Y (dY) table index
+	call	UPDATE_PLAYER_DY_INDEX
 	or	a
 	ret	z ; (dy == 0)
 	jp	m, .UP ; (dy < 0)
 
-; (dy > 0): ¿Hay suelo debajo del jugador?
-	push	af ; preserva dy
+; (dy > 0): Is there floor under the player?
+	push	af ; preserves dy
 	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
 	bit	BIT_WORLD_FLOOR, a
-	pop	bc ; restaura dy (en b para no pisar f)
-	jp	nz, SET_PLAYER_FLOOR ; sí
+	pop	bc ; restores dy in b (to keep f)
+	jp	nz, SET_PLAYER_FLOOR ; yes
 ; no
-	ld	a, b ; restaura dy (en a)
-	jp	MOVE_PLAYER_DY
+	ld	a, b ; restores dy in a
+	jp	MOVE_PLAYER_V
 	
 .UP:
-; (dy < 0): ¿Hay sólido encima del jugador?
-	push	af ; preserva dy
-	call	GET_PLAYER_TILE_FLAGS_OVER_FAST
+; (dy < 0): Is there solid above the player?
+	push	af ; preserves dy
+	call	GET_PLAYER_TILE_FLAGS_ABOVE_FAST
 	bit	BIT_WORLD_SOLID, a
-	pop	bc ; restaura dy (en b para no pisar f)
-	jp	nz, SET_PLAYER_FALLING ; sí
+	pop	bc ; restores dy in b (to keep f)
+	jp	nz, SET_PLAYER_FALLING ; yes
 ; no
-	ld	a, b ; restaura dy (en a)
-	jp	MOVE_PLAYER_DY
+	ld	a, b ; restores dy in a
+	jp	MOVE_PLAYER_V
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Hace que el jugador empiece a morir
+; Control routine when the player is on stairs
 SET_PLAYER_DYING:
-; ¿ya está muriendo? (evita que vuelva a empezar a morir si ya está muriendo)
+; Is the player already dying?
 	ld	a, [player.state]
 	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_DYING
-	ret	z ; sí
-; no: cambia el estado
+	ret	z ; yes (do nothing)
+; no: Sets the player state
 	ld	a, PLAYER_STATE_DYING
 	call	SET_PLAYER_STATE
-; inicializa el puntero a la tabla de dy
+; Initializes Delta-Y (dY) table index
 	xor	a
 	ld	[player.dy_index], a
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Rutina de control de jugador cuando está muriendo
+; Control routine when the player is dying
 UPDATE_PLAYER_DYING:
-; Anima
+; Animation and vertical movement
 	call	UPDATE_PLAYER_ANIMATION
-; Gestiona el desplazamiento vertical
-	call	UPDATE_PLAYER_DY
-	call	MOVE_PLAYER_DY
-; ¿fin de la pantalla?
+	call	UPDATE_PLAYER_DY_INDEX
+	call	MOVE_PLAYER_V
+; Is the player off-screen?
 	ld	a, [player.y]
 	cp	192 +16 +1
 	ret	c ; no
+; yes
 	; jr	SET_PLAYER_DEAD ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Hace que el jugador acabe de morir (condición de salida)
+; Set the player to be dead (with special state marker: exit state)
 SET_PLAYER_DEAD:
-; cambia el estado
+; Sets the player state
 	ld	a, PLAYER_STATE_DEAD
 	jp	SET_PLAYER_STATE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Gestiona el desplazamiento lateral en función de los cursores, sin animación
+; Moves the player left or right, according input
 MOVE_PLAYER_LR:
-; ¿Desplazamiento lateral?
+; Manages horizontal movement
 	ld	hl, stick
 	bit	BIT_STICK_RIGHT, [hl]
-	jr	z, .NO_RIGHT
-	
-; sí: derecha
-	call	GET_PLAYER_TILE_FLAGS_RIGHT_FAST
-	bit	BIT_WORLD_SOLID, a
-	ret	nz
-	jp	MOVE_PLAYER_RIGHT
-	
-.NO_RIGHT:
+	jr	nz, .RIGHT
 	bit	BIT_STICK_LEFT, [hl]
-	ret	z ; no
+	ret	z
 	
-; sí: izquierda
+.LEFT:
+; Is there solid left to the player?
 	call	GET_PLAYER_TILE_FLAGS_LEFT_FAST
 	bit	BIT_WORLD_SOLID, a
-	ret	nz
+	ret	nz ; yes
+; no
 	jp	MOVE_PLAYER_LEFT
+	
+.RIGHT:
+; Is there solid right to the player?
+	call	GET_PLAYER_TILE_FLAGS_RIGHT_FAST
+	bit	BIT_WORLD_SOLID, a
+	ret	nz ; yes
+; no
+	jp	MOVE_PLAYER_RIGHT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Gestiona el desplazamiento lateral en función de los cursores, con animación
+; Moves the player left or right, according input, with animation
 MOVE_PLAYER_LR_ANIMATE:
-; ¿Desplazamiento lateral?
+; Manages horizontal movement
 	ld	hl, stick
-	bit	BIT_STICK_RIGHT, [hl]
-	jr	nz, .RIGHT ; sí (derecha)
 	bit	BIT_STICK_LEFT, [hl]
-	jr	nz, .LEFT ; sí (izquierda)
+	jr	nz, .LEFT
+	bit	BIT_STICK_RIGHT, [hl]
+	jr	nz, .RIGHT
 
 .RESET_ANIMATION:
-; resetea el contador de animación
+; Resets the animation counter
 	xor	a
 	ld	[player.animation_delay], a
-; apaga el bit de animación
+; Turns off the animation flag
 	ld	hl, player.state
 	res	BIT_STATE_ANIM, [hl]
 
 IFEXIST ON_PLAYER_PUSH
-.RESET_STATE:
-; resetea el estado si está activa la UX de empujar
+.RESET_FLOOR:
+; Resets floor state (in case ON_PLAYER_PUSH is defined)
 	ld	a, PLAYER_STATE_FLOOR
 	ld	b, $ff XOR FLAGS_STATE
 	jp	SET_PLAYER_STATE.MASK
@@ -335,77 +342,66 @@ ELSE
 	ret
 ENDIF
 
-.RIGHT:
-	call	GET_PLAYER_TILE_FLAGS_RIGHT ; _FAST
-	
-; UX: ¿empujando tiles (alto del jugador)?
-IFEXIST ON_PLAYER_PUSH.RIGHT
-	bit	BIT_WORLD_PUSHABLE, a
-	jp	nz, ON_PLAYER_PUSH.RIGHT ; sí
-ENDIF
-
-; ¿Hay sólido a la derecha?
-	bit	BIT_WORLD_SOLID, a
-	jr	nz, .RESET_ANIMATION ; sí
-
-; resetea el estado si está activa la UX de empujar
-IFEXIST ON_PLAYER_PUSH
-	call	.RESET_STATE
-ENDIF
-
-; no: mueve y anima
-	call	MOVE_PLAYER_RIGHT
-	jp	UPDATE_PLAYER_ANIMATION
-
 .LEFT:
-	call	GET_PLAYER_TILE_FLAGS_LEFT ; _FAST
+; Is there solid left to the player?
+	call	GET_PLAYER_TILE_FLAGS_LEFT_FAST
 
-; UX: ¿empujando tiles (alto del jugador)?
 IFEXIST ON_PLAYER_PUSH.LEFT
+; Are there pushable tiles left to the player?
 	bit	BIT_WORLD_PUSHABLE, a
-	jp	nz, ON_PLAYER_PUSH.LEFT ; sí
+	jp	nz, ON_PLAYER_PUSH.LEFT ; yes
 ENDIF
 
-; ¿Hay sólido a la izquierda?
+; Is there solid left to the player?
 	bit	BIT_WORLD_SOLID, a
-	jr	nz, .RESET_ANIMATION ; sí
+	jr	nz, .RESET_ANIMATION ; yes
 
-; resetea el estado si está activa la UX de empujar
+; no
 IFEXIST ON_PLAYER_PUSH
-	call	.RESET_STATE
+; Resets floor state (in case ON_PLAYER_PUSH is defined)
+	call	.RESET_FLOOR
+ENDIF
+	call	UPDATE_PLAYER_ANIMATION
+	jp	MOVE_PLAYER_LEFT
+
+.RIGHT:
+; Is there solid right to the player?
+	call	GET_PLAYER_TILE_FLAGS_RIGHT_FAST
+	
+IFEXIST ON_PLAYER_PUSH.RIGHT
+; Are there pushable tiles right to the player?
+	bit	BIT_WORLD_PUSHABLE, a
+	jp	nz, ON_PLAYER_PUSH.RIGHT ; yes
 ENDIF
 
-; no: mueve y anima
-	call	MOVE_PLAYER_LEFT
-	jp	UPDATE_PLAYER_ANIMATION
+; Is there solid right to the player?
+	bit	BIT_WORLD_SOLID, a
+	jr	nz, .RESET_ANIMATION ; yes
+
+; no
+IFEXIST ON_PLAYER_PUSH
+; Resets floor state (in case ON_PLAYER_PUSH is defined)
+	call	.RESET_FLOOR
+ENDIF
+	call	UPDATE_PLAYER_ANIMATION
+	jp	MOVE_PLAYER_RIGHT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Gestiona el puntero de desplazamiento vertical
-; ret a: dy
-UPDATE_PLAYER_DY:
-; ¿Se ha alcanzado el final de la tabla de dy?
+; Updates Delta-Y (dY) table index
+; ret a: dy value
+UPDATE_PLAYER_DY_INDEX:
+; Delta-Y (dY) table end reached?
 	ld	hl, player.dy_index
 	ld	a, [hl]
-	cp	JUMP_DY_TABLE_SIZE -1
-	jr	z, .DY_MAX ; sí
-; no: avanza el puntero
+	cp	PLAYER_DY_TABLE.SIZE -1
+	jr	z, .DY_MAX ; yes
+; no: moves the pointer forward
 	inc	[hl]
 .DY_MAX:
-; Lee el valor de dy
-	ld	hl, JUMP_DY_TABLE
+; Reads and return dy
+	ld	hl, PLAYER_DY_TABLE
 	jp	GET_HL_A_BYTE
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Mueve el jugador en vertical
-; parm a: dy
-MOVE_PLAYER_DY:
-; y += dy
-	ld	hl, player.y
-	add	[hl]
-	ld	[hl], a
-	ret
 ; -----------------------------------------------------------------------------
 
 ; EOF

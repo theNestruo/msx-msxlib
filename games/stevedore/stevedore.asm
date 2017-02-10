@@ -136,7 +136,7 @@ TILE_FLAGS_TABLE:
 ; Default player control routines (platformer game)
 
 ; Logical sprite sizes (bounding box size) (pixels)
-	CFG_PLAYER_WIDTH:		equ 10
+	CFG_PLAYER_WIDTH:		equ 8
 	CFG_PLAYER_HEIGHT:		equ 16
 
 ; Number of player sprites (i.e.: number of colors)
@@ -172,16 +172,16 @@ PLAYER_UPDATE_TABLE:
 	CFG_PLAYER_GRAVITY:		equ 4
 
 ; Delta-Y (dY) table for jumping and falling
-JUMP_DY_TABLE:
+PLAYER_DY_TABLE:
 	db	-4, -4			; (2,-8)
 	db	-2, -2, -2		; (5,-14)
 	db	-1, -1, -1, -1, -1, -1	; (11,-20)
 	db	 0,  0,  0,  0,  0,  0	; (17,-20)
-	JUMP_DY_TABLE_FALL_OFFSET:	equ $ - JUMP_DY_TABLE
+	.FALL_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
 	db	2, 2, 2			; (26,-8) / (9,12)
 	db	CFG_PLAYER_GRAVITY	; (terminal falling speed)
-	JUMP_DY_TABLE_SIZE:		equ $ - JUMP_DY_TABLE
+	.SIZE:		equ $ - PLAYER_DY_TABLE
 
 ; Player related routines (generic)
 	include	"lib/game/player.asm"

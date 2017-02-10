@@ -71,6 +71,10 @@ SRCS_MSXLIB=\
 	lib\game\enemy_routines.asm \
 	lib\game\enemy_handlers.asm
 
+SRCS_LIBEXT=\
+	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
+	libext\zx7\dzx7_standard.tniasm.asm
+
 GFXS=\
 	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION)
@@ -133,7 +137,7 @@ $(GAME_PATH):
 	$(COPY) $(TEMPLATE_PATH) $@
 	$(RENAME) $(GAME_PATH)\template.asm $(GAME).asm
 	
-$(ROM_INTERMEDIATE) tniasm.sym: $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(GFXS) $(SPRS) $(DATAS)
+$(ROM_INTERMEDIATE) tniasm.sym: $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(GFXS) $(SPRS) $(DATAS)
 	$(ASM) $< $@
 
 $(SYM_INTERMEDIATE): tniasm.sym

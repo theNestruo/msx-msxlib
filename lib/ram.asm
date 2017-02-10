@@ -120,7 +120,7 @@ player:
 ; Current player state
 .state:
 	rb	1
-; dY table index (when jumping and falling)
+; Delta-Y (dY) table index (when jumping and falling)
 .dy_index:
 	rb	1
 ; -----------------------------------------------------------------------------

@@ -11,11 +11,13 @@
 	
 ; Define to prefer speed over size wherever speed does matter
 ; (e.g.: jp instead of jr, inline routines, etc.)
-	; CFG_OPT_SPEED:
+	CFG_OPT_SPEED:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; MSX cartridge (ROM) header, entry point and initialization
+
+	cpu	z80
 
 ; Define if the ROM is larger than 16kB (typically, 32kB)
 ; Includes search for page 2 slot/subslot at start
@@ -110,12 +112,12 @@
 
 ; Tile indexes (values) to be returned by GET_TILE_VALUE
 ; when the coordinates are over and under visible screen
-	CFG_TILES_VALUE_OVER:	equ $ff ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	CFG_TILES_VALUE_UNDER:	equ $1f ; BIT_WORLD_DEATH
+	CFG_TILES_VALUE_OVER:	equ $8f ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	CFG_TILES_VALUE_UNDER:	equ $8f ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
 
 ; Table of tile flags in pairs (up to index, tile flags)
 TILE_FLAGS_TABLE:
-	db	$7f, $00 ; [$00..$07] : 0
+	db	$7f, $00 ; [$00..$7f] : 0
 	db	$81, $00 ; [$80..$81] : 0
 	db	$8f, $03 ; [$82..$8f] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
 	db	$91, $00 ; [$90..$91] : 0
