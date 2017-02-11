@@ -1,6 +1,8 @@
 ;
 ; =============================================================================
 ;	Enemies related routines (generic)
+;	Convenience enemy state handlers (generic)
+;	Enemy-tile helper routines
 ; =============================================================================
 ;
 
@@ -31,6 +33,7 @@
 	ENEMY_STATE.HANDLER_H:	equ 1 ; State handler address (high)
 	ENEMY_STATE.ARGS:	equ 2 ; State handler arguments
 	ENEMY_STATE.SIZE:	equ 3
+	ENEMY_STATE.NEXT:	equ ENEMY_STATE.SIZE ; (for legiblity)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -125,6 +128,47 @@ UPDATE_ENEMIES:
 	ret
 ; -----------------------------------------------------------------------------
 
+;
+; =============================================================================
+;	Convenience enemy state handlers (generic)
+; =============================================================================
+;
+
+; -----------------------------------------------------------------------------
+; Sets a new current state for the current enemy
+; (this state handler is usually the last handler of a state)
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
+; ret nz (halt)
+SET_ENEMY_STATE:
+; Reads the offset to the next state in bc (16-bit signed)
+	ld	a, [iy + ENEMY_STATE.ARGS]
+IFDEF CFG_OPT_SPEED
+	ld	c, a
+	rla
+	sbc	a, a
+	ld	b, a
+ELSE
+	call	LD_BC_A
+ENDIF
+; Sets the new state as the enemy state
+	push	iy ; hl = iy + bc
+	pop	hl
+	add	hl, bc
+	ld	[ix + enemy.state_h], h
+	ld	[ix + enemy.state_l], l
+; Resets the animation flag
+	res	BIT_ENEMY_PATTERN_ANIM, [ix + enemy.pattern]
+; Resets the animation delay and the frame counter
+	xor	a
+	ld	[ix + enemy.animation_delay], a
+	ld	[ix + enemy.frame_counter], a
+; ret nz (halt)
+	inc	a
+	ret
+; -----------------------------------------------------------------------------
+
 ; -----------------------------------------------------------------------------
 ; Updates animation counter and toggles the animation flag,
 ; then puts the enemy sprite
@@ -164,261 +208,167 @@ PUT_ENEMY_SPRITE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Sets a new current state for the current enemy
-; (this state handler is usually the last handler of a state)
+; Toggles the left flag of the enemy
 ; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
-; ret nz (halt)
-SET_ENEMY_STATE:
-; Reads the offset to the next state in bc (16-bit signed)
-	ld	a, [iy + ENEMY_STATE.ARGS]
-IFDEF CFG_OPT_SPEED
-	ld	c, a
-	rla
-	sbc	a, a
-	ld	b, a
-ELSE
-	call	LD_BC_A
-ENDIF
-; Sets the new state as the enemy state
-	push	iy ; hl = iy + bc
-	pop	hl
-	add	hl, bc
-	ld	[ix + enemy.state_h], h
-	ld	[ix + enemy.state_l], l
-; Resets the animation flag
-	res	BIT_ENEMY_PATTERN_ANIM, [ix + enemy.pattern]
-; Resets the animation delay and the frame counter
-	xor	a
-	ld	[ix + enemy.animation_delay], a
-	ld	[ix + enemy.frame_counter], a
-; ret nz (halt)
-	inc	a
-	ret
-; -----------------------------------------------------------------------------
-
-;
-; =============================================================================
-;	Generic convenience routines for enemies
-; =============================================================================
-;
-
-; -----------------------------------------------------------------------------
-; Alterna el bit de dirección de un enemigo
-; param ix: puntero al enemigo
+; param iy: pointer to the current enemy state (ignored)
+; ret z (continue)
 TURN_ENEMY:
+; Toggles the left flag
 	ld	a, FLAG_ENEMY_PATTERN_LEFT
 	xor	[ix + enemy.pattern]
 	ld	[ix + enemy.pattern], a
-	ret
+; ret z (continue)
+	xor	a
+	ret	; (no enemy is expected to have the pattern $00)
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; param ix: puntero al enemigo
-; ret c/nc: c = derecha, nc = izquierda
-TURN_ENEMY_TOWARDS_PLAYER:
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jr	c, .AIM_LEFT
+; ; -----------------------------------------------------------------------------
+; ; param ix: puntero al enemigo
+; ; ret c/nc: c = derecha, nc = izquierda
+; TURN_ENEMY_TOWARDS_PLAYER:
+	; ld	a, [player.x]
+	; cp	[ix + enemy.x]
+	; jr	c, .AIM_LEFT
 	
-.AIM_RIGHT:
-	res	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	ret
+; .AIM_RIGHT:
+	; res	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	; ret
 	
-.AIM_LEFT:
-	set	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	ret
-; -----------------------------------------------------------------------------
+; .AIM_LEFT:
+	; set	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	; ret
+; ; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
-;	Convenience routines for enemies (platform games)
+;	Enemy-tile helper routines
 ; =============================================================================
 ;
 
 ; -----------------------------------------------------------------------------
-TURN_WALKING_ENEMY_TOWARDS_PLAYER:
-	call	TURN_ENEMY_TOWARDS_PLAYER
-	call	CAN_ENEMY_WALK
-	ret	nz
-	jp	TURN_ENEMY
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; param ix: puntero al enemigo
-CAN_ENEMY_WALK:
-	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, CAN_ENEMY_WALK_RIGHT
-	jr	CAN_ENEMY_WALK_LEFT
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; param ix: puntero al enemigo
-CAN_ENEMY_FLY:
-	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, CAN_ENEMY_FLY_RIGHT
-	jr	CAN_ENEMY_FLY_LEFT
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; param ix: puntero al enemigo
-CAN_ENEMY_WALK_LEFT:
-; ¿Puede seguir avanzando (comprueba suelos)?
-	call	CHECK_TILE_UNDER_LEFT_ENEMY
-	bit	BIT_WORLD_FLOOR, a
-	ret	z
-	
-CAN_ENEMY_FLY_LEFT:
-; ¿Puede seguir avanzando (comprueba colisiones)?
-	call	CHECK_TILES_LEFT_ENEMY
-	cpl	; Comprueba en negativo para devolver z/nz correctamente
-	bit	BIT_WORLD_SOLID, a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; param ix: puntero al enemigo
-CAN_ENEMY_WALK_RIGHT:
-; ¿Puede seguir avanzando (comprueba suelos)?
-	call	CHECK_TILE_UNDER_RIGHT_ENEMY
-	bit	BIT_WORLD_FLOOR, a
-	ret	z
-	
-CAN_ENEMY_FLY_RIGHT:
-; ¿Puede seguir avanzando (comprueba colisiones)?
-	call	CHECK_TILES_RIGHT_ENEMY
-	cpl	; Comprueba en negativo para devolver z/nz correctamente
-	bit	BIT_WORLD_SOLID, a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Lee las propiedades acumuladas (or) de los tiles a la izquierda del jugador
-; ret a: propiedades acumuladas (or) de los tiles
-CHECK_TILES_LEFT_ENEMY:
-; ¿hay cambio de tile hacia la izquierda?
-	ld	a, [ix + enemy.X]
+; Returns the OR-ed flags of the tiles to the left of the enemy
+; when aligned to the tile boundary
+; param ix: pointer to the current enemy
+; ret a: OR-ed tile flags
+GET_ENEMY_TILE_FLAGS_LEFT_FAST:
+; Aligned to tile boundary?
+	ld	a, [ix + enemy.x]
 	add	ENEMY_BOX_X_OFFSET
 	and	$07
-	jp	nz, CHECK_NO_TILES ; no: descarta comprobación
-	
-; sí: hace comprobación
+	jp	nz, CHECK_NO_TILES ; no: return no flags
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the OR-ed flags of the tiles to the left of the enemy
+; param ix: pointer to the current enemy
+; ret a: OR-ed tile flags
+GET_ENEMY_TILE_FLAGS_LEFT:
 	ld	a, ENEMY_BOX_X_OFFSET -1
-	jr	CHECK_V_TILES_ENEMY
+	jr	GET_ENEMY_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Lee las propiedades acumuladas (or) de los tiles a la izquierda del jugador
-; ret a: propiedades acumuladas (or) de los tiles
-CHECK_TILES_RIGHT_ENEMY:
-; ¿hay cambio de tile hacia la derecha?
-	ld	a, [ix + enemy.X]
+; Returns the OR-ed flags of the tiles to the right of the enemy
+; when aligned to the tile boundary
+; param ix: pointer to the current enemy
+; ret a: OR-ed tile flags
+GET_ENEMY_TILE_FLAGS_RIGHT_FAST:
+; Aligned to tile boundary?
+	ld	a, [ix + enemy.x]
 	add	ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
 	and	$07
-	jp	nz, CHECK_NO_TILES ; no: descarta comprobación
-	
-; sí: hace comprobación
-	ld	a, ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
-	jr	CHECK_V_TILES_ENEMY
-; -----------------------------------------------------------------------------
+	jp	nz, CHECK_NO_TILES ; no: return no flags
+; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Lee las propiedades acumuladas (or)
-; de una serie vertical de tiles relacionada con el jugador
-; param a: dy respecto a las coordenadas del jugador
-; ret a: propiedades acumuladas (or) de los tiles
-CHECK_V_TILES_ENEMY:
-; Coordenadas del enemigo
+; Returns the OR-ed flags of the tiles to the right of the enemy
+; param ix: pointer to the current enemy
+; ret a: OR-ed tile flags
+GET_ENEMY_TILE_FLAGS_RIGHT:
+	ld	a, ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
+	; jr	GET_ENEMY_V_TILE_FLAGS ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the OR-ed flags of a vertical serie of tiles
+; relative to the enemy position
+; param ix: pointer to the current enemy
+; param a: x-offset from the enemy logical coordinates
+; ret a: OR-ed tile flags
+GET_ENEMY_V_TILE_FLAGS:
+; Enemy coordinates
 	ld	e, [ix + enemy.y]
 	ld	d, [ix + enemy.x]
 ; x += dx
 	add	d
 	ld	d, a
-; y += PLAYER_Y_OFFSET
+; y += ENEMY_BOX_Y_OFFSET
 	ld	a, ENEMY_BOX_Y_OFFSET
 	add	e
 	ld	e, a
-; altura del objeto
+; Enemy height
 	ld	b, CFG_ENEMY_HEIGHT
 	jp	GET_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Lee las propiedades de un tile por debajo del enemigo
-; param ix: puntero al enemigo
-CHECK_TILE_UNDER_LEFT_ENEMY:
-	ld	a, ENEMY_BOX_X_OFFSET -1
-	jr	CHECK_TILE_UNDER_ENEMY_A_OK
-	
-CHECK_TILE_UNDER_RIGHT_ENEMY:
-	ld	a, ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
-	jr	CHECK_TILE_UNDER_ENEMY_A_OK
-	
-CHECK_TILE_UNDER_ENEMY:
-	xor	a
-	; jr	CHECK_TILES_UNDER_ENEMY_A_OK ; falls through
-	
-CHECK_TILE_UNDER_ENEMY_A_OK:
-; Coordenadas del enemigo
-	ld	e, [ix + enemy.y]
-; x += dx
-	add	[ix + enemy.x]
-	ld	d, a
-; Lee el tile
-	call	GET_TILE_VALUE
-	jp	GET_TILE_FLAGS
-; -----------------------------------------------------------------------------
-
-; ;
-; ; =============================================================================
-; ;	Subrutinas especÃ­ficas de juegos
-; ; =============================================================================
-; ;
 
 ; ; -----------------------------------------------------------------------------
-; CHECK_COLLISIONS_ENEMIES:
-; ; Recorre el array de enemigos
-	; ld	ix, enemies_array
-	; ld	b, MAX_ENEMY_COUNT
-; .LOOP:
-	; push	bc ; preserva el contador en b
-	; call	CHECK_COLLISION_ENEMY
-; ; AVanza al siguiente enemigo
-	; ld	bc, ENEMY_SIZE
-	; add	ix, bc
-	; pop	bc ; restaura el contador
-	; djnz	.LOOP
+; TURN_WALKING_ENEMY_TOWARDS_PLAYER:
+	; call	TURN_ENEMY_TOWARDS_PLAYER
+	; call	CAN_ENEMY_WALK
+	; ret	nz
+	; jp	TURN_ENEMY
 ; ; -----------------------------------------------------------------------------
 
+; ; ;
+; ; ; =============================================================================
+; ; ;	Subrutinas especÃ­ficas de juegos
+; ; ; =============================================================================
+; ; ;
 
-; ; -----------------------------------------------------------------------------
-; ; param ix
-; CHECK_COLLISION_ENEMY:
-; ; sÃ­: compara la diferencia horizontal
-	; ld	a, [player.x]
-	; sub	[ix + _ENEMY_X]
-; ; (valor absoluto)
-	; jp	p, .ELSE_X
-	; neg
-; .ELSE_X:
-; ; Â¿Hay solapamiento?
-	; cp	(PLAYER_WIDTH + ENEMY_WIDTH) /2
-	; ret	nc ; no
+; ; ; -----------------------------------------------------------------------------
+; ; CHECK_COLLISIONS_ENEMIES:
+; ; ; Recorre el array de enemigos
+	; ; ld	ix, enemies_array
+	; ; ld	b, MAX_ENEMY_COUNT
+; ; .LOOP:
+	; ; push	bc ; preserva el contador en b
+	; ; call	CHECK_COLLISION_ENEMY
+; ; ; AVanza al siguiente enemigo
+	; ; ld	bc, ENEMY_SIZE
+	; ; add	ix, bc
+	; ; pop	bc ; restaura el contador
+	; ; djnz	.LOOP
+; ; ; -----------------------------------------------------------------------------
+
+
+; ; ; -----------------------------------------------------------------------------
+; ; ; param ix
+; ; CHECK_COLLISION_ENEMY:
+; ; ; sÃ­: compara la diferencia horizontal
+	; ; ld	a, [player.x]
+	; ; sub	[ix + _ENEMY_X]
+; ; ; (valor absoluto)
+	; ; jp	p, .ELSE_X
+	; ; neg
+; ; .ELSE_X:
+; ; ; Â¿Hay solapamiento?
+	; ; cp	(PLAYER_WIDTH + ENEMY_WIDTH) /2
+	; ; ret	nc ; no
 	
-; ; Compara la diferencia vertical
-	; ld	a, [player.y]
-	; sub	[ix + _ENEMY_Y]
-; ; (valor absoluto)
-	; jp	p, .ELSE_Y
-	; neg
-; .ELSE_Y:
-; ; Â¿Hay solapamiento?
-	; cp	(PLAYER_HEIGHT + ENEMY_HEIGHT) /2
-	; ret	nc ; no
+; ; ; Compara la diferencia vertical
+	; ; ld	a, [player.y]
+	; ; sub	[ix + _ENEMY_Y]
+; ; ; (valor absoluto)
+	; ; jp	p, .ELSE_Y
+	; ; neg
+; ; .ELSE_Y:
+; ; ; Â¿Hay solapamiento?
+	; ; cp	(PLAYER_HEIGHT + ENEMY_HEIGHT) /2
+	; ; ret	nc ; no
 	
-; ; sÃ­
-	; jp	ON_ENEMY_COLLISION_UX
-; ; -----------------------------------------------------------------------------
+; ; ; sÃ­
+	; ; jp	ON_ENEMY_COLLISION_UX
+; ; ; -----------------------------------------------------------------------------
 
 ; EOF

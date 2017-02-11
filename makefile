@@ -6,24 +6,12 @@
 GAME=template
 
 #
-# commands
-#
-
-# ASM=asmsx
-ASM=tniasm
-COPY=cmd /c copy
-EMULATOR=cmd /c start
-DEBUGGER=cmd /c start \MSX\bin\blueMSX_2.8.2\blueMSX.exe
-MKDIR=cmd /c mkdir
-MOVE=cmd /c move
-REMOVE=cmd /c del
-RENAME=cmd /c ren
-TYPE=cmd /c type
-
-#
 # tools
 #
 
+ASM=tniasm
+EMULATOR=cmd /c start
+DEBUGGER=cmd /c start \MSX\bin\blueMSX_2.8.2\blueMSX.exe
 PCX2MSX=pcx2msx+
 PCX2SPR=pcx2spr
 TMX2BIN=tmx2bin
@@ -36,6 +24,16 @@ TMX2BIN=tmx2bin
 # (please note that ZX7 does not overwrite output)
 PACK=zx7.exe
 PACK_EXTENSION=zx7
+
+#
+# commands
+#
+
+COPY=cmd /c copy
+MKDIR=cmd /c mkdir
+MOVE=cmd /c move
+REMOVE=cmd /c del
+RENAME=cmd /c ren
 
 #
 # paths and file lists
@@ -68,8 +66,7 @@ SRCS_MSXLIB=\
 	lib\game\player.asm \
 	lib\game\player_x.asm \
 	lib\game\enemy.asm \
-	lib\game\enemy_routines.asm \
-	lib\game\enemy_handlers.asm
+	lib\game\enemy_x.asm
 
 SRCS_LIBEXT=\
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
@@ -116,11 +113,9 @@ cleanall: clean cleandata
 compile: $(ROM_INTERMEDIATE)
 
 test: $(ROM_INTERMEDIATE)
-	cmd /c dir $(GAME_PATH)\$(GAME).*
 	$(EMULATOR) $<
 
 debug: $(ROM_INTERMEDIATE) $(SYM_INTERMEDIATE)
-	cmd /c dir $(GAME_PATH)\$(GAME).*
 	$(DEBUGGER) $<
 
 deploy: $(ROM)
@@ -139,6 +134,7 @@ $(GAME_PATH):
 	
 $(ROM_INTERMEDIATE) tniasm.sym: $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(GFXS) $(SPRS) $(DATAS)
 	$(ASM) $< $@
+	cmd /c findstr /b /i "bytes_" tniasm.sym
 
 $(SYM_INTERMEDIATE): tniasm.sym
 	$(COPY) $< $@

@@ -133,7 +133,7 @@ TILE_FLAGS_TABLE:
 
 ; -----------------------------------------------------------------------------
 ; Player related routines (generic)
-; Default player control routines (platformer game)
+; Player-tile helper routines
 
 ; Logical sprite sizes (bounding box size) (pixels)
 	CFG_PLAYER_WIDTH:		equ 8
@@ -184,15 +184,19 @@ PLAYER_DY_TABLE:
 	.SIZE:		equ $ - PLAYER_DY_TABLE
 
 ; Player related routines (generic)
+; Player-tile helper routines
 	include	"lib/game/player.asm"
+; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
 ; Default player control routines (platformer game)
 	include	"lib/game/player_x.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Enemies related routines
-; Default enemy behavior routines (platformer game)
+; Enemies related routines (generic)
+; Convenience enemy state handlers (generic)
+; Enemy-tile helper routines
 
 ; Maximum simultaneous number of enemies
 	CFG_ENEMY_COUNT:		equ 8
@@ -205,11 +209,26 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
 	
 ; Enemies related routines (generic)
+; Convenience enemy state handlers (generic)
+; Enemy-tile helper routines
 	include	"lib/game/enemy.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Default enemy control routines (platformer game)
+
+; Pauses (frames) for the default enemy routines
+	CFG_ENEMY_PAUSE_S:	equ 15 ; short pause (~16 frames)
+	CFG_ENEMY_PAUSE_M:	equ 30 ; medium pause (~32 frames)
+	CFG_ENEMY_PAUSE_L:	equ 60 ; long pause (~64 frames)
 	
-; ; Default enemy behavior routines (platformer game)
-	; include	"lib/game/enemy_handlers.asm"
-	; include	"lib/game/enemy_routines.asm"
+; Default enemy control routines (platformer game)
+	include	"lib/game/enemy_x.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; (for debugging purposes only)
+	bytes_MSXlib_code:	equ $ - ROM_START
 ; -----------------------------------------------------------------------------
 
 ;
@@ -620,16 +639,7 @@ INIT_STAGE:
 .SNAKE_DATA:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
-	dw	.SNAKE_STATE
-.SNAKE_STATE:
-	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
-	dw	.RET_NZ
-	db	0 ; (unused)
-.RET_NZ:
-	xor	a
-	inc	a
-	ret
+	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
 
 ; .INIT_SKELETON:
 	; call	CLEAR_CHAR_GET_LOGICAL_COORDS
@@ -969,6 +979,11 @@ ON_PLAYER_PUSH:
 	; jp	SET_PLAYER_STATE
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+; (for debugging purposes only)
+	bytes_game_code:	equ $ - bytes_MSXlib_code
+; -----------------------------------------------------------------------------
+
 ;
 ; =============================================================================
 ;	Game data
@@ -1110,11 +1125,19 @@ TXT_GAME_OVER:
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 ; -----------------------------------------------------------------------------
 
-ROM_END:
+; -----------------------------------------------------------------------------
+; (for debugging purposes only)
+	bytes_game_data:	equ $ - bytes_game_code
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Padding to a 8kB boundary
 	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; (for debugging purposes only)
+	bytes_free:	equ $ - bytes_game_data
 ; -----------------------------------------------------------------------------
 
 ;
@@ -1158,6 +1181,11 @@ player.pushing:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; (for debugging purposes only)
+	bytes_ram:	equ $ - ram_start
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Unpacker routine buffer
 unpack_buffer:
 IFDEF CFG_RAM_RESERVE_BUFFER
@@ -1166,5 +1194,10 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ram_end:
+
+; -----------------------------------------------------------------------------
+; (for debugging purposes only)
+	bytes_ram_free:		equ $f380 - $
+; -----------------------------------------------------------------------------
 
 ; EOF
