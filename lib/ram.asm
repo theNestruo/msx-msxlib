@@ -65,7 +65,7 @@ vpokes:
 .count:
 	rb	1
 .array:
-	rb	CFG_VPOKES * VPOKE_SIZE
+	rb	CFG_VPOKES * VPOKE.SIZE
 ENDIF
 
 
@@ -94,11 +94,10 @@ spriteables:
 	_SPRITEABLE_COLOR:	equ $ - spriteables.array
 	rb	1	; color
 	SPRITEABLE_SIZE:	equ $ - spriteables.array
+
 ; (resto del array)
-IF (CFG_SPRITEABLES > 1)
 	rb	(CFG_SPRITEABLES -1) * ($ - spriteables.array)
-ENDIF
-	SPRITEABLES_SIZE:	equ $ - spriteables.array
+	spriteables.SIZE:	equ $ - spriteables.array
 	
 ENDIF
 ; -----------------------------------------------------------------------------
@@ -127,35 +126,39 @@ player:
 
 ; -----------------------------------------------------------------------------
 ; Enemies array
-enemies_array:
+IFDEF CFG_ENEMY_COUNT
+enemies:
+
+enemy:
 ; Logical coordinates (in pixels)
-	_ENEMY_Y:		equ $ - enemies_array
+	.xy:	equ $ - enemy
+	.y:		equ $ - enemy
 	rb	1
-	_ENEMY_X:		equ $ - enemies_array
+	.x:		equ $ - enemy
 	rb	1
-; Dynamic sprite attributes
-	_ENEMY_PATTERN:	equ $ - enemies_array
+; Enemy sprite attributes
+	.pattern:	equ $ - enemy
 	rb	1
-	_ENEMY_COLOR:		equ $ - enemies_array
+	.color:		equ $ - enemy
 	rb	1
-; Pointer to the current state
-	_ENEMY_STATE_L:		equ $ - enemies_array
+; State pointer
+	.state:		equ $ - enemy
+	.state_l:	equ $ - enemy
 	rb	1
-	_ENEMY_STATE_H:		equ $ - enemies_array
+	.state_h:	equ $ - enemy
 	rb	1
-; Current animation delay
-	_ENEMY_ANIMATION_DELAY:	equ $ - enemies_array
+; Current animation delay (e.g.: when walking) (in frames)
+	.animation_delay:	equ $ - enemy
 	rb	1
 ; Current frame counter
-	_ENEMY_FRAME_COUNTER:	equ $ - enemies_array
+	.frame_counter:	equ $ - enemy
 	rb	1
-	ENEMY_SIZE:		equ $ - enemies_array
+	.SIZE:	equ $ - enemy
 
 ; (rest of the array)
-IF (CFG_ENEMY_COUNT > 1)
-	rb	(CFG_ENEMY_COUNT -1) * ENEMY_SIZE
+	rb	(CFG_ENEMY_COUNT -1) * enemy.SIZE
+	enemies.SIZE:	equ $ - enemies
 ENDIF
-	ENEMIES_SIZE:	equ $ - enemies_array
 ; -----------------------------------------------------------------------------
 
 

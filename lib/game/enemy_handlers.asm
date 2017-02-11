@@ -6,42 +6,6 @@
 ;
 
 ; -----------------------------------------------------------------------------
-; Updates animation delay and switches the animation flag if necessary,
-; then puts the enemy sprite
-; param ix: pointer to the enemy
-; ret z: this handler always continues with the next handler
-EH_PUT_SPRITE_ANIM:
-; checks animation delay
-	ld	a, [ix + _ENEMY_ANIMATION_DELAY]
-	inc	a
-	cp	CFG_ENEMY_ANIMATION_DELAY
-	jr	nz, .DONT_ANIMATE ; not yet
-; switches the animation flag
-	ld	a, FLAG_ENEMY_PATTERN_ANIM
-	xor	[ix + _ENEMY_PATTERN]
-	ld	[ix + _ENEMY_PATTERN], a
-; resets the animation delay
-	xor	a
-.DONT_ANIMATE:
-	ld	[ix + _ENEMY_ANIMATION_DELAY], a
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Puts the enemy sprite
-; param ix: pointer to the enemy
-; ret z: this handler always continues with the next handler
-EH_PUT_SPRITE:
-	ld	e, [ix + _ENEMY_X]
-	ld	d, [ix + _ENEMY_Y]
-	ld	c, [ix + _ENEMY_PATTERN]
-	ld	b, [ix + _ENEMY_COLOR]
-	call	PUT_SPRITE
-; ret z (continue with next handler)
-	cp	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; The enemy waits idle.
 ; param [iy+_STATE_ARGUMENT]: The number of frames to wait (0 = forever)
 ; param ix: pointer to the enemy

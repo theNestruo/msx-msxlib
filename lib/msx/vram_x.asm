@@ -13,10 +13,10 @@ IFDEF CFG_VPOKES
 
 ; -----------------------------------------------------------------------------
 ; Symbolic constants for "vpokes"
-	_VPOKE_ADDRESS_L:	equ 0
-	_VPOKE_ADDRESS_H:	equ 1
-	_VPOKE_VALUE:		equ 2
-	VPOKE_SIZE:		equ 3
+	VPOKE.L:	equ 0 ; NAMTBL address (low)
+	VPOKE.H:	equ 1 ; NAMTBL address (high)
+	VPOKE.A:	equ 2 ; value to write
+	VPOKE.SIZE:	equ 3
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -50,13 +50,13 @@ VPOKE_NAMTBL_ADDRESS:
 	push	af ; preserves value to write
 ; Adds an element to the array
 	ld	ix, vpokes.count
-	ld	bc, VPOKE_SIZE
+	ld	bc, VPOKE.SIZE
 	call	ADD_ARRAY_IX
 ; Sets the values of the new element
 	pop	af ; restores the value to write
-	ld	[ix + _VPOKE_ADDRESS_L], l
-	ld	[ix + _VPOKE_ADDRESS_H], h
-	ld	[ix + _VPOKE_VALUE], a
+	ld	[ix + VPOKE.L], l
+	ld	[ix + VPOKE.H], h
+	ld	[ix + VPOKE.A], a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -74,12 +74,12 @@ EXECUTE_VPOKES:
 .LOOP:
 	push	bc ; preserves the counter
 ; Executes the "vpoke"
-	ld	l, [ix + _VPOKE_ADDRESS_L]
-	ld	h, [ix + _VPOKE_ADDRESS_H]
-	ld	a, [ix + _VPOKE_VALUE]
+	ld	l, [ix + VPOKE.L]
+	ld	h, [ix + VPOKE.H]
+	ld	a, [ix + VPOKE.A]
 	call	WRTVRM
 ; Next element
-	ld	bc, VPOKE_SIZE
+	ld	bc, VPOKE.SIZE
 	add	ix, bc
 	pop	bc ; restores the counter
 	djnz	.LOOP
@@ -122,7 +122,7 @@ IFDEF CFG_SPRITEABLES
 RESET_SPRITEABLES:
 	ld	hl, spriteables
 	ld	de, spriteables +1
-	ld	bc, SPRITEABLES_SIZE -1
+	ld	bc, spriteables.SIZE -1
 	ld	[hl], 0
 	ldir
 	ret

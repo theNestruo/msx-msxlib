@@ -120,8 +120,8 @@ JP_HL:
 ; ret bc: signed 16-bit value
 LD_BC_A:
 	ld	c, a
-	rlca ; or rla
-	sbc	a, a
+	rla	; sign in accumulator
+	sbc	a, a ; either $00 or $ff
 	ld	b, a
 	ret
 ; -----------------------------------------------------------------------------

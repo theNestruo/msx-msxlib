@@ -198,8 +198,8 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_COUNT:		equ 8
 
 ; Logical sprite sizes (bounding box size) (pixels)
-	CFG_ENEMY_WIDTH:		equ 8
-	CFG_ENEMY_HEIGHT:		equ 16
+	CFG_ENEMY_WIDTH:		equ 10
+	CFG_ENEMY_HEIGHT:		equ 14
 
 ; Enemies animation delay (frames)
 	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
@@ -207,9 +207,9 @@ PLAYER_DY_TABLE:
 ; Enemies related routines (generic)
 	include	"lib/game/enemy.asm"
 	
-; Default enemy behavior routines (platformer game)
-	include	"lib/game/enemy_handlers.asm"
-	include	"lib/game/enemy_routines.asm"
+; ; Default enemy behavior routines (platformer game)
+	; include	"lib/game/enemy_handlers.asm"
+	; include	"lib/game/enemy_routines.asm"
 ; -----------------------------------------------------------------------------
 
 ;
@@ -581,9 +581,9 @@ INIT_STAGE:
 ; 0 = Initial player coordinates
 	cp	'0'
 	jr	z, .INIT_START_POINT
-; ; 1, 2... = Enemies
-	; cp	'1'
-	; jr	z, .INIT_SNAKE
+; 1, 2... = Enemies
+	cp	'1'
+	jr	z, .INIT_SNAKE
 	; cp	'2'
 	; jr	z, .INIT_SKELETON
 	ret
@@ -611,14 +611,25 @@ INIT_STAGE:
 	ld	[hl], e
 	ret
 
-; ; Enemies
-; .INIT_SNAKE:
-	; call	CLEAR_CHAR_GET_LOGICAL_COORDS
-; ; Initializes the enemy in the array
-	; call	INIT_ENEMY
-	; .db	ENEMY_PATTERN_SNAKE
-	; .db	ENEMY_COLOR_SNAKE
-	; .dw	ENEMY_ROUTINE_CRAWLER
+; Enemies
+.INIT_SNAKE:
+	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
+; Initializes the enemy in the array
+	ld	hl, .SNAKE_DATA
+	jp	INIT_ENEMY
+.SNAKE_DATA:
+	db	SNAKE_SPRITE_PATTERN
+	db	SNAKE_SPRITE_COLOR
+	dw	.SNAKE_STATE
+.SNAKE_STATE:
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	.RET_NZ
+	db	0 ; (unused)
+.RET_NZ:
+	xor	a
+	inc	a
+	ret
 
 ; .INIT_SKELETON:
 	; call	CLEAR_CHAR_GET_LOGICAL_COORDS
@@ -1003,16 +1014,17 @@ SPRTBL_PACKED:
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
 
-	; ENEMY_PATTERN_SNAKE	equ $50
+	SNAKE_SPRITE_PATTERN:		equ $50
+	SNAKE_SPRITE_COLOR:		equ 2
+	
 	; ENEMY_PATTERN_SKELETON	equ $60
-	; ENEMY_COLOR_SNAKE	equ 2
 	; ENEMY_COLOR_SKELETON	equ 15
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
-	; dw	.TEST
+	dw	.TEST
 	
 	dw	.TUTORIAL_01
 	dw	.TUTORIAL_02
