@@ -74,7 +74,7 @@ ENEMY_TYPE_STATIONARY:
 
 ; -----------------------------------------------------------------------------
 ; Walker: the enemy walks ahead along the ground,
-; and then turns around and continues
+; then turns around, and continues
 ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
@@ -86,22 +86,64 @@ ENEMY_TYPE_WALKER:
 
 ; -----------------------------------------------------------------------------
 ; Walker: the enemy walks ahead along the ground,
-; then pauses, then turns around and continues
+; then pauses, turning around, and continues
 .WITH_PAUSE:
-	;	walks ahead along the ground
+; walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	ENEMY_TYPE_WALKER.HANDLER
 	db	0 ; 0 = forever
 	dw	SET_ENEMY_STATE
 	db	ENEMY_STATE.NEXT
-	;	pauses, turns around and continues
+; pauses, turning around, and continues
+	dw	PUT_ENEMY_SPRITE
+	db	0 ; (unused)
+	dw	ENEMY_TYPE_STATIONARY.HANDLER_TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
+	dw	SET_ENEMY_STATE
+	db	-5 * ENEMY_STATE.SIZE ; (restart)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Walker: the enemy walks a short distance toward the player along the ground,
+; then pauses and continues
+.FOLLOWER:
+; pauses and turns towards the player
+	dw	PUT_ENEMY_SPRITE
+	db	0 ; (unused)
+	dw	ENEMY_TYPE_STATIONARY.HANDLER_TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
+	dw	TURN_ENEMY.TOWARDS_PLAYER
+	db	0 ; (unused)
+	dw	SET_ENEMY_STATE
+	db	ENEMY_STATE.NEXT
+; walks ahead along the ground
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	ENEMY_TYPE_WALKER.HANDLER
+	db	CFG_ENEMY_PAUSE_S ; short distance
+	dw	SET_ENEMY_STATE
+	db	-6 * ENEMY_STATE.SIZE ; (restart)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Walker: the enemy walks a short distance toward the player along the ground,
+; then pauses briefly and continues
+.FAST_FOLLOWER:
+; pauses briefly and turns towards the player
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
 	dw	ENEMY_TYPE_STATIONARY.HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium pause
-	dw	TURN_ENEMY
+	dw	TURN_ENEMY.TOWARDS_PLAYER
 	db	0 ; (unused)
+	dw	SET_ENEMY_STATE
+	db	ENEMY_STATE.NEXT
+; walks ahead along the ground
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	ENEMY_TYPE_WALKER.HANDLER
+	db	CFG_ENEMY_PAUSE_M ; medium distance
 	dw	SET_ENEMY_STATE
 	db	-6 * ENEMY_STATE.SIZE ; (restart)
 ; -----------------------------------------------------------------------------

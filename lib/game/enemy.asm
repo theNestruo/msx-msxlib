@@ -222,22 +222,41 @@ TURN_ENEMY:
 	ret	; (no enemy is expected to have the pattern $00)
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; param ix: puntero al enemigo
-; ; ret c/nc: c = derecha, nc = izquierda
-; TURN_ENEMY_TOWARDS_PLAYER:
-	; ld	a, [player.x]
-	; cp	[ix + enemy.x]
-	; jr	c, .AIM_LEFT
+; -----------------------------------------------------------------------------
+; Turns the enemy towards the player
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; ret z (continue)
+.TOWARDS_PLAYER:
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jr	nc, .RIGHT
+	; jp	.LEFT ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Turns the enemy left
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; ret z (continue)
+.LEFT:
+	set	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+; ret z (continue)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
 	
-; .AIM_RIGHT:
-	; res	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	; ret
-	
-; .AIM_LEFT:
-	; set	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	; ret
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Turns the enemy right
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; ret z (continue)
+.RIGHT:
+	res	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+; ret z (continue)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================

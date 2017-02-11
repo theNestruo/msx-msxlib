@@ -202,11 +202,11 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_COUNT:		equ 8
 
 ; Logical sprite sizes (bounding box size) (pixels)
-	CFG_ENEMY_WIDTH:		equ 10
-	CFG_ENEMY_HEIGHT:		equ 14
+	CFG_ENEMY_WIDTH:		equ 8
+	CFG_ENEMY_HEIGHT:		equ 16
 
 ; Enemies animation delay (frames)
-	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
+	CFG_ENEMY_ANIMATION_DELAY:	equ 10
 	
 ; Enemies related routines (generic)
 ; Convenience enemy state handlers (generic)
@@ -218,17 +218,12 @@ PLAYER_DY_TABLE:
 ; Default enemy control routines (platformer game)
 
 ; Pauses (frames) for the default enemy routines
-	CFG_ENEMY_PAUSE_S:	equ 15 ; short pause (~16 frames)
-	CFG_ENEMY_PAUSE_M:	equ 30 ; medium pause (~32 frames)
-	CFG_ENEMY_PAUSE_L:	equ 60 ; long pause (~64 frames)
+	CFG_ENEMY_PAUSE_S:	equ 16 ; short pause (~16 frames)
+	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
+	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
 	
 ; Default enemy control routines (platformer game)
 	include	"lib/game/enemy_x.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; (for debugging purposes only)
-	bytes_MSXlib_code:	equ $ - ROM_START
 ; -----------------------------------------------------------------------------
 
 ;
@@ -582,7 +577,7 @@ INIT_STAGE:
 	push	bc ; preserves counter
 	push	hl ; preserves pointer
 	ld	a, [hl]
-	call	.INIT_ELEMENT
+	call	.ELEMENT
 ; Next element
 	pop	hl ; restores pointer
 	pop	bc ; restores counter
@@ -590,39 +585,39 @@ INIT_STAGE:
 	ret	po
 	jr	.LOOP
 	
-.INIT_ELEMENT:
+.ELEMENT:
 ; Box
 	cp	BOX_FIRST_CHAR
-	jr	z, .INIT_BOX
+	jr	z, .BOX
 ; Rock
 	cp	ROCK_FIRST_CHAR
-	jr	z, .INIT_ROCK
-; 0 = Initial player coordinates
-	cp	'0'
-	jr	z, .INIT_START_POINT
-; 1, 2... = Enemies
-	cp	'1'
-	jr	z, .INIT_SNAKE
-	; cp	'2'
-	; jr	z, .INIT_SKELETON
+	jr	z, .ROCK
+; '0' = Initial player coordinates
+	sub	'0'
+	ret	c
+	jr	z, .START_POINT
+; '1', '2'... = Enemies
+	dec	a
+	cp	.ENEMY_TABLE_SIZE
+	jr	c, .ENEMY
 	ret
 
 ; Inicializa un tile sprite de una caja
-.INIT_BOX:
+.BOX:
 	call	INIT_SPRITEABLE
 	ld	[ix + _SPRITEABLE_PATTERN], BOX_SPRITE_PATTERN
 	ld	[ix + _SPRITEABLE_COLOR], BOX_SPRITE_COLOR
 	ret
 
 ; Inicializa el tile sprite de una roca
-.INIT_ROCK:
+.ROCK:
 	call	INIT_SPRITEABLE
 	ld	[ix + _SPRITEABLE_PATTERN], ROCK_SPRITE_PATTERN
 	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
 	ret
 
 ; Initial player coordinates
-.INIT_START_POINT:
+.START_POINT:
 	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
 	ld	hl, player.y
 	ld	[hl], d
@@ -631,15 +626,35 @@ INIT_STAGE:
 	ret
 
 ; Enemies
-.INIT_SNAKE:
+.ENEMY:
+	push	af
 	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
+	pop	af
+	ld	hl, .ENEMY_TABLE
+	add	a
+	add	a
+	call	ADD_HL_A
 ; Initializes the enemy in the array
-	ld	hl, .SNAKE_DATA
 	jp	INIT_ENEMY
-.SNAKE_DATA:
+	
+.ENEMY_TABLE:
+; 1 = snake
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
 	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
+; 2 = snake (alt)
+	db	SNAKE_SPRITE_PATTERN
+	db	SNAKE_SPRITE_COLOR_ALT
+	dw	ENEMY_TYPE_WALKER
+; 3 = skeleton
+	db	SKELETON_SPRITE_PATTERN
+	db	SKELETON_SPRITE_CoLOR
+	dw	ENEMY_TYPE_WALKER.FOLLOWER
+; 4 = skeleton (alt)
+	db	SKELETON_SPRITE_PATTERN
+	db	14 ; SKELETON_SPRITE_CoLOR
+	dw	ENEMY_TYPE_WALKER.FAST_FOLLOWER
+.ENEMY_TABLE_SIZE:	equ ($ - .ENEMY_TABLE) / 4
 
 ; .INIT_SKELETON:
 	; call	CLEAR_CHAR_GET_LOGICAL_COORDS
@@ -979,11 +994,6 @@ ON_PLAYER_PUSH:
 	; jp	SET_PLAYER_STATE
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; (for debugging purposes only)
-	bytes_game_code:	equ $ - bytes_MSXlib_code
-; -----------------------------------------------------------------------------
-
 ;
 ; =============================================================================
 ;	Game data
@@ -1031,9 +1041,10 @@ SPRTBL_PACKED:
 
 	SNAKE_SPRITE_PATTERN:		equ $50
 	SNAKE_SPRITE_COLOR:		equ 2
+	SNAKE_SPRITE_COLOR_ALT:		equ 8
 	
-	; ENEMY_PATTERN_SKELETON	equ $60
-	; ENEMY_COLOR_SKELETON	equ 15
+	SKELETON_SPRITE_PATTERN:	equ $60
+	SKELETON_SPRITE_COLOR:		equ 15
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1126,18 +1137,10 @@ TXT_GAME_OVER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; (for debugging purposes only)
-	bytes_game_data:	equ $ - bytes_game_code
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Padding to a 8kB boundary
+PADDING:
 	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; (for debugging purposes only)
-	bytes_free:	equ $ - bytes_game_data
+	.SIZE:	equ $ - PADDING
 ; -----------------------------------------------------------------------------
 
 ;
@@ -1180,10 +1183,7 @@ player.pushing:
 	rb	1
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; (for debugging purposes only)
-	bytes_ram:	equ $ - ram_start
-; -----------------------------------------------------------------------------
+ram_end:
 
 ; -----------------------------------------------------------------------------
 ; Unpacker routine buffer
@@ -1193,11 +1193,15 @@ IFDEF CFG_RAM_RESERVE_BUFFER
 ENDIF
 ; -----------------------------------------------------------------------------
 
-ram_end:
-
 ; -----------------------------------------------------------------------------
 ; (for debugging purposes only)
-	bytes_ram_free:		equ $f380 - $
+	bytes_MSXlib_code:	equ MAIN_INIT - ROM_START
+	bytes_game_code:	equ CHARSET_CHR_PACKED - MAIN_INIT
+	bytes_game_data:	equ PADDING - CHARSET_CHR_PACKED
+	bytes_free_rom:		equ PADDING.SIZE
+	bytes_MSXlib_ram:	equ globals - ram_start
+	bytes_game_ram:		equ ram_end - globals
+	bytes_free_ram:		equ $f380 - $
 ; -----------------------------------------------------------------------------
 
 ; EOF
