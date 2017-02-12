@@ -6,6 +6,11 @@
 ;	Logical coordinates sprite routines
 ; =============================================================================
 
+; -----------------------------------------------------------------------------
+; TO DO list:
+;	Support for CFG_SPRITES_EC_AWARE (e.g.: logical x = 4)
+;	Support for CFG_SPRITES_FLICKERING
+; -----------------------------------------------------------------------------
 
 ; =============================================================================
 ;	VRAM routines (BIOS-based)
@@ -160,8 +165,12 @@ DISSCR_NO_FADE:
 ; Disables the screen
 	halt	; (sync before disabling screen)
 	call	DISSCR
+.CLEAR:
 ; Clears NAMTBL
-	call	CLS
+	ld	hl, NAMTBL
+	ld	bc, NAMTBL_SIZE
+	ld	a, $20 ; " " ASCII
+	call	FILVRM
 ; Disables sprites
 	ld	hl, SPRATR
 	ld	a, SPAT_END
@@ -219,13 +228,9 @@ ENASCR_NO_FADE:
 ; Fade in (horizontal sweep)
 ; LDIRVM the NAMTBL and SPRATR buffer and enables the screen
 ENASCR_FADE_IN:
-; Clears NAMTBL
+; Clears NAMTBL and disables sprites
 	halt	; (sync in case screen was enabled)
-	call	CLS
-; Disables sprites
-	ld	hl, SPRATR
-	ld	a, SPAT_END
-	call	WRTVRM
+	call	DISSCR_NO_FADE.CLEAR
 
 ; Activa la pantalla
 	halt	; (sync before enabling screen)
@@ -241,6 +246,7 @@ LDIRVM_NAMTBL_FADE_INOUT:
 	ld	a, SPAT_END
 	call	WRTVRM
 
+.KEEP_SPRITES:
 ; Fade in
 	ld	hl, NAMTBL
 	ld	de, namtbl_buffer

@@ -11,13 +11,11 @@
 	
 ; Define to prefer speed over size wherever speed does matter
 ; (e.g.: jp instead of jr, inline routines, etc.)
-	CFG_OPT_SPEED:
+	; CFG_OPT_SPEED:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; MSX cartridge (ROM) header, entry point and initialization
-
-	cpu	z80
 
 ; Define if the ROM is larger than 16kB (typically, 32kB)
 ; Includes search for page 2 slot/subslot at start
@@ -167,27 +165,31 @@ PLAYER_UPDATE_TABLE:
 	CFG_PLAYER_GRAVITY:		equ 4
 
 ; Delta-Y (dY) table for jumping and falling
-JUMP_DY_TABLE:
+PLAYER_DY_TABLE:
 	db	-4, -4			; (2,-8)
 	db	-2, -2, -2		; (5,-14)
 	db	-1, -1, -1, -1, -1, -1	; (11,-20)
 	db	 0,  0,  0,  0,  0,  0	; (17,-20)
-	JUMP_DY_TABLE_FALL_OFFSET:	equ $ - JUMP_DY_TABLE
+	.FALL_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
 	db	2, 2, 2			; (26,-8) / (9,12)
 	db	CFG_PLAYER_GRAVITY	; (terminal falling speed)
-	JUMP_DY_TABLE_SIZE:		equ $ - JUMP_DY_TABLE
+	.SIZE:		equ $ - PLAYER_DY_TABLE
 
 ; Player related routines (generic)
+; Player-tile helper routines
 	include	"lib/game/player.asm"
+; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
 ; Default player control routines (platformer game)
 	include	"lib/game/player_x.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Enemies related routines
-; Default enemy behavior routines (platformer game)
+; Enemies related routines (generic)
+; Convenience enemy state handlers (generic)
+; Enemy-tile helper routines
 
 ; Maximum simultaneous number of enemies
 	CFG_ENEMY_COUNT:		equ 4
@@ -200,11 +202,21 @@ JUMP_DY_TABLE:
 	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
 	
 ; Enemies related routines (generic)
+; Convenience enemy state handlers (generic)
+; Enemy-tile helper routines
 	include	"lib/game/enemy.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Default enemy control routines (platformer game)
+
+; Pauses (frames) for the default enemy routines
+	CFG_ENEMY_PAUSE_S:	equ 16 ; short pause (~16 frames)
+	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
+	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
 	
-; Default enemy behavior routines (platformer game)
-	include	"lib/game/enemy_handlers.asm"
-	include	"lib/game/enemy_routines.asm"
+; Default enemy control routines (platformer game)
+	include	"lib/game/enemy_x.asm"
 ; -----------------------------------------------------------------------------
 
 ;
@@ -635,11 +647,12 @@ TXT_GAME_OVER:
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 ; -----------------------------------------------------------------------------
 
-ROM_END:
 
 ; -----------------------------------------------------------------------------
 ; Padding to a 8kB boundary
+PADDING:
 	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
+	.SIZE:	equ $ - PADDING
 ; -----------------------------------------------------------------------------
 
 ;
@@ -685,6 +698,8 @@ stage:
 	; ...
 ; -----------------------------------------------------------------------------
 
+ram_end:
+
 ; -----------------------------------------------------------------------------
 ; Unpacker routine buffer
 unpack_buffer:
@@ -693,6 +708,20 @@ IFDEF CFG_RAM_RESERVE_BUFFER
 ENDIF
 ; -----------------------------------------------------------------------------
 
-ram_end:
+; -----------------------------------------------------------------------------
+; (for debugging purposes only)
+	bytes_rom_MSXlib_code:	equ MAIN_INIT - ROM_START
+	bytes_rom_game_code:	equ CHARSET_CHR_PACKED - MAIN_INIT
+	bytes_rom_game_data:	equ PADDING - CHARSET_CHR_PACKED
+
+	bytes_ram_MSXlib:	equ globals - ram_start
+	bytes_ram_game:		equ ram_end - globals
+	
+	bytes_total_rom:	equ PADDING - ROM_START
+	bytes_total_ram:	equ ram_end - ram_start
+
+	bytes_free_rom:		equ PADDING.SIZE
+	bytes_free_ram:		equ $f380 - $
+; -----------------------------------------------------------------------------
 
 ; EOF

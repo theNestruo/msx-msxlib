@@ -88,6 +88,8 @@ SPRS_INTERMEDIATE=\
 
 DATAS=\
 	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\intro_0.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\intro_1.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\tutorial_01.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\tutorial_02.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\tutorial_03.tmx.bin.$(PACK_EXTENSION) \
@@ -98,6 +100,8 @@ DATAS=\
 
 DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\screen.tmx.bin \
+	$(GAME_PATH)\intro_0.tmx.bin \
+	$(GAME_PATH)\intro_1.tmx.bin \
 	$(GAME_PATH)\tutorial_01.tmx.bin \
 	$(GAME_PATH)\tutorial_02.tmx.bin \
 	$(GAME_PATH)\tutorial_03.tmx.bin \

@@ -271,21 +271,107 @@ MAIN_INIT:
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
-; Skips the main menu and goes into tutorial stages the first time
-TUTORIAL_FIRST:
+; Intro sequence
+INTRO:
 ; Is SELECT key pressed?
 	halt
 	ld	hl, NEWKEY + 7
 	bit	6, [hl]
-	call	z, MAIN_MENU ; yes: skip tutorial
-
-; no: skip MAIN_MENU and enter tutorial stages
-	xor	a
-	ld	[game.current_stage], a
-	call	ENASCR_NO_FADE
-	jp	NEW_STAGE
-; -----------------------------------------------------------------------------
+	call	z, MAIN_MENU ; yes: skip intro / tutorial
 	
+; Loads intro screen into NAMTBL buffer
+	ld	hl, NAMTBL_PACKED_INTRO_0
+	ld	de, namtbl_buffer
+	call	UNPACK
+	
+; Mimics in-game loop preamble and initialization	
+	call	INIT_STAGE
+	
+; Fade in
+	call	ENASCR_FADE_IN
+
+; Intro sequence #1: the fall
+
+; Special initialization
+	ld	hl, player.state
+	set	BIT_STATE_LEFT, [hl]
+	call	SET_PLAYER_FALLING
+.LOOP_1:
+; Synchronization (halt) and blit buffers to VRAM
+	call	PUT_PLAYER_SPRITE
+	halt
+	call	LDIRVM_SPRATR
+; Mimics game logic
+	call	UPDATE_PLAYER
+; Check exit condition
+	ld	a, [player.state]
+	and	$ff XOR FLAGS_STATE
+	cp	PLAYER_STATE_AIR
+	jr	z, .LOOP_1 ; no
+
+; Intro sequence #2: the floor
+
+; Crashed sprite
+	ld	a, PLAYER_SPRITE_INTRO_PATTERN
+	ld	[player_spratr.pattern], a
+	add	4
+	ld	[player_spratr.pattern +4], a
+	call	LDIRVM_SPRATR
+
+; Intro sequence #3: the darkness
+
+; Loop preamble
+	ld	hl, NAMTBL
+	ld	b, 16 ; 16 lines
+.LOOP_2:
+	push	bc ; preserves counter
+	push	hl ; preserves line
+; Synchronization (halt)
+	halt
+	halt	; (slowly)
+	halt
+	pop	hl ; restores line
+; Erases one line in VRAM
+	ld	bc, SCR_WIDTH
+	push	bc ; preserves SCR_WIDTH
+	push	hl ; preserves line (again)
+	ld	a, $20 ; " " ASCII
+	call	FILVRM
+	pop	hl ; restores line (again)
+	pop	bc ; restores SCR_WIDTH
+; Moves one line down
+	add	hl, bc
+	pop	bc ; resotres counter
+	djnz	.LOOP_2
+
+; Intro sequence #4: the awakening
+
+; Erases upper thirds of the NAMTBL buffer
+	ld	hl, namtbl_buffer
+	ld	de, namtbl_buffer +1
+	ld	bc, 16 *SCR_WIDTH -1
+	ld	[hl], 0
+	ldir
+; Loads playable intro screen into lower third of the NAMTBL buffer
+	ld	hl, NAMTBL_PACKED_INTRO_1
+	call	UNPACK
+
+; Pause until trigger
+.LOOP_3:
+	halt
+	call	GET_TRIGGER
+	jr	z, .LOOP_3
+
+; Awakens player
+	call	PUT_PLAYER_SPRITE
+	halt
+	call	LDIRVM_SPRATR
+
+; Fade in-out with the playable intro screen and enter the game
+	call	LDIRVM_NAMTBL_FADE_INOUT.KEEP_SPRITES
+	jr	GAME_LOOP
+; -----------------------------------------------------------------------------
+
 ; -----------------------------------------------------------------------------
 ; Main menu
 MAIN_MENU:
@@ -359,49 +445,16 @@ NEW_STAGE:
 ; -----------------------------------------------------------------------------
 ; New stage / new life entry point
 GAME_LOOP_INIT:
-; Name table memory buffer (from the current stage)
+; Loads current stage into NAMTBL buffer
 	ld	hl, NAMTBL_PACKED_TABLE
 	ld	a, [game.current_stage]
 	add	a ; a *= 2
 	call	GET_HL_A_WORD
 	ld	de, namtbl_buffer
 	call	UNPACK
-	
-; Initializes stage vars
-	ld	hl, STAGE_0
-	ld	de, stage
-	ld	bc, STAGE_0.SIZE
-	ldir
 
-; Initializes player vars
-	ld	hl, PLAYER_0
-	ld	de, player
-	ld	bc, PLAYER_0.SIZE
-	ldir
-	
-; Initializes sprite attribute table (SPRATR)
-	ld	hl, SPRATR_0
-	ld	de, spratr_buffer
-	ld	bc, SPRATR_SIZE
-	ldir
-	
-; In-game loop preamble and initialization
-	call	RESET_SPRITES
-	call	RESET_ENEMIES
-	call	RESET_VPOKES
-	call	RESET_SPRITEABLES
-
-; Post-process the stage	
-	ld	hl, namtbl_buffer
-	ld	bc, NAMTBL_SIZE
-.LOOP:
-	push	bc ; preserves counter
-	push	hl ; preserves pointer
-	call	POST_PROCESS_STAGE_ELEMENT
-	pop	hl ; restores pointer
-	pop	bc ; restores counter
-	cpi	; inc hl, dec bc
-	jp	pe, .LOOP
+; In-game loop preamble and initialization	
+	call	INIT_STAGE
 	
 ; Fade in-out
 	call	LDIRVM_NAMTBL_FADE_INOUT
@@ -478,25 +531,25 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 ON_GAME_LOOP_STOP_KEY:
-; Has the player already finished?
-	ld	a, [player.state]
-	bit	BIT_STATE_FINISH, a
-	ret	nz ; yes: do nothing
+; ; Has the player already finished?
+	; ld	a, [player.state]
+	; bit	BIT_STATE_FINISH, a
+	; ret	nz ; yes: do nothing
 
-; no: It is a tutorial stage?
-	ld	a, [game.current_stage]
-	cp	TUTORIAL_STAGES
-	jr	c, TUTORIAL_OVER ; yes: skip tutorial
+; ; no: It is a tutorial stage?
+	; ld	a, [game.current_stage]
+	; cp	TUTORIAL_STAGES
+	; jr	c, TUTORIAL_OVER ; yes: skip tutorial
 	
-; no: Is the player already dying?
-	ld	a, [player.state]
-	and	$ff XOR FLAGS_STATE
-	cp	PLAYER_STATE_DYING
-	ret	z ; yes: do nothing
+; ; no: Is the player already dying?
+	; ld	a, [player.state]
+	; and	$ff XOR FLAGS_STATE
+	; cp	PLAYER_STATE_DYING
+	; ret	z ; yes: do nothing
 	
-; no: kills the player
-	ld	a, PLAYER_STATE_DYING
-	jp	SET_PLAYER_STATE
+; ; no: kills the player
+	; ld	a, PLAYER_STATE_DYING
+	; jp	SET_PLAYER_STATE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -576,7 +629,54 @@ GAME_OVER:
 ;
 
 ; -----------------------------------------------------------------------------
-; Initializes the initial player coordinates, enemies and other special elements
+; In-game loop preamble and initialization:
+; Initializes stage vars, player vars and SPRATR,
+; sprites, enemies, vpokes, spriteables,
+; and post-processes the stage loaded in NATMBL buffer
+INIT_STAGE:
+; Initializes stage vars
+	ld	hl, STAGE_0
+	ld	de, stage
+	ld	bc, STAGE_0.SIZE
+	ldir
+
+; Initializes player vars
+	ld	hl, PLAYER_0
+	ld	de, player
+	ld	bc, PLAYER_0.SIZE
+	ldir
+	
+; Initializes sprite attribute table (SPRATR)
+	ld	hl, SPRATR_0
+	ld	de, spratr_buffer
+	ld	bc, SPRATR_SIZE
+	ldir
+	
+; Other initialization
+	call	RESET_SPRITES
+	call	RESET_ENEMIES
+	call	RESET_VPOKES
+	call	RESET_SPRITEABLES
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Post-processes the stage loaded in NATMBL buffer
+POST_PROCESS_STAGE_ELEMENTS:
+	ld	hl, namtbl_buffer
+	ld	bc, NAMTBL_SIZE
+.LOOP:
+	push	bc ; preserves counter
+	push	hl ; preserves pointer
+	call	POST_PROCESS_STAGE_ELEMENT
+	pop	hl ; restores pointer
+	pop	bc ; restores counter
+	cpi	; inc hl, dec bc
+	jp	pe, .LOOP
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Post-processes one char of the loaded stage
 ; param hl: NAMTBL buffer pointer
 POST_PROCESS_STAGE_ELEMENT:
 	ld	a, [hl]
@@ -593,9 +693,9 @@ POST_PROCESS_STAGE_ELEMENT:
 	sub	'0'
 	jr	z, .START_POINT ; '0'
 	dec	a
-	jr	z, .SNAKE ; '1'
+	jr	z, .BAT ; '1'
 	dec	a
-	jr	z, .SNAKE_ALT ; '2'
+	jr	z, .SNAKE ; '2'
 	dec	a
 	jr	z, .SAVAGE ; '3'
 	ret
@@ -624,6 +724,17 @@ POST_PROCESS_STAGE_ELEMENT:
 	ld	[hl], d
 	ret
 
+; Initializes a new bat
+.BAT:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .BAT_DATA
+	jp	INIT_ENEMY
+.BAT_DATA:
+	db	BAT_SPRITE_PATTERN
+	db	BAT_SPRITE_COLOR
+	dw	ENEMY_TYPE_FLYER
+
 ; Initializes a new snake
 .SNAKE:
 	ld	[hl], 0
@@ -634,17 +745,6 @@ POST_PROCESS_STAGE_ELEMENT:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
 	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
-
-; Initializes a new snake (alt)
-.SNAKE_ALT:
-	ld	[hl], 0
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SNAKE_ALT_DATA
-	jp	INIT_ENEMY
-.SNAKE_ALT_DATA:
-	db	SNAKE_SPRITE_PATTERN
-	db	SNAKE_SPRITE_COLOR_ALT
-	dw	ENEMY_TYPE_WALKER
 
 ; Initializes a new skeleton
 .SKELETON:
@@ -1063,29 +1163,44 @@ SPRTBL_PACKED:
 	incbin	"games/stevedore/sprites.pcx.spr.zx7"
 
 ; Sprite-related symbolic constants (SPRATR)
-	BOX_SPRITE_PATTERN:		equ $b0
+	PLAYER_SPRITE_COLOR_1:		equ 9
+	PLAYER_SPRITE_COLOR_2:		equ 15
+	
+	BAT_SPRITE_PATTERN:		equ $50
+	BAT_SPRITE_COLOR:		equ 4
+
+	SNAKE_SPRITE_PATTERN:		equ $70
+	SNAKE_SPRITE_COLOR:		equ 2
+	
+	SKELETON_SPRITE_PATTERN:	equ $80
+	SKELETON_SPRITE_COLOR:		equ 15
+	
+	SAVAGE_SPRITE_PATTERN:		equ $90
+	SAVAGE_SPRITE_COLOR:		equ 8
+
+	BOX_SPRITE_PATTERN:		equ $a0
 	BOX_SPRITE_COLOR:		equ 9
 	
-	ROCK_SPRITE_PATTERN:		equ $b4
+	ROCK_SPRITE_PATTERN:		equ $a4
 	ROCK_SPRITE_COLOR:		equ 14
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
-
-	SNAKE_SPRITE_PATTERN:		equ $50
-	SNAKE_SPRITE_COLOR:		equ 2
-	SNAKE_SPRITE_COLOR_ALT:		equ 8
 	
-	SKELETON_SPRITE_PATTERN:	equ $60
-	SKELETON_SPRITE_COLOR:		equ 15
-	
-	SAVAGE_SPRITE_PATTERN:		equ $70
-	SAVAGE_SPRITE_COLOR:		equ 8
+	PLAYER_SPRITE_INTRO_PATTERN:	equ $b0
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
+NAMTBL_TEST_SCREEN:
+	incbin	"games/stevedore/screen.tmx.bin.zx7"
+	
+NAMTBL_PACKED_INTRO_0:
+	incbin	"games/stevedore/intro_0.tmx.bin.zx7"
+NAMTBL_PACKED_INTRO_1:
+	incbin	"games/stevedore/intro_1.tmx.bin.zx7"
+
 NAMTBL_PACKED_TABLE:
-	dw	.TEST
+	; dw	NAMTBL_TEST_SCREEN
 	
 	dw	.TUTORIAL_01
 	dw	.TUTORIAL_02
@@ -1094,9 +1209,6 @@ NAMTBL_PACKED_TABLE:
 	dw	.TUTORIAL_05
 	dw	.JUNGLE_01
 	dw	.VOLCANO_01
-	
-.TEST:
-	incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
 .TUTORIAL_01:
 	incbin	"games/stevedore/tutorial_01.tmx.bin.zx7"
@@ -1141,13 +1253,15 @@ STAGE_0:
 
 ; Initial (per stage) sprite attributes table
 SPRATR_0:
-	db	SPAT_OB, 0, 0, 9	; Player 1st sprite
-	db	SPAT_OB, 0, 0, 15	; Player 2nd sprite
-	db	SPAT_END		; SPAT end marker
+; Player sprites
+	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_1
+	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_2
+; SPAT end marker
+	db	SPAT_END
 	
 ; Initial (per stage) player vars
 PLAYER_0:
-	db	0, 0			; .y, .x
+	db	48, 128			; .y, .x
 	db	0			; .animation_delay
 	db	PLAYER_STATE_FLOOR	; .state
 	db	0			; .dy_index

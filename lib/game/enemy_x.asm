@@ -73,6 +73,45 @@ ENEMY_TYPE_STATIONARY:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Flyer: The enemy flies (or foats), then turns around, and continues
+ENEMY_TYPE_FLYER:
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	.HANDLER
+	db	0 ; 0 = forever
+	dw	TURN_ENEMY
+	db	0 ; (unused)
+	dw	SET_ENEMY_STATE
+	db	-3 * ENEMY_STATE.SIZE ; (restart)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Flyer state handler: The enemy flies (or floats)
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARGS]: distance (frames/pixels) (0 = forever)
+; ret z/nz: if the state has finished (wall hit or distance reached)
+.HANDLER:
+	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	jr	z, .HANDLER_RIGHT
+	; jr	.HANDLER_LEFT ; falls through
+
+.HANDLER_LEFT:
+	call	CAN_ENEMY_FLY.LEFT
+	ret	z ; no
+; moves left
+	dec	[ix + enemy.x]
+	jp	ENEMY_TYPE_STATIONARY.HANDLER
+
+.HANDLER_RIGHT:
+	call	CAN_ENEMY_FLY.RIGHT
+	ret	z ; no
+; moves right
+	inc	[ix + enemy.x]
+	jp	ENEMY_TYPE_STATIONARY.HANDLER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Walker: the enemy walks ahead along the ground,
 ; then turns around, and continues
 ENEMY_TYPE_WALKER:
@@ -185,8 +224,6 @@ ENEMY_TYPE_WALKER:
 
 ; Jumper - The enemy can bounce or jump. (some jump forward, some jump straight up and down). Examples: Donkey Kong's Springs, Super Mario 2's Tweeter, Super Mario 2's Ninji
 
-; Floater - The enemy can float, fly, or levitate. Example: Castlevania's Bats
-
 ; Sticky - The enemy sticks to walls and ceilings. Example: Super Mario 2's Spark
 
 ; Waver - The enemy floats in a sine wave pattern. Example: Castlevania's Medusa Head
@@ -196,8 +233,6 @@ ENEMY_TYPE_WALKER:
 ; Swinger - The enemy swings from a fixed point. Example: Castlevania's swinging blades
 
 ; Pacer - The enemy changes direction in response to a trigger (like reaching the edge of a platform). Example: Super Mario's Red Koopas
-
-; Follower - The enemy follows the player (Often used in top-down games). Example: Zelda 3's Hard Hat Beetles
 
 ; Roamer - The enemy changes direction completely randomly. Example: Legend of Zelda's Octoroks
 
