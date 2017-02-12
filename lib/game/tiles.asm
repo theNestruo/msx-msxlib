@@ -68,6 +68,25 @@ OFFSET_TO_COORDS:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Translates NAMTBL offsets to logical coordinates
+; (i.e: below the center of the character pointed by NAMTBL offset)
+; param de: NAMTBL offset
+; ret de: pixel coordinates (x, y)
+; touches: a
+NAMTBL_POINTER_TO_LOGICAL_COORDS:
+	call	NAMTBL_POINTER_TO_COORDS
+; Translates into logical coordinates (also reverses (y,x) order)
+	ex	de, hl ; coordinates in hl
+	ld	a, l ; (x += 4px, half tile right)
+	add	4
+	ld	d, a
+	ld	a, h ; (y += 8px, one tile down)
+	add	8
+	ld	e, a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Reads the tile index (value) at some pixel coordinates
 ; param de: pixel coordinates (x, y)
 ; ret hl: NAMTBL buffer pointer

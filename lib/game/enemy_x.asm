@@ -78,20 +78,22 @@ ENEMY_TYPE_STATIONARY:
 ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
-	dw	ENEMY_TYPE_WALKER.HANDLER
+	dw	.HANDLER
 	db	0 ; 0 = forever
 	dw	TURN_ENEMY
 	db	0 ; (unused)
+	dw	SET_ENEMY_STATE
+	db	-3 * ENEMY_STATE.SIZE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Walker: the enemy walks ahead along the ground,
+; Walker (with pause): the enemy walks ahead along the ground,
 ; then pauses, turning around, and continues
 .WITH_PAUSE:
 ; walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
-	dw	ENEMY_TYPE_WALKER.HANDLER
+	dw	.HANDLER
 	db	0 ; 0 = forever
 	dw	SET_ENEMY_STATE
 	db	ENEMY_STATE.NEXT
@@ -99,20 +101,20 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
 	dw	ENEMY_TYPE_STATIONARY.HANDLER_TURNING
-	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 	dw	SET_ENEMY_STATE
 	db	-5 * ENEMY_STATE.SIZE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Walker: the enemy walks a short distance toward the player along the ground,
-; then pauses and continues
+; Walker (follower): the enemy walks a medium distance along the ground,
+; towards the player, then pauses briefly, and continues
 .FOLLOWER:
-; pauses and turns towards the player
+; pauses briefly and turns towards the player
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
-	dw	ENEMY_TYPE_STATIONARY.HANDLER_TURNING
-	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
+	dw	ENEMY_TYPE_STATIONARY.HANDLER
+	db	CFG_ENEMY_PAUSE_M ; medium pause
 	dw	TURN_ENEMY.TOWARDS_PLAYER
 	db	0 ; (unused)
 	dw	SET_ENEMY_STATE
@@ -121,20 +123,21 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	ENEMY_TYPE_WALKER.HANDLER
-	db	CFG_ENEMY_PAUSE_S ; short distance
+	db	CFG_ENEMY_PAUSE_M ; medium distance
 	dw	SET_ENEMY_STATE
 	db	-6 * ENEMY_STATE.SIZE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Walker: the enemy walks a short distance toward the player along the ground,
-; then pauses briefly and continues
-.FAST_FOLLOWER:
-; pauses briefly and turns towards the player
+; Walker (follower with pause):
+; the enemy walks a medium distance along the ground,
+; towards the player, then pauses, turning around, and continues
+.FOLLOWER_WITH_PAUSE:
+; pauses, turning around, turns towards the player
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
-	dw	ENEMY_TYPE_STATIONARY.HANDLER
-	db	CFG_ENEMY_PAUSE_M ; medium pause
+	dw	ENEMY_TYPE_STATIONARY.HANDLER_TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
 	dw	TURN_ENEMY.TOWARDS_PLAYER
 	db	0 ; (unused)
 	dw	SET_ENEMY_STATE
@@ -173,7 +176,6 @@ ENEMY_TYPE_WALKER:
 	inc	[ix + enemy.x]
 	jp	ENEMY_TYPE_STATIONARY.HANDLER
 ; -----------------------------------------------------------------------------
-
 
 ; Riser - The enemy can increase its height (often, can rise from nothing). Examples: Super Mario's Piranha Plants and Castlevania's Mud Man
 
@@ -347,125 +349,4 @@ GET_ENEMY_TILE_FLAGS_UNDER:
 	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ENEMY_ROUTINE_CRAWLER:
-	; dw	EH_PUT_SPRITE_ANIM
-	; db	0 ; (unused)
-	; dw	EH_WALK
-	; db	0 ; forever
-	; dw	EH_SET_STATE
-	; db	STATE_SIZE ; next
-	
-	; dw	EH_PUT_SPRITE
-	; db	0 ; (unused)
-	; dw	EH_IDLE_TURNING ; EH_IDLE
-	; db	(2 << 6) OR 30 ; 3 repetitions, 30 frames
-	; dw	EH_SET_STATE
-	; db	-5 * STATE_SIZE ; restart
-; ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; ENEMY_ROUTINE_FOLLOWER:
-	; dw	EH_PUT_SPRITE_ANIM
-	; db	0 ; (unused)
-	; dw	EH_WALK
-	; db	32 ; 16 pixels
-	; dw	EH_SET_STATE
-	; db	STATE_SIZE ; next
-	
-	; dw	EH_PUT_SPRITE
-	; db	0 ; (unused)
-	; dw	EH_IDLE_TURNING
-	; db	(2 << 6) OR 30 ; 3 repetitions, 30 frames
-	; dw	EH_TURN_WALKING_ENEMY_TOWARDS_PLAYER
-	; db	0 ; (unused)
-	; dw	EH_SET_STATE
-	; db	-6 * STATE_SIZE ; restart
-; ; -----------------------------------------------------------------------------
-
-; ;
-; ; =============================================================================
-; ;	Handler routines for enemies (platform games)
-; ; =============================================================================
-; ;
-
-; ; -----------------------------------------------------------------------------
-; EH_TURN_WALKING_ENEMY_TOWARDS_PLAYER:
-	; call	TURN_WALKING_ENEMY_TOWARDS_PLAYER
-; ; ret z (continue with next handler)
-	; cp	a
-	; ret
-; ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; EH_WALK:
-	; bit	BIT_ENEMY_PATTERN_LEFT, [ix + _ENEMY_PATTERN]
-	; jr	z, EH_WALK_RIGHT
-	; ; jr	EH_WALK_LEFT ; falls through
-; ; ------VVVV----falls through--------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; EH_WALK_LEFT:
-	; call	CAN_ENEMY_WALK_LEFT
-	; ret	z ; no
-	; dec	[ix + _ENEMY_X]
-; ; ret nz
-	; ; or	1 ; unecessary? (TODO check dec[ix] flag affection)
-	; ; ret
-	; jp	EH_IDLE
-; ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; EH_WALK_RIGHT:
-	; call	CAN_ENEMY_WALK
-	; ret	z ; no
-	; inc	[ix + _ENEMY_X]
-; ; ret nz
-	; ; or	1 ; unecessary? (TODO check inc[ix] flag affection)
-	; ; ret
-	; jp	EH_IDLE
-; ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; ; EH_FLY_LEFT:
-; ; ; Can move left? Checks walls
-	; ; call	CHECK_TILES_LEFT_ENEMY
-	; ; cpl	; (for checking z instead of nz)
-	; ; bit	BIT_WORLD_SOLID, a
-	; ; ret	z ; no
-; ; -----------------------------------------------------------------------------
-	
-; ; -----------------------------------------------------------------------------
-; ; EH_FLOAT_LEFT:
-; ; ; Unconditionally moves left
-	; ; dec	[ix + _ENEMY_X]
-; ; ; ret nz
-	; ; or	1
-	; ; ret
-; ; -----------------------------------------------------------------------------
-
-; ; ; -----------------------------------------------------------------------------
-; ; ; Mueve el enemigo hacia la derecha, comprobando suelo y colisiones
-; ; ; param ix: puntero al enemigo
-; ; ; param _STATE_ARG: número de píxeles/frames; se decrementará (0 = infinito)
-; ; EH_WALK_RIGHT:
-; ; ; Can walk left? Checks floor
-	; ; call	CHECK_TILE_UNDER_RIGHT_ENEMY
-	; ; bit	BIT_WORLD_FLOOR, a
-	; ; ret	z ; no
-	
-; ; EH_FLY_RIGHT:
-; ; ; Can move right? Checks walls
-	; ; call	CHECK_TILES_RIGHT_ENEMY
-	; ; cpl	; (for checking z instead of nz)
-	; ; bit	BIT_WORLD_SOLID, a
-	; ; ret	z ; no
-	
-; ; EH_FLOAT_RIGHT:
-; ; ; Unconditionally moves right
-	; ; inc	[ix + _ENEMY_X]
-; ; ; ret nz
-	; ; or	1
-	; ; ret
-; ; ; -----------------------------------------------------------------------------
-; 
+; EOF

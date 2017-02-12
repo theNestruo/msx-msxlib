@@ -352,7 +352,7 @@ NEW_STAGE:
 	ld	[de], a
 
 ; Fade in
-	call	LDIRVM_NAMTBL_FADE_INOUT
+	call	ENASCR_FADE_IN
 	call	TRIGGER_PAUSE_ONE_SECOND
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -390,12 +390,21 @@ GAME_LOOP_INIT:
 	call	RESET_ENEMIES
 	call	RESET_VPOKES
 	call	RESET_SPRITEABLES
+
+; Post-process the stage	
+	ld	hl, namtbl_buffer
+	ld	bc, NAMTBL_SIZE
+.LOOP:
+	push	bc ; preserves counter
+	push	hl ; preserves pointer
+	call	POST_PROCESS_STAGE_ELEMENT
+	pop	hl ; restores pointer
+	pop	bc ; restores counter
+	cpi	; inc hl, dec bc
+	jp	pe, .LOOP
 	
-	call	INIT_STAGE	; (custom)
-	
-; Fade in
+; Fade in-out
 	call	LDIRVM_NAMTBL_FADE_INOUT
-	; call	LDIRVM_NAMTBL_FADE_INOUT
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -568,38 +577,27 @@ GAME_OVER:
 
 ; -----------------------------------------------------------------------------
 ; Initializes the initial player coordinates, enemies and other special elements
-INIT_STAGE:
-; Travels the playable area
-	ld	hl, namtbl_buffer
-	ld	bc, NAMTBL_SIZE
-.LOOP:
-; For each character
-	push	bc ; preserves counter
-	push	hl ; preserves pointer
+; param hl: NAMTBL buffer pointer
+POST_PROCESS_STAGE_ELEMENT:
 	ld	a, [hl]
-	call	.ELEMENT
-; Next element
-	pop	hl ; restores pointer
-	pop	bc ; restores counter
-	cpi	; inc hl, dec bc
-	ret	po
-	jr	.LOOP
-	
-.ELEMENT:
-; Box
+; Is it a box?
 	cp	BOX_FIRST_CHAR
 	jr	z, .BOX
-; Rock
+; Is it a rock?
 	cp	ROCK_FIRST_CHAR
 	jr	z, .ROCK
-; '0' = Initial player coordinates
+; Is it a skeleton?
+	cp	SKELETON_FIRST_CHAR +1
+	jr	z, .SKELETON
+; Is it '0', '1', '2', ...
 	sub	'0'
-	ret	c
-	jr	z, .START_POINT
-; '1', '2'... = Enemies
+	jr	z, .START_POINT ; '0'
 	dec	a
-	cp	.ENEMY_TABLE_SIZE
-	jr	c, .ENEMY
+	jr	z, .SNAKE ; '1'
+	dec	a
+	jr	z, .SNAKE_ALT ; '2'
+	dec	a
+	jr	z, .SAVAGE ; '3'
 	ret
 
 ; Inicializa un tile sprite de una caja
@@ -616,70 +614,100 @@ INIT_STAGE:
 	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
 	ret
 
-; Initial player coordinates
+; Initializes player coordinates
 .START_POINT:
-	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
 	ld	hl, player.y
-	ld	[hl], d
-	inc	hl ; hl = player.x
 	ld	[hl], e
+	inc	hl ; hl = player.x
+	ld	[hl], d
 	ret
 
-; Enemies
-.ENEMY:
-	push	af
-	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
-	pop	af
-	ld	hl, .ENEMY_TABLE
-	add	a
-	add	a
-	call	ADD_HL_A
-; Initializes the enemy in the array
+; Initializes a new snake
+.SNAKE:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SNAKE_DATA
 	jp	INIT_ENEMY
-	
-.ENEMY_TABLE:
-; 1 = snake
+.SNAKE_DATA:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
 	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
-; 2 = snake (alt)
+
+; Initializes a new snake (alt)
+.SNAKE_ALT:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SNAKE_ALT_DATA
+	jp	INIT_ENEMY
+.SNAKE_ALT_DATA:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR_ALT
 	dw	ENEMY_TYPE_WALKER
-; 3 = skeleton
-	db	SKELETON_SPRITE_PATTERN
-	db	SKELETON_SPRITE_CoLOR
-	dw	ENEMY_TYPE_WALKER.FOLLOWER
-; 4 = skeleton (alt)
-	db	SKELETON_SPRITE_PATTERN
-	db	14 ; SKELETON_SPRITE_CoLOR
-	dw	ENEMY_TYPE_WALKER.FAST_FOLLOWER
-.ENEMY_TABLE_SIZE:	equ ($ - .ENEMY_TABLE) / 4
 
-; .INIT_SKELETON:
-	; call	CLEAR_CHAR_GET_LOGICAL_COORDS
-; ; Initializes the enemy in the array
-	; call	INIT_ENEMY
-	; .db	ENEMY_PATTERN_SKELETON
-	; .db	ENEMY_COLOR_SKELETON
-	; .dw	ENEMY_ROUTINE_FOLLOWER
+; Initializes a new skeleton
+.SKELETON:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SKELETON_DATA
+	jp	INIT_ENEMY
+.SKELETON_DATA:
+	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
+	db	SKELETON_SPRITE_COLOR
+	dw	ENEMY_TYPE_SKELETON
 
-; Rutina de conveniencia que elimina el caracter de control
-; y devuelve las coordenadas lógicas para ubicar ahí un sprite
-; param hl: puntero del buffer namtbl del caracter de control
-; ret de: coordenadas lógicas del sprite
-.CLEAR_CHAR_GET_LOGICAL_COORDS:
-; elimina el caracter de control
+; Initializes a new savage
+.SAVAGE:
 	ld	[hl], 0
-; calcula las coordenadas
-	call	NAMTBL_POINTER_TO_COORDS
-; convierte a coordenadas lógicas
-	ld	a, 4 ; medio caracter a la derecha
-	add	e
-	ld	e, a
-	ld	a, 8 ; un caracter hacia abajo
-	add	d
-	ld	d, a
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SAVAGE_DATA
+	jp	INIT_ENEMY
+.SAVAGE_DATA:
+	db	SAVAGE_SPRITE_PATTERN
+	db	SAVAGE_SPRITE_COLOR
+	dw	ENEMY_TYPE_WALKER.FOLLOWER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Skeleton: the skeleton is slept until the star is picked up,
+; then, it becomes of type walker (follower with pause)
+ENEMY_TYPE_SKELETON:
+	dw	.HANDLER
+	db	0 ; (unused)
+	
+.HANDLER:
+; Has the star been picked up?
+	ld	a, [star]
+	or	a
+	jr	nz, .WAKE_UP ; yes
+; no: ret nz (halt)
+	inc	a
+	ret
+	
+.WAKE_UP:
+; Locates the skeleton characters
+	ld	e, [ix + enemy.y]
+	ld	d, [ix + enemy.x]
+	call	COORDS_TO_OFFSET ; hl = NAMTBL offset
+	ld	de, namtbl_buffer -SCR_WIDTH -1 ; (-1,-1)
+	add	hl, de ; hl = NAMTBL buffer pointer
+; Removes the characters in the next frame
+	push	ix ; preserves ix
+	xor	a
+	ld	[hl], a ; left char (NAMTBL buffer only)
+	inc	hl
+	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE ; right char
+	dec	hl
+	call	VPOKE_NAMTBL_ADDRESS ; left char (NATMBL)
+	pop	ix ; restores ix
+; Shows the sprite in the next frame
+	call	PUT_ENEMY_SPRITE
+; Makes the enemy a walker (follower with pause)
+	ld	hl, ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
+	ld	[ix + enemy.state_h], h
+	ld	[ix + enemy.state_l], l
+; ret nz (halt)
+	inc	a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -869,6 +897,8 @@ ON_PLAYER_WALK_ON:
 
 ; -----------------------------------------------------------------------------
 .STAR:
+	ld	a, 1
+	ld	[star], a
 	ret
 ; -----------------------------------------------------------------------------
 	
@@ -1023,6 +1053,8 @@ CHARSET_CLR_PACKED:
 	ROCK_FIRST_CHAR:	equ $14
 	ROCK_FIRST_CHAR_WATER:	equ $f8
 	ROCK_FIRST_CHAR_LAVA:	equ $fc
+	
+	SKELETON_FIRST_CHAR:	equ $98
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1045,6 +1077,9 @@ SPRTBL_PACKED:
 	
 	SKELETON_SPRITE_PATTERN:	equ $60
 	SKELETON_SPRITE_COLOR:		equ 15
+	
+	SAVAGE_SPRITE_PATTERN:		equ $70
+	SAVAGE_SPRITE_COLOR:		equ 8
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1101,6 +1136,7 @@ GAME_0:
 ; Initial value of the stage-scoped vars
 STAGE_0:
 	db	0			; player.pushing
+	db	0			; star
 	.SIZE:	equ $ - STAGE_0
 
 ; Initial (per stage) sprite attributes table
@@ -1181,6 +1217,9 @@ stage:
 ; Number of consecutive frames the player has been pushing an object
 player.pushing:
 	rb	1
+; The player has picked up the star
+star:
+	rb	1
 ; -----------------------------------------------------------------------------
 
 ram_end:
@@ -1195,12 +1234,17 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 ; (for debugging purposes only)
-	bytes_MSXlib_code:	equ MAIN_INIT - ROM_START
-	bytes_game_code:	equ CHARSET_CHR_PACKED - MAIN_INIT
-	bytes_game_data:	equ PADDING - CHARSET_CHR_PACKED
+	bytes_rom_MSXlib_code:	equ MAIN_INIT - ROM_START
+	bytes_rom_game_code:	equ CHARSET_CHR_PACKED - MAIN_INIT
+	bytes_rom_game_data:	equ PADDING - CHARSET_CHR_PACKED
+
+	bytes_ram_MSXlib:	equ globals - ram_start
+	bytes_ram_game:		equ ram_end - globals
+	
+	bytes_total_rom:	equ PADDING - ROM_START
+	bytes_total_ram:	equ ram_end - ram_start
+
 	bytes_free_rom:		equ PADDING.SIZE
-	bytes_MSXlib_ram:	equ globals - ram_start
-	bytes_game_ram:		equ ram_end - globals
 	bytes_free_ram:		equ $f380 - $
 ; -----------------------------------------------------------------------------
 

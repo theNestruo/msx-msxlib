@@ -68,9 +68,9 @@ INIT_ENEMY:
 	
 .INIT:
 ; Stores the logical coordinates
-	ld	[hl], d ; .y
+	ld	[hl], e ; .y
 	inc	hl
-	ld	[hl], e ; .x
+	ld	[hl], d ; .x
 	inc	hl
 ; Stores the pattern, color and initial handler
 	ex	de, hl ; target in de
@@ -90,7 +90,6 @@ INIT_ENEMY:
 ; -----------------------------------------------------------------------------
 ; Updates the enemies
 UPDATE_ENEMIES:
-	ld b,b | jr $+2 ; BREAKPOINT
 ; For each enemy in the array
 	ld	ix, enemies
 	ld	b, CFG_ENEMY_COUNT

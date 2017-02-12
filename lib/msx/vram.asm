@@ -380,6 +380,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; param de: logical coordinates (x, y)
 ; ret de: physical coordinates (x, y)
+; touches: a
 LOGICAL_TO_PHYSICAL_COORDINATES:
 	ld	a, e ; y -= 16, y--
 	add	CFG_SPRITES_Y_OFFSET
@@ -414,7 +415,8 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Appends a volatile sprite using logical coordinates
 ; param de: logical coordinates (x, y)
-; param cb: attributes (patter, color)
+; param bc: attributes (pattern, color)
+; touches: a, hl
 PUT_SPRITE:
 	call	LOGICAL_TO_PHYSICAL_COORDINATES
 ; ------VVVV----falls through--------------------------------------------------
@@ -422,7 +424,8 @@ PUT_SPRITE:
 ; -----------------------------------------------------------------------------
 ; Appends a volatile sprite using physical coordinates
 ; param de: physical coordinates (x, y)
-; param cb: attributes (pattern, color)
+; param bc: attributes (pattern, color)
+; touches: a, hl
 PUT_SPRITE_NO_OFFSET:
 ; Locates the SPAT_END
 IFDEF CFG_SPRITES_RESERVED

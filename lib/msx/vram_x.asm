@@ -24,6 +24,7 @@ IFDEF CFG_VPOKES
 ; param hl: NAMTBL buffer pointer
 ; param a: value to set and write
 ; ret hl: NAMTBL address
+; touches: bc, de, ix
 UPDATE_NAMTBL_BUFFER_AND_VPOKE:
 ; Updates the NAMTBL buffer
 	ld	[hl], a
@@ -34,7 +35,7 @@ UPDATE_NAMTBL_BUFFER_AND_VPOKE:
 ; param hl: NAMTBL buffer pointer
 ; param a: value to write
 ; ret hl: NAMTBL address
-; touches: ix, bc, de
+; touches: bc, de, ix
 VPOKE_NAMTBL_BUFFER:
 ; Translates NAMTBL buffer pointer into NAMTBL address and adds the "vpoke"
 	ld	de, -namtbl_buffer +NAMTBL +$10000
@@ -45,7 +46,7 @@ VPOKE_NAMTBL_BUFFER:
 ; Adds a "vpoke" to the array, using NAMTBL address
 ; param hl: NAMTBL address
 ; param a: value to write
-; touches: ix, bc
+; touches: bc, ix
 VPOKE_NAMTBL_ADDRESS:
 	push	af ; preserves value to write
 ; Adds an element to the array

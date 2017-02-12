@@ -148,7 +148,7 @@ $(GAME_PATH):
 	
 $(ROM_INTERMEDIATE) tniasm.sym: $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(GFXS) $(SPRS) $(DATAS)
 	$(ASM) $< $@
-	cmd /c findstr /b /i "bytes_" tniasm.sym
+	cmd /c findstr /b /i "bytes_" tniasm.sym | sort
 
 $(SYM_INTERMEDIATE): tniasm.sym
 	$(COPY) $< $@
