@@ -68,6 +68,10 @@ INIT_ENEMY:
 	
 .INIT:
 ; Stores the logical coordinates
+	ld	[hl], e ; .y_backup
+	inc	hl
+	ld	[hl], d ; .x_backup
+	inc	hl
 	ld	[hl], e ; .y
 	inc	hl
 	ld	[hl], d ; .x
@@ -134,13 +138,13 @@ UPDATE_ENEMIES:
 ;
 
 ; -----------------------------------------------------------------------------
-; Sets a new current state for the current enemy
+; Sets a new current state for the current enemy, relative to the current state
 ; (this state handler is usually the last handler of a state)
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
 ; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
 ; ret nz (halt)
-SET_ENEMY_STATE:
+SET_NEW_STATE_HANDLER:
 ; Reads the offset to the next state in bc (16-bit signed)
 	ld	a, [iy + ENEMY_STATE.ARGS]
 IFDEF CFG_OPT_SPEED
@@ -165,6 +169,23 @@ ENDIF
 	ld	[ix + enemy.frame_counter], a
 ; ret nz (halt)
 	inc	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Sets a new current state for the current enemy,
+; relative to the current state,
+; when the player and the enemy are in overlapping x coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
+; ret z (continue) if the state does not change (no overlapping coordinates)
+; ret nz (halt) if the state changes
+.ON_X_COLLISION:
+	call	CHECK_PLAYER_ENEMY_COLLISION.X
+	jp	c, SET_NEW_STATE_HANDLER
+; ret z (continue)
+	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -328,65 +349,5 @@ GET_ENEMY_V_TILE_FLAGS:
 	ld	b, CFG_ENEMY_HEIGHT
 	jp	GET_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
-
-
-; ; -----------------------------------------------------------------------------
-; TURN_WALKING_ENEMY_TOWARDS_PLAYER:
-	; call	TURN_ENEMY_TOWARDS_PLAYER
-	; call	CAN_ENEMY_WALK
-	; ret	nz
-	; jp	TURN_ENEMY
-; ; -----------------------------------------------------------------------------
-
-; ; ;
-; ; ; =============================================================================
-; ; ;	Subrutinas específicas de juegos
-; ; ; =============================================================================
-; ; ;
-
-; ; ; -----------------------------------------------------------------------------
-; ; CHECK_COLLISIONS_ENEMIES:
-; ; ; Recorre el array de enemigos
-	; ; ld	ix, enemies_array
-	; ; ld	b, MAX_ENEMY_COUNT
-; ; .LOOP:
-	; ; push	bc ; preserva el contador en b
-	; ; call	CHECK_COLLISION_ENEMY
-; ; ; AVanza al siguiente enemigo
-	; ; ld	bc, ENEMY_SIZE
-	; ; add	ix, bc
-	; ; pop	bc ; restaura el contador
-	; ; djnz	.LOOP
-; ; ; -----------------------------------------------------------------------------
-
-
-; ; ; -----------------------------------------------------------------------------
-; ; ; param ix
-; ; CHECK_COLLISION_ENEMY:
-; ; ; sí: compara la diferencia horizontal
-	; ; ld	a, [player.x]
-	; ; sub	[ix + _ENEMY_X]
-; ; ; (valor absoluto)
-	; ; jp	p, .ELSE_X
-	; ; neg
-; ; .ELSE_X:
-; ; ; ¿Hay solapamiento?
-	; ; cp	(PLAYER_WIDTH + ENEMY_WIDTH) /2
-	; ; ret	nc ; no
-	
-; ; ; Compara la diferencia vertical
-	; ; ld	a, [player.y]
-	; ; sub	[ix + _ENEMY_Y]
-; ; ; (valor absoluto)
-	; ; jp	p, .ELSE_Y
-	; ; neg
-; ; .ELSE_Y:
-; ; ; ¿Hay solapamiento?
-	; ; cp	(PLAYER_HEIGHT + ENEMY_HEIGHT) /2
-	; ; ret	nc ; no
-	
-; ; ; sí
-	; ; jp	ON_ENEMY_COLLISION_UX
-; ; ; -----------------------------------------------------------------------------
 
 ; EOF

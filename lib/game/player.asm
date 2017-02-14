@@ -122,11 +122,13 @@ SET_PLAYER_STATE:
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Loads a in [hl], masked with b
+; Loads a in [hl], masked with b (only loads the bits specified by b).
+; i.e.: [hl] = a = ([hl] & not(b)) | (a & b)
 ; param hl: memory address
 ; param a: new value
 ; param b: mask (1 = new value, 0 = old value)
 ; ret a: loaded value
+; ret [hl]: loaded value
 LD_HL_A_MASK:
 			; a    = new_10
 	xor	[hl]	; a    = new_10 ^ old_10

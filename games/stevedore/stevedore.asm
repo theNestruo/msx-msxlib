@@ -207,6 +207,14 @@ PLAYER_DY_TABLE:
 
 ; Enemies animation delay (frames)
 	CFG_ENEMY_ANIMATION_DELAY:	equ 10
+
+; Enemies terminal falling speed (pixels/frame)
+	CFG_ENEMY_GRAVITY:		equ CFG_PLAYER_GRAVITY
+
+; Enemies delta-Y (dY) table for jumping and falling
+	ENEMY_DY_TABLE:			equ PLAYER_DY_TABLE
+	.FALL_OFFSET:			equ PLAYER_DY_TABLE.FALL_OFFSET
+	.SIZE:				equ PLAYER_DY_TABLE.SIZE
 	
 ; Enemies related routines (generic)
 ; Convenience enemy state handlers (generic)
@@ -215,15 +223,24 @@ PLAYER_DY_TABLE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Default enemy control routines (platformer game)
+; Default enemy types (platformer game)
+; Convenience enemy state handlers (platformer game)
+; Convenience enemy helper routines (platform games)
 
 ; Pauses (frames) for the default enemy routines
 	CFG_ENEMY_PAUSE_S:	equ 16 ; short pause (~16 frames)
 	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
 	
-; Default enemy control routines (platformer game)
+; Default enemy types (platformer game)
+; Convenience enemy state handlers (platformer game)
+; Convenience enemy helper routines (platform games)
 	include	"lib/game/enemy_x.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Enemy-player helper routines
+	include	"lib/game/collision.asm"
 ; -----------------------------------------------------------------------------
 
 ;
@@ -270,23 +287,30 @@ MAIN_INIT:
 	ldir
 ; ------VVVV----falls through--------------------------------------------------
 	
+IFEXIST NAMTBL_TEST_SCREEN
+	ld	hl, NAMTBL_TEST_SCREEN
+	ld	de, namtbl_buffer
+	call	UNPACK
+	call	INIT_STAGE
+	call	ENASCR_NO_FADE
+	jp	GAME_LOOP
+ENDIF
+
 ; -----------------------------------------------------------------------------
 ; Intro sequence
 INTRO:
 ; Is SELECT key pressed?
 	halt
-	ld	hl, NEWKEY + 7
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
 	call	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 ; Loads intro screen into NAMTBL buffer
-	ld	hl, NAMTBL_PACKED_INTRO_0
+	ld	hl, NAMTBL_PACKED_INTRO
 	ld	de, namtbl_buffer
 	call	UNPACK
-	
 ; Mimics in-game loop preamble and initialization	
 	call	INIT_STAGE
-	
 ; Fade in
 	call	ENASCR_FADE_IN
 
@@ -346,16 +370,15 @@ INTRO:
 
 ; Intro sequence #4: the awakening
 
-; Erases upper thirds of the NAMTBL buffer
-	ld	hl, namtbl_buffer
-	ld	de, namtbl_buffer +1
-	ld	bc, 16 *SCR_WIDTH -1
-	ld	[hl], 0
-	ldir
-; Loads playable intro screen into lower third of the NAMTBL buffer
-	ld	hl, NAMTBL_PACKED_INTRO_1
+; Loads first tutorial stage screen into NAMTBL buffer
+	ld	hl, NAMTBL_PACKED_TABLE.TUTORIAL_01
+	ld	de, namtbl_buffer
 	call	UNPACK
-
+; Mimics in-game loop preamble and initialization	
+	call	INIT_STAGE
+; Special initialization
+	ld	hl, player.state
+	set	BIT_STATE_LEFT, [hl]
 ; Pause until trigger
 .LOOP_3:
 	halt
@@ -366,7 +389,6 @@ INTRO:
 	call	PUT_PLAYER_SPRITE
 	halt
 	call	LDIRVM_SPRATR
-
 ; Fade in-out with the playable intro screen and enter the game
 	call	LDIRVM_NAMTBL_FADE_INOUT.KEEP_SPRITES
 	jr	GAME_LOOP
@@ -411,8 +433,17 @@ NEW_STAGE:
 ; Skip this section in tutorial stages
 	ld	a, [game.current_stage]
 	cp	TUTORIAL_STAGES
-	jr	c, GAME_LOOP_INIT
+	jr	nc, .NORMAL
 	
+; Tutorial stage (quick init)
+
+; Loads and initializes the current stage
+	call	LOAD_AND_INIT_CURRENT_STAGE
+; Fade in
+	call	ENASCR_FADE_IN
+	jp	GAME_LOOP
+	
+.NORMAL:
 ; Prepares the "new stage" screen
 	call	CLS_NAMTBL
 	
@@ -440,21 +471,9 @@ NEW_STAGE:
 ; Fade in
 	call	ENASCR_FADE_IN
 	call	TRIGGER_PAUSE_ONE_SECOND
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; New stage / new life entry point
-GAME_LOOP_INIT:
-; Loads current stage into NAMTBL buffer
-	ld	hl, NAMTBL_PACKED_TABLE
-	ld	a, [game.current_stage]
-	add	a ; a *= 2
-	call	GET_HL_A_WORD
-	ld	de, namtbl_buffer
-	call	UNPACK
-
-; In-game loop preamble and initialization	
-	call	INIT_STAGE
+	
+; Loads and initializes the current stage
+	call	LOAD_AND_INIT_CURRENT_STAGE
 	
 ; Fade in-out
 	call	LDIRVM_NAMTBL_FADE_INOUT
@@ -503,9 +522,7 @@ ENDIF
 	call	UPDATE_FRAMES_PUSHING	; (custom)
 	
 ; Extra input
-	ld	hl, NEWKEY + 7
-	bit	4, [hl]
-	call	z, ON_GAME_LOOP_STOP_KEY
+	call	.CTRL_STOP_CHECK
 	
 ; Check exit condition
 	ld	a, [player.state]
@@ -530,31 +547,41 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-ON_GAME_LOOP_STOP_KEY:
-; ; Has the player already finished?
-	; ld	a, [player.state]
-	; bit	BIT_STATE_FINISH, a
-	; ret	nz ; yes: do nothing
+.CTRL_STOP_CHECK:
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	4, [hl]
+	ret	nz ; no STOP
+	
+	dec	hl ; hl = NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	bit	1, [hl]
+	ret	nz ; no CTRL
+	
+; Has the player already finished?
+	ld	a, [player.state]
+	bit	BIT_STATE_FINISH, a
+	ret	nz ; yes: do nothing
 
 ; ; no: It is a tutorial stage?
 	; ld	a, [game.current_stage]
 	; cp	TUTORIAL_STAGES
 	; jr	c, TUTORIAL_OVER ; yes: skip tutorial
 	
-; ; no: Is the player already dying?
-	; ld	a, [player.state]
-	; and	$ff XOR FLAGS_STATE
-	; cp	PLAYER_STATE_DYING
-	; ret	z ; yes: do nothing
+; no: Is the player already dying?
+	ld	a, [player.state]
+	and	$ff XOR FLAGS_STATE
+	cp	PLAYER_STATE_DYING
+	ret	z ; yes: do nothing
 	
-; ; no: kills the player
-	; ld	a, PLAYER_STATE_DYING
-	; jp	SET_PLAYER_STATE
+; no: kills the player
+	jp	SET_PLAYER_DYING
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; In-game loop finish due stage over
 STAGE_OVER:
+; Fade out
+	call	DISSCR_FADE_OUT
+
 ; Next stage logic
 	ld	hl, game.current_stage
 	inc	[hl]
@@ -565,9 +592,6 @@ STAGE_OVER:
 	jp	c, NEW_STAGE ; yes: next stage directly
 	jp	z, TUTORIAL_OVER ; no: tutorial finished
 	
-; Fade out
-	call	DISSCR_FADE_OUT
-
 ; Stage over screen
 	;	...
 	
@@ -585,10 +609,13 @@ TUTORIAL_OVER:
 ; -----------------------------------------------------------------------------
 ; In-game loop finish due death of the player
 PLAYER_OVER:
+; Fade out
+	call	DISSCR_FADE_OUT
+	
 ; Is it a tutorial stage?
 	ld	a, [game.current_stage]
 	cp	TUTORIAL_STAGES
-	jp	c, NEW_STAGE ; .SKIP ; yes: no lives lost
+	jp	c, NEW_STAGE ; yes: re-enter current stage, no life lost
 	
 ; Life loss logic
 	ld	hl, game.lives
@@ -598,8 +625,6 @@ PLAYER_OVER:
 	dec	[hl]
 
 .SKIP:	
-; Fade out
-	call	DISSCR_FADE_OUT
 ; Re-enter current stage
 	jp	NEW_STAGE
 ; -----------------------------------------------------------------------------
@@ -627,6 +652,20 @@ GAME_OVER:
 ;	Custom game routines
 ; =============================================================================
 ;
+
+; -----------------------------------------------------------------------------
+; Loads and initializes the current stage
+LOAD_AND_INIT_CURRENT_STAGE:
+; Loads current stage into NAMTBL buffer
+	ld	hl, NAMTBL_PACKED_TABLE
+	ld	a, [game.current_stage]
+	add	a ; a *= 2
+	call	GET_HL_A_WORD
+	ld	de, namtbl_buffer
+	call	UNPACK
+; In-game loop preamble and initialization	
+	; jp	INIT_STAGE ; falls through
+; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; In-game loop preamble and initialization:
@@ -695,9 +734,11 @@ POST_PROCESS_STAGE_ELEMENT:
 	dec	a
 	jr	z, .BAT ; '1'
 	dec	a
-	jr	z, .SNAKE ; '2'
+	jr	z, .SPIDER ; '2'
 	dec	a
-	jr	z, .SAVAGE ; '3'
+	jr	z, .SNAKE ; '3'
+	dec	a
+	jr	z, .SAVAGE ; '4'
 	ret
 
 ; Inicializa un tile sprite de una caja
@@ -734,6 +775,17 @@ POST_PROCESS_STAGE_ELEMENT:
 	db	BAT_SPRITE_PATTERN
 	db	BAT_SPRITE_COLOR
 	dw	ENEMY_TYPE_FLYER
+
+; Initializes a new spider
+.SPIDER:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SPIDER_DATA
+	jp	INIT_ENEMY
+.SPIDER_DATA:
+	db	SPIDER_SPRITE_PATTERN
+	db	SPIDER_SPRITE_COLOR
+	dw	ENEMY_TYPE_FALLER
 
 ; Initializes a new snake
 .SNAKE:
@@ -1169,6 +1221,12 @@ SPRTBL_PACKED:
 	BAT_SPRITE_PATTERN:		equ $50
 	BAT_SPRITE_COLOR:		equ 4
 
+	SPIDER_SPRITE_PATTERN:		equ $60
+	SPIDER_SPRITE_COLOR:		equ 13
+	
+	OCTOPUS_SPRITE_PATTERN:		equ $68
+	OCTOPUS_SPRITE_COLOR:		equ 13
+	
 	SNAKE_SPRITE_PATTERN:		equ $70
 	SNAKE_SPRITE_COLOR:		equ 2
 	
@@ -1194,14 +1252,10 @@ SPRTBL_PACKED:
 NAMTBL_TEST_SCREEN:
 	incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
-NAMTBL_PACKED_INTRO_0:
-	incbin	"games/stevedore/intro_0.tmx.bin.zx7"
-NAMTBL_PACKED_INTRO_1:
-	incbin	"games/stevedore/intro_1.tmx.bin.zx7"
+NAMTBL_PACKED_INTRO:
+	incbin	"games/stevedore/intro.tmx.bin.zx7"
 
 NAMTBL_PACKED_TABLE:
-	; dw	NAMTBL_TEST_SCREEN
-	
 	dw	.TUTORIAL_01
 	dw	.TUTORIAL_02
 	dw	.TUTORIAL_03
@@ -1234,12 +1288,12 @@ NAMTBL_PACKED_TABLE:
 ; Initial value of the globals
 GLOBALS_0:
 	dw	2500			; .hi_score
-	db	0			; game.current_stage (tutorial)
+	db	0			; game.current_stage (intro)
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
-	db	TUTORIAL_STAGES		; .current_stage
+	db	0			; .current_stage
 	db	3			; .continues
 	dw	0			; .score
 	db	5			; .lives

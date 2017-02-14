@@ -66,7 +66,8 @@ SRCS_MSXLIB=\
 	lib\game\player.asm \
 	lib\game\player_x.asm \
 	lib\game\enemy.asm \
-	lib\game\enemy_x.asm
+	lib\game\enemy_x.asm \
+	lib\game\collision.asm \
 
 SRCS_LIBEXT=\
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
@@ -88,8 +89,7 @@ SPRS_INTERMEDIATE=\
 
 DATAS=\
 	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\intro_0.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\intro_1.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\intro.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\tutorial_01.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\tutorial_02.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\tutorial_03.tmx.bin.$(PACK_EXTENSION) \
@@ -100,8 +100,7 @@ DATAS=\
 
 DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\screen.tmx.bin \
-	$(GAME_PATH)\intro_0.tmx.bin \
-	$(GAME_PATH)\intro_1.tmx.bin \
+	$(GAME_PATH)\intro.tmx.bin \
 	$(GAME_PATH)\tutorial_01.tmx.bin \
 	$(GAME_PATH)\tutorial_02.tmx.bin \
 	$(GAME_PATH)\tutorial_03.tmx.bin \

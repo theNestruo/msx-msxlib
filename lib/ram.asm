@@ -136,6 +136,12 @@ enemy:
 	rb	1
 	.x:		equ $ - enemy
 	rb	1
+; Initial logical coordinates backup (e.g.: for respawning)
+	.xy_backup:	equ $ - enemy
+	.y_backup:	equ $ - enemy
+	rb	1
+	.x_backup:	equ $ - enemy
+	rb	1
 ; Enemy sprite attributes
 	.pattern:	equ $ - enemy
 	rb	1
