@@ -92,6 +92,8 @@ MOVE_PLAYER_LEFT:
 ; -----------------------------------------------------------------------------
 ; Moves the player n pixels up or down
 ; parm a: dy value
+; ret a: new y coordinate (player.y)
+; ret hl: player.y address
 MOVE_PLAYER_V:
 ; player.y += dy
 	ld	hl, player.y

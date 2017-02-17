@@ -124,7 +124,7 @@ ENEMY_TYPE_FALLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Faller (with trigger): The enemy onto the ground
+; Faller (with trigger): The enemy falls onto the ground
 ; when the player x coordinate overlaps with the enemy's
 .WITH_TRIGGER:
 ; Does the player overlaps x coordinate?
@@ -137,29 +137,29 @@ ENEMY_TYPE_FALLER:
 	db	0 ; 0 = forever
 	
 ; Yes: The enemy falls onto the ground
-	dw	PUT_ENEMY_SPRITE
+	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER
-	db	0 ; (unused)
+	db	0 ; 0 = forever
 	dw	SET_NEW_STATE_HANDLER
 	db	ENEMY_STATE.NEXT
 ; then
-	dw	PUT_ENEMY_SPRITE
+	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	RISER_ENEMY_HANDLER
-	db	0 ; (unused)
+	db	0 ; 0 = forever
 	dw	SET_NEW_STATE_HANDLER
 	db	-8 * ENEMY_STATE.SIZE; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Riser: The enemy can increase its height.
-ENEMY_TYPE_RISER:
+; ENEMY_TYPE_RISER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Jumper: The enemy bounces or jumps.
-ENEMY_TYPE_JUMPER:
+; ENEMY_TYPE_JUMPER:
 ; -----------------------------------------------------------------------------
 
 ; Ducker - The enemy can reduce its height (including, melting into the floor). Example: Super Mario's Piranha Plants
@@ -313,26 +313,27 @@ WALKER_ENEMY_HANDLER:
 ; param [iy + ENEMY_STATE.ARGS]: (ignored)
 ; ret z/nz: if the state has finished
 FALLER_ENEMY_HANDLER:
+; Has fallen onto the ground?
 	call	GET_ENEMY_TILE_FLAGS_UNDER
 	cpl	; (negative check to ret z/nz properly)
 	bit	BIT_WORLD_SOLID, a
-	ret	z ; (continue)
+	ret	z ; yes (continue)
 	
+; Computes falling speed	
 	ld	a, [ix + enemy.frame_counter]
-	cp	ENEMY_DY_TABLE.SIZE -ENEMY_DY_TABLE.FALL_OFFSET -1
-	jr	z, .DY_MAX ; yes
-; increases frame counter
 	inc	[ix + enemy.frame_counter]
-.DY_MAX:
+	cp	ENEMY_DY_TABLE.SIZE -ENEMY_DY_TABLE.FALL_OFFSET -1
+	ld	a, CFG_ENEMY_GRAVITY
+	jr	nc, .DY_OK ; (dY table exhausted)
+; value from the dY table
 	ld	hl, ENEMY_DY_TABLE + ENEMY_DY_TABLE.FALL_OFFSET
 	call	GET_HL_A_BYTE
-	
+.DY_OK:
+; moves down
 	add	[ix + enemy.y]
 	ld	[ix + enemy.y], a
-	
 ; ret nz (halt)
-	xor	a
-	inc	a
+	; inc	a ; (unnecessary)
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -340,45 +341,42 @@ FALLER_ENEMY_HANDLER:
 ; Riser: The enemy can increase its height.
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: (ignored)
+; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
 ; ret z/nz: if the state has finished
 RISER_ENEMY_HANDLER:
+; Has reached the ceiling?
 	call	GET_ENEMY_TILE_FLAGS_ABOVE
 	cpl	; (negative check to ret z/nz properly)
 	bit	BIT_WORLD_SOLID, a
-	ret	z ; (continue)
-	
+	ret	z ; yes (continue)
+; moves up
 	dec	[ix + enemy.y]
-	
-; ret nz (halt)
-	xor	a
-	inc	a
-	ret
+	jp	STATIONARY_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Jumper: The enemy bounces or jumps.
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: (ignored)
-; ret z/nz: if the state has finished
-JUMPER_ENEMY_HANDLER:
-	ld	a, [ix + enemy.frame_counter]
-	cp	ENEMY_DY_TABLE.SIZE -1
-	jr	z, .DY_MAX ; yes
-; increases frame counter
-	inc	[ix + enemy.frame_counter]
-.DY_MAX:
-	ld	hl, ENEMY_DY_TABLE
-	call	GET_HL_A_BYTE
+; ; Jumper: The enemy bounces or jumps.
+; ; param ix: pointer to the current enemy
+; ; param iy: pointer to the current enemy state
+; ; param [iy + ENEMY_STATE.ARGS]: (ignored)
+; ; ret z/nz: if the state has finished
+; JUMPER_ENEMY_HANDLER:
+	; ld	a, [ix + enemy.frame_counter]
+	; cp	ENEMY_DY_TABLE.SIZE -1
+	; jr	z, .DY_MAX ; yes
+; ; increases frame counter
+	; inc	[ix + enemy.frame_counter]
+; .DY_MAX:
+	; ld	hl, ENEMY_DY_TABLE
+	; call	GET_HL_A_BYTE
 	
-	add	[ix + enemy.y]
-	ld	[ix + enemy.y], a
+	; add	[ix + enemy.y]
+	; ld	[ix + enemy.y], a
 	
-; ret nz (halt)
-	xor	a
-	inc	a
-	ret
+; ; ret nz (halt)
+	; xor	a
+	; inc	a
+	; ret
 ; -----------------------------------------------------------------------------
 
 

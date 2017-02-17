@@ -75,10 +75,11 @@ ENDIF
 ; Set the player to be on the floor in the next frame
 SET_PLAYER_FLOOR:
 ; Y adjust
-	ld	a, [player.y]
+	ld	hl, player.y
+	ld	a, [hl]
 	add	CFG_PLAYER_GRAVITY - 1
 	and	$f8 ; (aligned to char)
-	ld	[player.y], a
+	ld	[hl], a
 ; Sets the player state
 	ld	a, PLAYER_STATE_FLOOR
 	jp	SET_PLAYER_STATE
@@ -98,7 +99,7 @@ UPDATE_PLAYER_FLOOR:
 ; Jumping?
 	ld	hl, stick_edge
 	bit	BIT_STICK_UP, [hl]
-	jr	nz, SET_PLAYER_JUMPING ; yes
+	jp	nz, SET_PLAYER_JUMPING ; yes
 	
 ; Moves horizontally with animation
 	call	MOVE_PLAYER_LR_ANIMATE
@@ -106,7 +107,7 @@ UPDATE_PLAYER_FLOOR:
 ; Is there floor under the player?
 	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
 	bit	BIT_WORLD_FLOOR, a
-	jr	z, SET_PLAYER_FALLING ; no
+	jp	z, SET_PLAYER_FALLING ; no
 ; yes	
 	ret
 	
@@ -220,7 +221,11 @@ UPDATE_PLAYER_AIR:
 	call	MOVE_PLAYER_LR
 	
 ; Updates Delta-Y (dY) table index
-	call	UPDATE_PLAYER_DY_INDEX
+	; call	UPDATE_PLAYER_DY_INDEX
+	call	READ_PLAYER_DY_VALUE
+	ld	hl, player.dy_index
+	inc	[hl]
+	
 	or	a
 	ret	z ; (dy == 0)
 	jp	m, .UP ; (dy < 0)
@@ -269,7 +274,12 @@ SET_PLAYER_DYING:
 UPDATE_PLAYER_DYING:
 ; Animation and vertical movement
 	call	UPDATE_PLAYER_ANIMATION
-	call	UPDATE_PLAYER_DY_INDEX
+	
+	; call	UPDATE_PLAYER_DY_INDEX
+	call	READ_PLAYER_DY_VALUE
+	ld	hl, player.dy_index
+	inc	[hl]
+	
 	call	MOVE_PLAYER_V
 ; Is the player off-screen?
 	ld	a, [player.y]
@@ -388,20 +398,35 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Updates Delta-Y (dY) table index
-; ret a: dy value
-UPDATE_PLAYER_DY_INDEX:
-; Delta-Y (dY) table end reached?
-	ld	hl, player.dy_index
-	ld	a, [hl]
-	cp	PLAYER_DY_TABLE.SIZE -1
-	jr	z, .DY_MAX ; yes
-; no: moves the pointer forward
-	inc	[hl]
-.DY_MAX:
-; Reads and return dy
+; UPDATE_PLAYER_DY_VALUE:
+	; ld	hl, player.dy_index
+	; inc	[hl]
+
+READ_PLAYER_DY_VALUE:
+	ld	a, [player.dy_index]
+	cp	PLAYER_DY_TABLE.SIZE
+	jr	c, .FROM_TABLE
+	ld	a, CFG_PLAYER_GRAVITY
+	ret
+	
+.FROM_TABLE:
 	ld	hl, PLAYER_DY_TABLE
 	jp	GET_HL_A_BYTE
+
+; Updates Delta-Y (dY) table index
+; ret a: dy value
+; UPDATE_PLAYER_DY_INDEX:
+; ; Delta-Y (dY) table end reached?
+	; ld	hl, player.dy_index
+	; ld	a, [hl]
+	; cp	PLAYER_DY_TABLE.SIZE -1
+	; jr	z, .DY_MAX ; yes
+; ; no: moves the pointer forward
+	; inc	[hl]
+; .DY_MAX:
+; ; Reads and return dy
+	; ld	hl, PLAYER_DY_TABLE
+	; jp	GET_HL_A_BYTE
 ; -----------------------------------------------------------------------------
 
 ; EOF

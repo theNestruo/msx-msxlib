@@ -168,9 +168,6 @@ PLAYER_UPDATE_TABLE:
 	dw	UPDATE_PLAYER_FLOOR	; PLAYER_STATE_PUSH
 	;	...
 
-; Terminal falling speed (pixels/frame)
-	CFG_PLAYER_GRAVITY:		equ 4
-
 ; Delta-Y (dY) table for jumping and falling
 PLAYER_DY_TABLE:
 	db	-4, -4			; (2,-8)
@@ -180,8 +177,10 @@ PLAYER_DY_TABLE:
 	.FALL_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
 	db	2, 2, 2			; (26,-8) / (9,12)
-	db	CFG_PLAYER_GRAVITY	; (terminal falling speed)
 	.SIZE:		equ $ - PLAYER_DY_TABLE
+
+; Terminal falling speed (pixels/frame)
+	CFG_PLAYER_GRAVITY:		equ 4
 
 ; Player related routines (generic)
 ; Player-tile helper routines
@@ -208,14 +207,14 @@ PLAYER_DY_TABLE:
 ; Enemies animation delay (frames)
 	CFG_ENEMY_ANIMATION_DELAY:	equ 10
 
-; Enemies terminal falling speed (pixels/frame)
-	CFG_ENEMY_GRAVITY:		equ CFG_PLAYER_GRAVITY
-
 ; Enemies delta-Y (dY) table for jumping and falling
 	ENEMY_DY_TABLE:			equ PLAYER_DY_TABLE
 	.FALL_OFFSET:			equ PLAYER_DY_TABLE.FALL_OFFSET
 	.SIZE:				equ PLAYER_DY_TABLE.SIZE
 	
+; Enemies terminal falling speed (pixels/frame)
+	CFG_ENEMY_GRAVITY:		equ CFG_PLAYER_GRAVITY
+
 ; Enemies related routines (generic)
 ; Convenience enemy state handlers (generic)
 ; Enemy-tile helper routines
@@ -515,11 +514,15 @@ ENDIF
 	call	UPDATE_SPRITEABLES
 	call	UPDATE_BOXES_AND_ROCKS	; (custom)
 	call	UPDATE_PLAYER
+	call	UPDATE_FRAMES_PUSHING	; (custom)
 	call	UPDATE_ENEMIES
 	; call	UPDATE_BULLETS		; específica
 	; call	CHECK_COLLISIONS_ENEMIES
 	
-	call	UPDATE_FRAMES_PUSHING	; (custom)
+;
+	call	GET_PLAYER_TILE_FLAGS
+	bit	BIT_WORLD_SOLID, a
+	; call	nz, SET_PLAYER_DYING
 	
 ; Extra input
 	call	.CTRL_STOP_CHECK
@@ -528,7 +531,6 @@ ENDIF
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
 	jr	z, GAME_LOOP ; no
-	
 ; yes: conditionally jump according the exit status
 	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_FINISH
@@ -1172,8 +1174,7 @@ ON_PLAYER_PUSH:
 	; ret
 
 ; ON_BULLET_COLLISION_UX:
-	; ld	a, PLAYER_STATE_DYING
-	; jp	SET_PLAYER_STATE
+	; jp	SET_PLAYER_DYING
 ; -----------------------------------------------------------------------------
 
 ;
@@ -1249,8 +1250,8 @@ SPRTBL_PACKED:
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
-NAMTBL_TEST_SCREEN:
-	incbin	"games/stevedore/screen.tmx.bin.zx7"
+; NAMTBL_TEST_SCREEN:
+	; incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
 NAMTBL_PACKED_INTRO:
 	incbin	"games/stevedore/intro.tmx.bin.zx7"
