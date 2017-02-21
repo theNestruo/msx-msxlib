@@ -393,13 +393,8 @@ RISER_ENEMY_HANDLER:
 ; ret nz: yes
 CAN_ENEMY_WALK:
 	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-IFDEF CFG_OPT_SPEED
-	jp	nz, CAN_ENEMY_WALK.LEFT
-	jp	CAN_ENEMY_WALK.RIGHT
-ELSE
 	jr	nz, CAN_ENEMY_WALK.LEFT
 	jr	CAN_ENEMY_WALK.RIGHT
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -409,13 +404,8 @@ ENDIF
 ; ret nz: yes
 CAN_ENEMY_FLY:
 	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-IFDEF CFG_OPT_SPEED
-	jp	nz, CAN_ENEMY_FLY.LEFT
-	jp	CAN_ENEMY_FLY.RIGHT
-ELSE
 	jr	nz, CAN_ENEMY_FLY.LEFT
 	jr	CAN_ENEMY_FLY.RIGHT
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -492,11 +482,7 @@ GET_ENEMY_TILE_FLAGS_ABOVE:
 ; ret a: tile flags
 GET_ENEMY_TILE_FLAGS_UNDER.LEFT:
 	ld	a, ENEMY_BOX_X_OFFSET -1
-IFDEF CFG_OPT_SPEED
-	jp	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
-ELSE
 	jr	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -505,11 +491,7 @@ ENDIF
 ; ret a: tile flags
 GET_ENEMY_TILE_FLAGS_UNDER.RIGHT:
 	ld	a, ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
-IFDEF CFG_OPT_SPEED
-	jp	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
-ELSE
 	jr	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

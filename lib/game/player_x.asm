@@ -62,7 +62,7 @@ ENDIF
 	
 IFEXIST ON_PLAYER_WALK_OVER
 ; Reads the OR-ed flags of the tiles under the player
-	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
+	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST.ONE_PIXEL
 ; Has walking over tiles (player width) bit?
 	bit	BIT_WORLD_WALK_OVER, a
 	call	nz, ON_PLAYER_WALK_OVER ; yes
@@ -105,7 +105,7 @@ UPDATE_PLAYER_FLOOR:
 	call	MOVE_PLAYER_LR_ANIMATE
 	
 ; Is there floor under the player?
-	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
+	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST.ONE_PIXEL
 	bit	BIT_WORLD_FLOOR, a
 	jp	z, SET_PLAYER_FALLING ; no
 ; yes	
@@ -118,7 +118,7 @@ UPDATE_PLAYER_FLOOR:
 	
 .CHECK_DOWNSTAIRS:
 ; Trying to get on stairs downstairs
-	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
+	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST.ONE_PIXEL
 	; jr	.CHECK_STAIRS ; falls through
 	
 .CHECK_STAIRS:
@@ -185,7 +185,7 @@ UPDATE_PLAYER_STAIRS:
 	
 .OFF:
 ; Is there floor under the player?
-	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
+	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST.ONE_PIXEL
 	bit	BIT_WORLD_FLOOR, a
 	jp	nz, SET_PLAYER_FLOOR ; yes
 	; jp	SET_PLAYER_FALLING ; no ; falls through

@@ -23,15 +23,11 @@ ADD_HL_A:
 ; ret hl: pointer to the byte (i.e.: hl + a)
 ; ret a: read byte
 GET_HL_A_BYTE:
-IFDEF CFG_OPT_SPEED
-	add	l
+	add	l ; hl += a
 	ld	l, a
 	adc	h
 	sub	l
 	ld	h, a
-ELSE
-	call	ADD_HL_A
-ENDIF
 	ld	a, [hl] ; a = [hl]
 	ret
 ; -----------------------------------------------------------------------------
@@ -42,15 +38,11 @@ ENDIF
 ; param a: unsigned 0-based index (0, 2, 4...)
 ; ret hl: read word
 GET_HL_A_WORD:
-IFDEF CFG_OPT_SPEED
-	add	l
+	add	l ; hl += a
 	ld	l, a
 	adc	h
 	sub	l
 	ld	h, a
-ELSE
-	call	ADD_HL_A
-ENDIF
 	; jr	LD_HL_HL ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -79,15 +71,11 @@ JP_TABLE:
 ; param hl: jump table address
 ; param a: unsigned 0-based index (0, 2, 4...)
 JP_TABLE_2:
-IFDEF CFG_OPT_SPEED
-	add	l
+	add	l ; hl += a
 	ld	l, a
 	adc	h
 	sub	l
 	ld	h, a
-ELSE
-	call	ADD_HL_A
-ENDIF
 	; jr	JP_HL_INDIRECT ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -96,14 +84,10 @@ ENDIF
 ; param hl: pointer to the address
 ; touches a
 JP_HL_INDIRECT:
-IFDEF CFG_OPT_SPEED
 	ld	a, [hl] ; hl = [hl]
 	inc	hl
 	ld	h, [hl]
 	ld	l, a
-ELSE
-	call	LD_HL_HL
-ENDIF
 	; jr	JP_HL ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 

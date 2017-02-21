@@ -22,16 +22,12 @@ COORDS_TO_OFFSET:
 	srl	a
 	srl	a
 ; hl += a
-IFDEF CFG_OPT_SPEED
 	add	l
 	ld	l, a
 	adc	h
 	sub	l
 	ld	h, a
 	ret
-ELSE
-	jp	ADD_HL_A
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -130,11 +126,7 @@ GET_TILE_FLAGS:
 	jr	z, .OK ; yes (equal)
 ; no
 	inc	hl ; hl = up to index (next group)
-IFDEF CFG_OPT_SPEED
-	jp	.LOOP
-ELSE
 	jr	.LOOP
-ENDIF
 
 .OK:
 	ld	a, [hl]

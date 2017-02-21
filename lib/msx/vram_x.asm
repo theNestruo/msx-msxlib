@@ -174,25 +174,6 @@ GET_SPRITEABLE_COORDS:
 GET_SPRITEABLE_OFFSET:
 ; Travels the spriteable array
 	ld	ix, spriteables.array
-IFDEF CFG_OPT_SPEED
-.LOOP_OPT:
-; Compares offsets
-	ld	a, [ix +_SPRITEABLE_OFFSET_L]
-	cp	e
-	jr	z, .CHECK_H ; l equals
-; no match: next element
-	ld	bc, SPRITEABLE_SIZE
-	add	ix, bc
-	jp	.LOOP_OPT
-.CHECK_H:	
-	ld	a, [ix +_SPRITEABLE_OFFSET_H]
-	cp	d
-	ret	z ; match
-; no match: next element
-	ld	bc, SPRITEABLE_SIZE
-	add	ix, bc
-	jp	.LOOP_OPT
-ELSE
 .LOOP:
 ; Compares offsets
 	ld	a, [ix +_SPRITEABLE_OFFSET_L]
@@ -207,7 +188,6 @@ ELSE
 	ld	bc, SPRITEABLE_SIZE
 	add	ix, bc
 	jr	.LOOP
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -235,11 +215,7 @@ UPDATE_SPRITEABLES:
 ; Decreases the pending movement and shows the sprite
 	dec	[ix + _SPRITEABLE_STATUS]
 	call	PUT_SPRITEABLE_SPRITE
-IFDEF CFG_OPT_SPEED
-	jp	.NEXT
-ELSE
 	jr	.NEXT
-ENDIF
 
 ; Stops the spriteable (for the next frame)
 .STOP:
@@ -289,40 +265,24 @@ PUT_SPRITEABLE_SPRITE:
 	ld	a, d
 	add	c
 	ld	d, a
-IFDEF CFG_OPT_SPEED
-	jp	.DE_OK
-ELSE
 	jr	.DE_OK
-ENDIF
 
 .RIGHT:
 ; right: x -= pending movement
 	ld	a, d
 	sub	c
 	ld	d, a
-IFDEF CFG_OPT_SPEED
-	jp	.DE_OK
-ELSE
 	jr	.DE_OK
-ENDIF
 
 .UP_OR_DOWN:
 	cp	SPRITEABLE_DIR_DOWN
-IFDEF CFG_OPT_SPEED
-	jp	c, .UP
-ELSE
 	jr	c, .UP
-ENDIF
 
 ; down: y -= pending movement
 	ld	a, e
 	sub	c
 	ld	e, a
-IFDEF CFG_OPT_SPEED
-	jp	.DE_OK
-ELSE
 	jr	.DE_OK
-ENDIF
 
 .UP:
 ; up: y += pending movement
@@ -367,11 +327,7 @@ MOVE_SPRITEABLE_DOWN:
 	ld	bc, SCR_WIDTH
 	add	hl, bc
 ; Shows the spriteable sprite and puts the spriteable in the NAMTBL buffer
-IFDEF CFG_OPT_SPEED
-	jp	MOVE_SPRITEABLE_2
-ELSE
 	jr	MOVE_SPRITEABLE_2
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -384,11 +340,7 @@ MOVE_SPRITEABLE_RIGHT:
 ; Updates NAMTBL offset
 	inc	hl
 ; Shows the spriteable sprite and puts the spriteable in the NAMTBL buffer
-IFDEF CFG_OPT_SPEED
-	jp	MOVE_SPRITEABLE_2
-ELSE
 	jr	MOVE_SPRITEABLE_2
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -505,11 +457,7 @@ VPOKE_SPRITEABLE_BACKGROUND:
 ; Lower right character
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +3]
-IFDEF CFG_OPT_SPEED
-	jp	VPOKE_SPRITEABLE_NEXT
-ELSE
 	jr	VPOKE_SPRITEABLE_NEXT
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -533,11 +481,7 @@ VPOKE_SPRITEABLE_FOREGROUND:
 ; Lower right character
 	inc	hl
 	inc	a
-IFDEF CFG_OPT_SPEED
-	jp	VPOKE_SPRITEABLE_NEXT
-ELSE
 	jr	VPOKE_SPRITEABLE_NEXT
-ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

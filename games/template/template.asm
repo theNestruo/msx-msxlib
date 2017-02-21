@@ -8,10 +8,6 @@
 ; -----------------------------------------------------------------------------
 ; Define to visually debug frame timing
 	; CFG_DEBUG_BDRCLR:
-	
-; Define to prefer speed over size wherever speed does matter
-; (e.g.: jp instead of jr, inline routines, etc.)
-	; CFG_OPT_SPEED:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

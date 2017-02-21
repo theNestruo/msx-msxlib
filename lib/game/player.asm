@@ -261,19 +261,29 @@ GET_PLAYER_TILE_FLAGS_WIDE:
 ; Returns the OR-ed flags of the tiles under the player
 ; when aligned to a tile boundary
 ; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_UNDER_FAST:
-; Aligned to tile boundary?
-; (or falling fast enough to cross the tile boundary?)
-	ld	a, [player.y]
-IFDEF CFG_PLAYER_GRAVITY
-	and	$07
-	cp	CFG_PLAYER_GRAVITY ; (any value lower than the maximum dy)
-	jr	nc, CHECK_NO_TILES ; no: return no flags
-ELSE
-	and	$07
-	jr	nz, CHECK_NO_TILES ; no: return no flags
-ENDIF
+GET_PLAYER_TILE_FLAGS_UNDER_FAST.ONE_PIXEL:
+	ld	a, 1
 ; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the OR-ed flags of the tiles under the player
+; when moving fast enough to cross the tile boundary
+; param a: positive delta-Y
+; ret a: OR-ed tile flags
+GET_PLAYER_TILE_FLAGS_UNDER_FAST:
+; Moving fast enough to cross the tile boundary?
+	ld	b, a ; delta-Y on b
+	ld	a, [player.y]
+	; and	$07
+	; cp	CFG_PLAYER_GRAVITY ; (any value lower than the maximum dy)
+	dec	a
+	or	$f8
+	add	b
+	jp	nc, CHECK_NO_TILES ; no: return no flags
+	
+	ld	a, b
+	jp	GET_PLAYER_H_TILE_FLAGS
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles under the player

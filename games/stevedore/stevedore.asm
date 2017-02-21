@@ -7,11 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Define to visually debug frame timing
-	; CFG_DEBUG_BDRCLR:
-	
-; Define to prefer speed over size wherever speed does matter
-; (e.g.: jp instead of jr, inline routines, etc.)
-	; CFG_OPT_SPEED:
+	CFG_DEBUG_BDRCLR:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -173,6 +169,7 @@ PLAYER_DY_TABLE:
 	db	-4, -4			; (2,-8)
 	db	-2, -2, -2		; (5,-14)
 	db	-1, -1, -1, -1, -1, -1	; (11,-20)
+	.TOP_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	 0,  0,  0,  0,  0,  0	; (17,-20)
 	.FALL_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
@@ -209,6 +206,7 @@ PLAYER_DY_TABLE:
 
 ; Enemies delta-Y (dY) table for jumping and falling
 	ENEMY_DY_TABLE:			equ PLAYER_DY_TABLE
+	.TOP_OFFSET:			equ PLAYER_DY_TABLE.TOP_OFFSET
 	.FALL_OFFSET:			equ PLAYER_DY_TABLE.FALL_OFFSET
 	.SIZE:				equ PLAYER_DY_TABLE.SIZE
 	
@@ -287,6 +285,12 @@ MAIN_INIT:
 ; ------VVVV----falls through--------------------------------------------------
 	
 IFEXIST NAMTBL_TEST_SCREEN
+; Is SELECT key pressed?
+	halt
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	6, [hl]
+	call	z, INTRO ; yes: skip test screen
+	
 	ld	hl, NAMTBL_TEST_SCREEN
 	ld	de, namtbl_buffer
 	call	UNPACK
@@ -298,10 +302,10 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Intro sequence
 INTRO:
-; Is SELECT key pressed?
+; Is ESC key pressed?
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	6, [hl]
+	bit	2, [hl]
 	call	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 ; Loads intro screen into NAMTBL buffer
@@ -1250,8 +1254,8 @@ SPRTBL_PACKED:
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
-; NAMTBL_TEST_SCREEN:
-	; incbin	"games/stevedore/screen.tmx.bin.zx7"
+NAMTBL_TEST_SCREEN:
+	incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
 NAMTBL_PACKED_INTRO:
 	incbin	"games/stevedore/intro.tmx.bin.zx7"

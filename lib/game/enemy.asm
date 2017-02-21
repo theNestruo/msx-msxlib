@@ -147,14 +147,10 @@ UPDATE_ENEMIES:
 SET_NEW_STATE_HANDLER:
 ; Reads the offset to the next state in bc (16-bit signed)
 	ld	a, [iy + ENEMY_STATE.ARGS]
-IFDEF CFG_OPT_SPEED
-	ld	c, a
+	ld	c, a ; ld bc, a
 	rla
 	sbc	a, a
 	ld	b, a
-ELSE
-	call	LD_BC_A
-ENDIF
 ; Sets the new state as the enemy state
 	push	iy ; hl = iy + bc
 	pop	hl
