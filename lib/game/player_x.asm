@@ -398,10 +398,6 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; UPDATE_PLAYER_DY_VALUE:
-	; ld	hl, player.dy_index
-	; inc	[hl]
-
 READ_PLAYER_DY_VALUE:
 	ld	a, [player.dy_index]
 	cp	PLAYER_DY_TABLE.SIZE
@@ -412,21 +408,6 @@ READ_PLAYER_DY_VALUE:
 .FROM_TABLE:
 	ld	hl, PLAYER_DY_TABLE
 	jp	GET_HL_A_BYTE
-
-; Updates Delta-Y (dY) table index
-; ret a: dy value
-; UPDATE_PLAYER_DY_INDEX:
-; ; Delta-Y (dY) table end reached?
-	; ld	hl, player.dy_index
-	; ld	a, [hl]
-	; cp	PLAYER_DY_TABLE.SIZE -1
-	; jr	z, .DY_MAX ; yes
-; ; no: moves the pointer forward
-	; inc	[hl]
-; .DY_MAX:
-; ; Reads and return dy
-	; ld	hl, PLAYER_DY_TABLE
-	; jp	GET_HL_A_BYTE
 ; -----------------------------------------------------------------------------
 
 ; EOF

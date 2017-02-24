@@ -21,7 +21,8 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Symbolic constants for enemy states
+; Symbolic constants for enemy states.
+
 ; Any enemy state handler routine:
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
@@ -68,10 +69,6 @@ INIT_ENEMY:
 	
 .INIT:
 ; Stores the logical coordinates
-	ld	[hl], e ; .y_backup
-	inc	hl
-	ld	[hl], d ; .x_backup
-	inc	hl
 	ld	[hl], e ; .y
 	inc	hl
 	ld	[hl], d ; .x
@@ -179,6 +176,23 @@ SET_NEW_STATE_HANDLER:
 ; ret nz (halt) if the state changes
 .ON_X_COLLISION:
 	call	CHECK_PLAYER_ENEMY_COLLISION.X
+	jp	c, SET_NEW_STATE_HANDLER
+; ret z (continue)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Sets a new current state for the current enemy,
+; relative to the current state,
+; when the player and the enemy are in overlapping y coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
+; ret z (continue) if the state does not change (no overlapping coordinates)
+; ret nz (halt) if the state changes
+.ON_Y_COLLISION:
+	call	CHECK_PLAYER_ENEMY_COLLISION.Y
 	jp	c, SET_NEW_STATE_HANDLER
 ; ret z (continue)
 	xor	a

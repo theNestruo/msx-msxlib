@@ -162,33 +162,51 @@ ENEMY_TYPE_FALLER:
 ; ENEMY_TYPE_JUMPER:
 ; -----------------------------------------------------------------------------
 
-; Ducker - The enemy can reduce its height (including, melting into the floor). Example: Super Mario's Piranha Plants
+; Ducker - The enemy can reduce its height (including, melting into the floor).
+; Example: Super Mario's Piranha Plants
 
-; Sticky - The enemy sticks to walls and ceilings. Example: Super Mario 2's Spark
+; Sticky - The enemy sticks to walls and ceilings.
+; Example: Super Mario 2's Spark
 
-; Waver - The enemy floats in a sine wave pattern. Example: Castlevania's Medusa Head
+; Waver - The enemy floats in a sine wave pattern.
+; Example: Castlevania's Medusa Head
 
-; Rotator - The enemy rotates around a fixed point. Sometimes, the fixed point moves, and can move according to any movement attribute in this list. Also, the rotation direction may change. Example: Super Mario 3's Rotodisc, These jetpack enemeis from Sunsoft's Batman (notice that the point which they rotate around is the player)
+; Rotator - The enemy rotates around a fixed point.
+; Sometimes, the fixed point moves, and can move according to any movement attribute in this list.
+; Also, the rotation direction may change.
+; Example: Super Mario 3's Rotodisc,
+; These jetpack enemeis from Sunsoft's Batman (notice that the point which they rotate around is the player)
 
-; Swinger - The enemy swings from a fixed point. Example: Castlevania's swinging blades
+; Swinger - The enemy swings from a fixed point.
+; Example: Castlevania's swinging blades
 
-; Pacer - The enemy changes direction in response to a trigger (like reaching the edge of a platform). Example: Super Mario's Red Koopas
+; Pacer - The enemy changes direction in response to a trigger (like reaching the edge of a platform).
+; Example: Super Mario's Red Koopas
 
-; Roamer - The enemy changes direction completely randomly. Example: Legend of Zelda's Octoroks
+; Roamer - The enemy changes direction completely randomly.
+; Example: Legend of Zelda's Octoroks
 
-; Liner - The enemy moves directly to a spot on the screen. Forgot to record the enemies I saw doing this, but usually they move from one spot to another in straight lines, sometimes randomly, other times, trying to 'slice' through the player.
+; Liner - The enemy moves directly to a spot on the screen.
+; Forgot to record the enemies I saw doing this, but usually they move from one spot to another in straight lines,
+; sometimes randomly, other times, trying to 'slice' through the player.
 
-; Teleporter - The enemy can teleport from one location to another. Example: Zelda's Wizrobes
+; Teleporter - The enemy can teleport from one location to another.
+; Example: Zelda's Wizrobes
 
-; Dasher - The enemy dashes in a direction, faster than its normal movement speed. Example: Zelda's Rope Snakes
+; Dasher - The enemy dashes in a direction, faster than its normal movement speed.
+; Example: Zelda's Rope Snakes
 
-; Ponger - The enemy ignores gravity and physics, and bounces off walls in straight lines. Example: Zelda 2's "Bubbles"
+; Ponger - The enemy ignores gravity and physics, and bounces off walls in straight lines.
+; Example: Zelda 2's "Bubbles"
 
-; Geobound - The enemy is physically stuck to the geometry of the level, sometimes appears as level geometry. Examples: Megaman's Spikes, Super Mario's Piranha Plants, CastleVania's White Dragon
+; Geobound - The enemy is physically stuck to the geometry of the level, sometimes appears as level geometry.
+; Examples: Megaman's Spikes, Super Mario's Piranha Plants, CastleVania's White Dragon
 
-; Tethered - The enemy is tethered to the level's geometry by a chain or a rope. Example: Super Mario's Chain Chomps
+; Tethered - The enemy is tethered to the level's geometry by a chain or a rope.
+; Example: Super Mario's Chain Chomps
 
-; Swooper - A floating enemy that swoops down, often returning to its original position, but not always. Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
+; Swooper - A floating enemy that swoops down, often returning to its original position, but not always.
+; Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
 
 ;
 ; =============================================================================
@@ -322,13 +340,8 @@ FALLER_ENEMY_HANDLER:
 ; Computes falling speed	
 	ld	a, [ix + enemy.frame_counter]
 	inc	[ix + enemy.frame_counter]
-	cp	ENEMY_DY_TABLE.SIZE -ENEMY_DY_TABLE.FALL_OFFSET -1
-	ld	a, CFG_ENEMY_GRAVITY
-	jr	nc, .DY_OK ; (dY table exhausted)
-; value from the dY table
-	ld	hl, ENEMY_DY_TABLE + ENEMY_DY_TABLE.FALL_OFFSET
-	call	GET_HL_A_BYTE
-.DY_OK:
+	add	ENEMY_DY_TABLE.FALL_OFFSET
+	call	READ_ENEMY_DY_VALUE
 ; moves down
 	add	[ix + enemy.y]
 	ld	[ix + enemy.y], a
@@ -510,6 +523,19 @@ GET_ENEMY_TILE_FLAGS_UNDER:
 ; Reads the tile index and then the tile flags
 	call	GET_TILE_VALUE
 	jp	GET_TILE_FLAGS
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+READ_ENEMY_DY_VALUE:
+	; ld	a, [player.dy_index]
+	cp	ENEMY_DY_TABLE.SIZE
+	jr	c, .FROM_TABLE
+	ld	a, CFG_ENEMY_GRAVITY
+	ret
+	
+.FROM_TABLE:
+	ld	hl, ENEMY_DY_TABLE
+	jp	GET_HL_A_BYTE
 ; -----------------------------------------------------------------------------
 
 ; EOF

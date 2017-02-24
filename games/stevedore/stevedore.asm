@@ -195,9 +195,9 @@ PLAYER_DY_TABLE:
 ; Enemy-tile helper routines
 
 ; Maximum simultaneous number of enemies
-	CFG_ENEMY_COUNT:		equ 8
+	CFG_ENEMY_COUNT:		equ 16
 
-; Logical sprite sizes (bounding box size) (pixels)
+; Logical enemy sprite sizes (bounding box size) (pixels)
 	CFG_ENEMY_WIDTH:		equ 8
 	CFG_ENEMY_HEIGHT:		equ 16
 
@@ -233,6 +233,25 @@ PLAYER_DY_TABLE:
 ; Convenience enemy state handlers (platformer game)
 ; Convenience enemy helper routines (platform games)
 	include	"lib/game/enemy_x.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Bullet related routines (generic)
+; Bullet-tile helper routines
+
+; Maximum simultaneous number of bullets
+	CFG_BULLET_COUNT:		equ 8
+
+; Logical bullet sprite sizes (bounding box size) (pixels)
+	CFG_BULLET_WIDTH:		equ 4
+	CFG_BULLET_HEIGHT:		equ 4
+
+; Bullet speed (pixels/frame)
+	CFG_BULLET_SPEED:		equ 4
+
+; Bullet related routines (generic)
+; Bullet-tile helper routines
+	include	"lib/game/bullet.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -514,19 +533,21 @@ ENDIF
 	call	GET_STICK_BITS
 	call	GET_TRIGGER
 
-; Game logic
+; Game logic (1/2: updates)
 	call	UPDATE_SPRITEABLES
 	call	UPDATE_BOXES_AND_ROCKS	; (custom)
 	call	UPDATE_PLAYER
 	call	UPDATE_FRAMES_PUSHING	; (custom)
 	call	UPDATE_ENEMIES
-	; call	UPDATE_BULLETS		; específica
-	; call	CHECK_COLLISIONS_ENEMIES
+	; call	UPDATE_BULLETS
+
+; Game logic (2/2: interactions)
+	call	CHECK_PLAYER_ENEMIES_COLLISIONS
 	
-;
+; Additional game logic: crushed (by a pushable)
 	call	GET_PLAYER_TILE_FLAGS
 	bit	BIT_WORLD_SOLID, a
-	; call	nz, SET_PLAYER_DYING
+	call	nz, SET_PLAYER_DYING
 	
 ; Extra input
 	call	.CTRL_STOP_CHECK
@@ -725,44 +746,63 @@ POST_PROCESS_STAGE_ELEMENTS:
 ; param hl: NAMTBL buffer pointer
 POST_PROCESS_STAGE_ELEMENT:
 	ld	a, [hl]
+	
 ; Is it a box?
 	cp	BOX_FIRST_CHAR
-	jr	z, .BOX
-; Is it a rock?
-	cp	ROCK_FIRST_CHAR
-	jr	z, .ROCK
-; Is it a skeleton?
-	cp	SKELETON_FIRST_CHAR +1
-	jr	z, .SKELETON
-; Is it '0', '1', '2', ...
-	sub	'0'
-	jr	z, .START_POINT ; '0'
-	dec	a
-	jr	z, .BAT ; '1'
-	dec	a
-	jr	z, .SPIDER ; '2'
-	dec	a
-	jr	z, .SNAKE ; '3'
-	dec	a
-	jr	z, .SAVAGE ; '4'
-	ret
-
-; Inicializa un tile sprite de una caja
-.BOX:
+	jr	nz, .BOX_ELSE
+; Initializes a box spriteable
 	call	INIT_SPRITEABLE
 	ld	[ix + _SPRITEABLE_PATTERN], BOX_SPRITE_PATTERN
 	ld	[ix + _SPRITEABLE_COLOR], BOX_SPRITE_COLOR
 	ret
+.BOX_ELSE:
 
-; Inicializa el tile sprite de una roca
-.ROCK:
+; Is it a rock?
+	cp	ROCK_FIRST_CHAR
+	jr	nz, .ROCK_ELSE
+; Initializes a rock spriteable
 	call	INIT_SPRITEABLE
 	ld	[ix + _SPRITEABLE_PATTERN], ROCK_SPRITE_PATTERN
 	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
 	ret
+.ROCK_ELSE:
 
+; Is it a skeleton?
+	cp	SKELETON_FIRST_CHAR +1
+	jr	nz, .SKELETON_ELSE
+; Initializes a new skeleton
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SKELETON_DATA
+	jp	INIT_ENEMY
+.SKELETON_DATA:
+	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
+	db	SKELETON_SPRITE_COLOR
+	dw	ENEMY_TYPE_SKELETON
+.SKELETON_ELSE:
+
+; Is it a trap?
+	cp	TRAP_RIGHT_LOWER_CHAR
+	jr	z, .RIGHT_TRAP
+	cp	TRAP_LEFT_LOWER_CHAR
+	jp	nz, .TRAP_ELSE
+.LEFT_TRAP:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .TRAP_DATA
+	jp	INIT_ENEMY
+.RIGHT_TRAP:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .TRAP_DATA
+	jp	INIT_ENEMY
+.TRAP_DATA:
+	db	0 ; pattern
+	db	0 ; color
+	dw	ENEMY_TYPE_TRIGGER.RIGHT
+.TRAP_ELSE:
+	
+; Is it '0', '1', '2', ...
+	sub	'0'
+	jr	nz, .START_POINT_ELSE ; '0'
 ; Initializes player coordinates
-.START_POINT:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
 	ld	hl, player.y
@@ -770,9 +810,11 @@ POST_PROCESS_STAGE_ELEMENT:
 	inc	hl ; hl = player.x
 	ld	[hl], d
 	ret
+.START_POINT_ELSE:
 
+	dec	a
+	jr	nz, .BAT_ELSE ; '1'
 ; Initializes a new bat
-.BAT:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
 	ld	hl, .BAT_DATA
@@ -781,9 +823,11 @@ POST_PROCESS_STAGE_ELEMENT:
 	db	BAT_SPRITE_PATTERN
 	db	BAT_SPRITE_COLOR
 	dw	ENEMY_TYPE_FLYER
+.BAT_ELSE:
 
+	dec	a
+	jr	nz, .SPIDER_ELSE ; '2'
 ; Initializes a new spider
-.SPIDER:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
 	ld	hl, .SPIDER_DATA
@@ -792,9 +836,11 @@ POST_PROCESS_STAGE_ELEMENT:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
 	dw	ENEMY_TYPE_FALLER
+.SPIDER_ELSE:
 
+	dec	a
+	jr	nz, .SNAKE_ELSE ; '3'
 ; Initializes a new snake
-.SNAKE:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
 	ld	hl, .SNAKE_DATA
@@ -803,27 +849,23 @@ POST_PROCESS_STAGE_ELEMENT:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
 	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
+.SNAKE_ELSE:
 
-; Initializes a new skeleton
-.SKELETON:
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SKELETON_DATA
-	jp	INIT_ENEMY
-.SKELETON_DATA:
-	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
-	db	SKELETON_SPRITE_COLOR
-	dw	ENEMY_TYPE_SKELETON
-
+	dec	a
+	jr	nz, .SAVAGE_ELSE ; '4'
 ; Initializes a new savage
-.SAVAGE:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
 	ld	hl, .SAVAGE_DATA
-	jp	INIT_ENEMY
+	ret ; jp	INIT_ENEMY
 .SAVAGE_DATA:
 	db	SAVAGE_SPRITE_PATTERN
 	db	SAVAGE_SPRITE_COLOR
 	dw	ENEMY_TYPE_WALKER.FOLLOWER
+.SAVAGE_ELSE:
+	
+	ret
+
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -866,6 +908,49 @@ ENEMY_TYPE_SKELETON:
 	ld	[ix + enemy.state_l], l
 ; ret nz (halt)
 	inc	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Skeleton: the skeleton is slept until the star is picked up,
+; then, it becomes of type walker (follower with pause)
+ENEMY_TYPE_TRIGGER:
+
+.RIGHT:
+; Does the player overlaps y coordinate?
+	dw	.RIGHT_HANDLER
+	db	2 * ENEMY_STATE.SIZE ; (skip one)
+; No: the enemy remains stationary
+	dw	STATIONARY_ENEMY_HANDLER
+	db	0 ; 0 = forever
+; Yes: shoot
+	dw	.ZZZ
+	db	0 ; (unused)
+	dw	SET_NEW_STATE_HANDLER
+	db	ENEMY_STATE.NEXT
+; then pause and restart
+	dw	STATIONARY_ENEMY_HANDLER
+	db	60
+	dw	SET_NEW_STATE_HANDLER
+	db	-5 * ENEMY_STATE.SIZE; (restart)
+	
+.RIGHT_HANDLER:
+	call	CHECK_PLAYER_ENEMY_COLLISION.Y
+	jp	nc, .RET_Z
+; right?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jr	c, .RET_Z
+; yes
+	jp	SET_NEW_STATE_HANDLER
+	
+.ZZZ:
+	call	BEEP
+	; jr	.ZZZ
+	
+.RET_Z:
+; ret z (continue)
+	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -1162,6 +1247,8 @@ ON_PLAYER_PUSH:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+ON_PLAYER_ENEMY_COLLISION:
+	jp	SET_PLAYER_DYING
 ; ON_ENEMY_COLLISION_UX:
 	; ld	a, [ix + _ENEMY_STATE]
 	; cp	ENEMY_TRIGGER
@@ -1212,6 +1299,9 @@ CHARSET_CLR_PACKED:
 	ROCK_FIRST_CHAR_LAVA:	equ $fc
 	
 	SKELETON_FIRST_CHAR:	equ $98
+	
+	TRAP_LEFT_LOWER_CHAR:	equ $de
+	TRAP_RIGHT_LOWER_CHAR:	equ $df
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

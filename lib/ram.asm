@@ -131,16 +131,10 @@ enemies:
 
 enemy:
 ; Logical coordinates (in pixels)
-	.xy:	equ $ - enemy
+	.xy:		equ $ - enemy
 	.y:		equ $ - enemy
 	rb	1
 	.x:		equ $ - enemy
-	rb	1
-; Initial logical coordinates backup (e.g.: for respawning)
-	.xy_backup:	equ $ - enemy
-	.y_backup:	equ $ - enemy
-	rb	1
-	.x_backup:	equ $ - enemy
 	rb	1
 ; Enemy sprite attributes
 	.pattern:	equ $ - enemy
@@ -164,6 +158,43 @@ enemy:
 ; (rest of the array)
 	rb	(CFG_ENEMY_COUNT -1) * enemy.SIZE
 	enemies.SIZE:	equ $ - enemies
+ENDIF
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Bullets array
+IFDEF CFG_ENEMY_COUNT
+bullets:
+
+bullet:
+; Logical coordinates (in pixels)
+	.xy:		equ $ - bullet
+	.y:		equ $ - bullet
+	rb	1
+	.x:		equ $ - bullet
+	rb	1
+; Bullet sprite attributes
+	.pattern:	equ $ - bullet
+	rb	1
+	.color:		equ $ - bullet
+	rb	1
+; ; State pointer
+	; .state:		equ $ - bullet
+	; .state_l:	equ $ - bullet
+	; rb	1
+	; .state_h:	equ $ - bullet
+	; rb	1
+; ; Current animation delay (e.g.: when walking) (in frames)
+	; .animation_delay:	equ $ - bullet
+	; rb	1
+; ; Current frame counter
+	; .frame_counter:	equ $ - bullet
+	; rb	1
+	.SIZE:	equ $ - bullet
+
+; (rest of the array)
+	rb	(CFG_BULLET_COUNT -1) * bullet.SIZE
+	bullets.SIZE:	equ $ - bullets
 ENDIF
 ; -----------------------------------------------------------------------------
 
