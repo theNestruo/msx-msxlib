@@ -53,7 +53,20 @@ INIT_BULLET_FROM_ENEMY:
 	push	ix ; hl = ix, de = empy bullet slot
 	pop	de
 	ex	de, hl
-	ldi	; .y
+; .y
+IFDEF CFG_ENEMY_TO_BULLET_Y_OFFSET
+IF CFG_ENEMY_TO_BULLET_Y_OFFSET = 0
+	ldi
+ELSE
+	ld	a, [hl]
+	inc	hl
+	add	CFG_ENEMY_TO_BULLET_Y_OFFSET
+	ld	[de], a
+	inc	de
+ENDIF
+ELSE
+	ldi
+ENDIF
 	ldi	; .x
 ; Stores the pattern, color and type (speed and direction)
 	pop	hl ; restores source in hl

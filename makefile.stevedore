@@ -1,79 +1,19 @@
 
 #
-# current game name
+# current game name, paths, sources and assets
 #
 
 GAME=stevedore
 
-#
-# tools
-#
-
-ASM=tniasm
-EMULATOR=cmd /c start
-DEBUGGER=cmd /c start \MSX\bin\blueMSX_2.8.2\blueMSX.exe
-PCX2MSX=pcx2msx+
-PCX2SPR=pcx2spr
-TMX2BIN=tmx2bin
-
-# Uncomment for Pletter 0.5c1
-# PACK=pletter
-# PACK_EXTENSION=plet5
-
-# Uncomment for ZX7
-# (please note that ZX7 does not overwrite output)
-PACK=zx7.exe
-PACK_EXTENSION=zx7
-
-#
-# commands
-#
-
-COPY=cmd /c copy
-MKDIR=cmd /c mkdir
-MOVE=cmd /c move
-REMOVE=cmd /c del
-RENAME=cmd /c ren
-
-#
-# paths and file lists
-#
-
 GAME_PATH=\
 	games\$(GAME)
+
+SRCS=\
+	$(GAME_PATH)\$(GAME).asm \
+	$(GAME_PATH)\$(GAME).code.asm \
+	$(GAME_PATH)\$(GAME).data.asm \
+	$(GAME_PATH)\$(GAME).ram.asm
 	
-TEMPLATE_PATH=\
-	games\template
-
-ROM=\
-	roms\$(GAME).rom
-	
-ROM_INTERMEDIATE=\
-	$(GAME_PATH)\$(GAME).rom
-	
-SYM_INTERMEDIATE=\
-	$(GAME_PATH)\$(GAME).sym
-
-SRCS_MSXLIB=\
-	lib\ram.asm \
-	lib\asm.asm \
-	lib\msx\symbols.asm \
-	lib\msx\cartridge.asm \
-	lib\msx\input.asm \
-	lib\msx\vram.asm \
-	lib\msx\vram_x.asm \
-	lib\game\tiles.asm \
-	lib\game\collision.asm \
-	lib\game\player.asm \
-	lib\game\player_x.asm \
-	lib\game\enemy.asm \
-	lib\game\enemy_x.asm \
-	lib\game\bullet.asm
-
-SRCS_LIBEXT=\
-	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
-	libext\zx7\dzx7_standard.tniasm.asm
-
 GFXS=\
 	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION)
@@ -109,6 +49,78 @@ DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\tutorial_05.tmx.bin \
 	$(GAME_PATH)\jungle_01.tmx.bin \
 	$(GAME_PATH)\volcano_01.tmx.bin
+
+#
+# tools
+#
+
+ASM=tniasm
+EMULATOR=cmd /c start
+DEBUGGER=cmd /c start \MSX\bin\blueMSX_2.8.2\blueMSX.exe
+PCX2MSX=pcx2msx+
+PCX2SPR=pcx2spr
+TMX2BIN=tmx2bin
+
+# Uncomment for Pletter 0.5c1
+# PACK=pletter
+# PACK_EXTENSION=plet5
+
+# Uncomment for ZX7
+# (please note that ZX7 does not overwrite output)
+PACK=zx7.exe
+PACK_EXTENSION=zx7
+
+#
+# commands
+#
+
+COPY=cmd /c copy
+MKDIR=cmd /c mkdir
+MOVE=cmd /c move
+REMOVE=cmd /c del
+RENAME=cmd /c ren
+
+#
+# paths and file lists
+#
+
+TEMPLATE_PATH=\
+	games\template
+
+ROM=\
+	roms\$(GAME).rom
+	
+ROM_INTERMEDIATE=\
+	$(GAME_PATH)\$(GAME).rom
+	
+SYM_INTERMEDIATE=\
+	$(GAME_PATH)\$(GAME).sym
+
+SRCS_MSXLIB=\
+	lib\asm.asm \
+	lib\ram.asm \
+	lib\msx\symbols.asm \
+	lib\msx\cartridge.asm \
+	lib\msx\cartridge.ram.asm \
+	lib\msx\input.asm \
+	lib\msx\input.ram.asm \
+	lib\msx\vram.asm \
+	lib\msx\vram_x.asm \
+	lib\msx\vram.ram.asm \
+	lib\game\tiles.asm \
+	lib\game\collision.asm \
+	lib\game\player.asm \
+	lib\game\player_x.asm \
+	lib\game\player.ram.asm \
+	lib\game\enemy.asm \
+	lib\game\enemy_x.asm \
+	lib\game\enemy.ram.asm \
+	lib\game\bullet.asm \
+	lib\game\bullet.ram.asm
+
+SRCS_LIBEXT=\
+	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
+	libext\zx7\dzx7_standard.tniasm.asm
 
 #
 # phony targets
@@ -150,7 +162,7 @@ $(GAME_PATH):
 	$(COPY) $(TEMPLATE_PATH) $@
 	$(RENAME) $(GAME_PATH)\template.asm $(GAME).asm
 	
-$(ROM_INTERMEDIATE) tniasm.sym: $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(GFXS) $(SPRS) $(DATAS)
+$(ROM_INTERMEDIATE) tniasm.sym: $(SRCS) $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(GFXS) $(SPRS) $(DATAS)
 	$(ASM) $< $@
 	cmd /c findstr /b /i "bytes_" tniasm.sym | sort
 
