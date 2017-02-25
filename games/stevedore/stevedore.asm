@@ -246,9 +246,6 @@ PLAYER_DY_TABLE:
 	CFG_BULLET_WIDTH:		equ 4
 	CFG_BULLET_HEIGHT:		equ 4
 
-; Bullet speed (pixels/frame)
-	CFG_BULLET_SPEED:		equ 4
-
 ; Bullet related routines (generic)
 ; Bullet-tile helper routines
 	include	"lib/game/bullet.asm"
@@ -539,7 +536,7 @@ ENDIF
 	call	UPDATE_PLAYER
 	call	UPDATE_FRAMES_PUSHING	; (custom)
 	call	UPDATE_ENEMIES
-	; call	UPDATE_BULLETS
+	call	UPDATE_BULLETS
 
 ; Game logic (2/2: interactions)
 	call	CHECK_PLAYER_ENEMIES_COLLISIONS
@@ -721,6 +718,7 @@ INIT_STAGE:
 ; Other initialization
 	call	RESET_SPRITES
 	call	RESET_ENEMIES
+	call	RESET_BULLETS
 	call	RESET_VPOKES
 	call	RESET_SPRITEABLES
 ; ------VVVV----falls through--------------------------------------------------
@@ -749,59 +747,32 @@ POST_PROCESS_STAGE_ELEMENT:
 	
 ; Is it a box?
 	cp	BOX_FIRST_CHAR
-	jr	nz, .BOX_ELSE
-; Initializes a box spriteable
-	call	INIT_SPRITEABLE
-	ld	[ix + _SPRITEABLE_PATTERN], BOX_SPRITE_PATTERN
-	ld	[ix + _SPRITEABLE_COLOR], BOX_SPRITE_COLOR
-	ret
-.BOX_ELSE:
-
+	jr	z, .NEW_BOX
 ; Is it a rock?
 	cp	ROCK_FIRST_CHAR
-	jr	nz, .ROCK_ELSE
-; Initializes a rock spriteable
-	call	INIT_SPRITEABLE
-	ld	[ix + _SPRITEABLE_PATTERN], ROCK_SPRITE_PATTERN
-	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
-	ret
-.ROCK_ELSE:
-
+	jr	z, .NEW_ROCK
 ; Is it a skeleton?
 	cp	SKELETON_FIRST_CHAR +1
-	jr	nz, .SKELETON_ELSE
-; Initializes a new skeleton
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SKELETON_DATA
-	jp	INIT_ENEMY
-.SKELETON_DATA:
-	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
-	db	SKELETON_SPRITE_COLOR
-	dw	ENEMY_TYPE_SKELETON
-.SKELETON_ELSE:
-
+	jr	z, .NEW_SKELETON
 ; Is it a trap?
-	cp	TRAP_RIGHT_LOWER_CHAR
-	jr	z, .RIGHT_TRAP
 	cp	TRAP_LEFT_LOWER_CHAR
-	jp	nz, .TRAP_ELSE
-.LEFT_TRAP:
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .TRAP_DATA
-	jp	INIT_ENEMY
-.RIGHT_TRAP:
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .TRAP_DATA
-	jp	INIT_ENEMY
-.TRAP_DATA:
-	db	0 ; pattern
-	db	0 ; color
-	dw	ENEMY_TYPE_TRIGGER.RIGHT
-.TRAP_ELSE:
-	
+	jp	z, .NEW_LEFT_TRAP
+	cp	TRAP_RIGHT_LOWER_CHAR
+	jr	z, .NEW_RIGHT_TRAP
 ; Is it '0', '1', '2', ...
 	sub	'0'
-	jr	nz, .START_POINT_ELSE ; '0'
+	jr	z, .SET_START_POINT ; '0'
+	dec	a
+	jr	z, .NEW_BAT ; '1'
+	dec	a
+	jr	z, .NEW_SPIDER ; '2'
+	dec	a
+	jr	z, .NEW_SNAKE ; '3'
+	dec	a
+	jr	z, .NEW_SAVAGE ; '4'
+	ret
+	
+.SET_START_POINT:
 ; Initializes player coordinates
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
@@ -810,148 +781,66 @@ POST_PROCESS_STAGE_ELEMENT:
 	inc	hl ; hl = player.x
 	ld	[hl], d
 	ret
-.START_POINT_ELSE:
 
-	dec	a
-	jr	nz, .BAT_ELSE ; '1'
+.NEW_BOX:
+; Initializes a box spriteable
+	call	INIT_SPRITEABLE
+	ld	[ix + _SPRITEABLE_PATTERN], BOX_SPRITE_PATTERN
+	ld	[ix + _SPRITEABLE_COLOR], BOX_SPRITE_COLOR
+	ret
+
+.NEW_ROCK:
+; Initializes a rock spriteable
+	call	INIT_SPRITEABLE
+	ld	[ix + _SPRITEABLE_PATTERN], ROCK_SPRITE_PATTERN
+	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
+	ret
+	
+.NEW_SKELETON:
+; Initializes a new skeleton
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, ENEMY_0.SKELETON
+	jp	INIT_ENEMY
+
+.NEW_BAT:
 ; Initializes a new bat
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .BAT_DATA
+	ld	hl, ENEMY_0.BAT
 	jp	INIT_ENEMY
-.BAT_DATA:
-	db	BAT_SPRITE_PATTERN
-	db	BAT_SPRITE_COLOR
-	dw	ENEMY_TYPE_FLYER
-.BAT_ELSE:
 
-	dec	a
-	jr	nz, .SPIDER_ELSE ; '2'
+.NEW_SPIDER:
 ; Initializes a new spider
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SPIDER_DATA
+	ld	hl, ENEMY_0.SPIDER
 	jp	INIT_ENEMY
-.SPIDER_DATA:
-	db	SPIDER_SPRITE_PATTERN
-	db	SPIDER_SPRITE_COLOR
-	dw	ENEMY_TYPE_FALLER
-.SPIDER_ELSE:
 
-	dec	a
-	jr	nz, .SNAKE_ELSE ; '3'
+.NEW_OCTOPUS:
+
+.NEW_SNAKE:
 ; Initializes a new snake
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SNAKE_DATA
+	ld	hl, ENEMY_0.SNAKE
 	jp	INIT_ENEMY
-.SNAKE_DATA:
-	db	SNAKE_SPRITE_PATTERN
-	db	SNAKE_SPRITE_COLOR
-	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
-.SNAKE_ELSE:
 
-	dec	a
-	jr	nz, .SAVAGE_ELSE ; '4'
+.NEW_SAVAGE:
 ; Initializes a new savage
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SAVAGE_DATA
-	ret ; jp	INIT_ENEMY
-.SAVAGE_DATA:
-	db	SAVAGE_SPRITE_PATTERN
-	db	SAVAGE_SPRITE_COLOR
-	dw	ENEMY_TYPE_WALKER.FOLLOWER
-.SAVAGE_ELSE:
+	ld	hl, ENEMY_0.SAVAGE
+	jp	INIT_ENEMY
 	
-	ret
-
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Skeleton: the skeleton is slept until the star is picked up,
-; then, it becomes of type walker (follower with pause)
-ENEMY_TYPE_SKELETON:
-	dw	.HANDLER
-	db	0 ; (unused)
+.NEW_LEFT_TRAP:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, ENEMY_0.TRAP_LEFT
+	jp	INIT_ENEMY
 	
-.HANDLER:
-; Has the star been picked up?
-	ld	a, [star]
-	or	a
-	jr	nz, .WAKE_UP ; yes
-; no: ret nz (halt)
-	inc	a
-	ret
-	
-.WAKE_UP:
-; Locates the skeleton characters
-	ld	e, [ix + enemy.y]
-	ld	d, [ix + enemy.x]
-	call	COORDS_TO_OFFSET ; hl = NAMTBL offset
-	ld	de, namtbl_buffer -SCR_WIDTH -1 ; (-1,-1)
-	add	hl, de ; hl = NAMTBL buffer pointer
-; Removes the characters in the next frame
-	push	ix ; preserves ix
-	xor	a
-	ld	[hl], a ; left char (NAMTBL buffer only)
-	inc	hl
-	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE ; right char
-	dec	hl
-	call	VPOKE_NAMTBL_ADDRESS ; left char (NATMBL)
-	pop	ix ; restores ix
-; Shows the sprite in the next frame
-	call	PUT_ENEMY_SPRITE
-; Makes the enemy a walker (follower with pause)
-	ld	hl, ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
-	ld	[ix + enemy.state_h], h
-	ld	[ix + enemy.state_l], l
-; ret nz (halt)
-	inc	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Skeleton: the skeleton is slept until the star is picked up,
-; then, it becomes of type walker (follower with pause)
-ENEMY_TYPE_TRIGGER:
-
-.RIGHT:
-; Does the player overlaps y coordinate?
-	dw	.RIGHT_HANDLER
-	db	2 * ENEMY_STATE.SIZE ; (skip one)
-; No: the enemy remains stationary
-	dw	STATIONARY_ENEMY_HANDLER
-	db	0 ; 0 = forever
-; Yes: shoot
-	dw	.ZZZ
-	db	0 ; (unused)
-	dw	SET_NEW_STATE_HANDLER
-	db	ENEMY_STATE.NEXT
-; then pause and restart
-	dw	STATIONARY_ENEMY_HANDLER
-	db	60
-	dw	SET_NEW_STATE_HANDLER
-	db	-5 * ENEMY_STATE.SIZE; (restart)
-	
-.RIGHT_HANDLER:
-	call	CHECK_PLAYER_ENEMY_COLLISION.Y
-	jp	nc, .RET_Z
-; right?
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jr	c, .RET_Z
-; yes
-	jp	SET_NEW_STATE_HANDLER
-	
-.ZZZ:
-	call	BEEP
-	; jr	.ZZZ
-	
-.RET_Z:
-; ret z (continue)
-	xor	a
-	ret
+.NEW_RIGHT_TRAP:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, ENEMY_0.TRAP_RIGHT
+	jp	INIT_ENEMY
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1079,6 +968,81 @@ UPDATE_FRAMES_PUSHING:
 	xor	a
 	ld	[player.pushing], a
 	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Skeleton: the skeleton is slept until the star is picked up,
+; then, it becomes of type walker (follower with pause)
+ENEMY_SKELETON.HANDLER:
+; Has the star been picked up?
+	ld	a, [star]
+	or	a
+	jr	z, .RET_NZ ; no
+
+; yes: locates the skeleton characters
+	ld	e, [ix + enemy.y]
+	ld	d, [ix + enemy.x]
+	call	COORDS_TO_OFFSET ; hl = NAMTBL offset
+	ld	de, namtbl_buffer -SCR_WIDTH -1 ; (-1,-1)
+	add	hl, de ; hl = NAMTBL buffer pointer
+; Removes the characters in the next frame
+	push	ix ; preserves ix
+	xor	a
+	ld	[hl], a ; left char (NAMTBL buffer only)
+	inc	hl
+	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE ; right char
+	dec	hl
+	call	VPOKE_NAMTBL_ADDRESS ; left char (NATMBL)
+	pop	ix ; restores ix
+; Shows the sprite in the next frame
+	call	PUT_ENEMY_SPRITE
+; Makes the enemy a walker (follower with pause)
+	ld	hl, ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
+	ld	[ix + enemy.state_h], h
+	ld	[ix + enemy.state_l], l
+	
+.RET_NZ:
+; ret nz (halt)
+	inc	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+ENEMY_TRAP:
+
+.TRIGGER_RIGHT_HANDLER:
+.TRIGGER_LEFT_HANDLER:
+	call	CHECK_PLAYER_ENEMY_COLLISION.Y
+	jp	nc, .RET_NZ
+; right?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jr	c, .RET_NZ
+	
+; Sets the next state as the enemy state
+	push	iy ; hl = iy + bc
+	pop	hl
+	ld	bc, ENEMY_STATE.NEXT
+	add	hl, bc
+	ld	[ix + enemy.state_h], h
+	ld	[ix + enemy.state_l], l
+	
+.RET_NZ:
+; ret nz (halt)
+	or	1
+	ret
+	
+.SHOOT_RIGHT_HANDLER:
+.SHOOT_LEFT_HANDLER:
+	ld	hl, .BULLET_RIGHT_DATA
+	call	INIT_BULLET_FROM_ENEMY
+; ret z (continue)
+	xor	a
+	ret
+.BULLET_RIGHT_DATA:
+	db	ARROW_RIGHT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ;
@@ -1275,6 +1239,172 @@ ON_PLAYER_ENEMY_COLLISION:
 ;
 
 ; -----------------------------------------------------------------------------
+; Literals
+TXT_STAGE:
+	db	"STAGE 00", $00
+	.SIZE:		equ $ - TXT_STAGE
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	
+TXT_LIVES:
+	db	"0 LIVES LEFT", $00
+	.SIZE: equ $ - TXT_LIVES
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	
+TXT_GAME_OVER:
+	db	"GAME OVER", $00
+	.SIZE: equ $ - TXT_GAME_OVER
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initial value of the globals
+GLOBALS_0:
+	dw	2500			; .hi_score
+	db	0			; game.current_stage (intro)
+	.SIZE:	equ $ - GLOBALS_0
+	
+; Initial value of the game-scope vars
+GAME_0:
+	db	0			; .current_stage
+	db	3			; .continues
+	dw	0			; .score
+	db	5			; .lives
+	.SIZE:	equ $ - GAME_0
+
+; Initial value of the stage-scoped vars
+STAGE_0:
+	db	0			; player.pushing
+	db	0			; star
+	.SIZE:	equ $ - STAGE_0
+
+; Initial (per stage) sprite attributes table
+SPRATR_0:
+; Player sprites
+	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_1
+	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_2
+; SPAT end marker
+	db	SPAT_END
+	
+; Initial (per stage) player vars
+PLAYER_0:
+	db	48, 128			; .y, .x
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
+	.SIZE:	equ $ - PLAYER_0
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initial enemy data
+ENEMY_0:
+
+.BAT:
+	db	BAT_SPRITE_PATTERN
+	db	BAT_SPRITE_COLOR
+	dw	ENEMY_TYPE_FLYER
+	
+.SPIDER:
+	db	SPIDER_SPRITE_PATTERN
+	db	SPIDER_SPRITE_COLOR
+	dw	ENEMY_TYPE_FALLER
+	
+.OCTOPUS:
+
+.SNAKE:
+	db	SNAKE_SPRITE_PATTERN
+	db	SNAKE_SPRITE_COLOR
+	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
+
+; Skeleton: the skeleton is slept until the star is picked up,
+; then, it becomes of type walker (follower with pause)
+.SKELETON:
+	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
+	db	SKELETON_SPRITE_COLOR
+	dw	$ + 2
+; Slept until the star is picked up
+	dw	ENEMY_SKELETON.HANDLER
+	db	0 ; (unused)
+
+.SAVAGE:
+	db	SAVAGE_SPRITE_PATTERN
+	db	SAVAGE_SPRITE_COLOR
+	dw	ENEMY_TYPE_WALKER.FOLLOWER
+
+.TRAP_RIGHT:
+	db	ARROW_RIGHT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	dw	$ + 2
+; Does the player overlaps y coordinate?
+	dw	ENEMY_TRAP.TRIGGER_RIGHT_HANDLER
+	db	0 ; (unused)
+; Shoot
+	dw	ENEMY_TRAP.SHOOT_RIGHT_HANDLER
+	db	0 ; (unused)
+	dw	SET_NEW_STATE_HANDLER
+	db	ENEMY_STATE.NEXT
+; then pause and restart
+	dw	STATIONARY_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_M
+	dw	SET_NEW_STATE_HANDLER
+	db	-4 * ENEMY_STATE.SIZE; (restart)
+	
+.TRAP_LEFT:
+	db	ARROW_LEFT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	dw	$ + 2
+; Does the player overlaps y coordinate?
+	dw	ENEMY_TRAP.TRIGGER_LEFT_HANDLER
+	db	0 ; (unused)
+; Shoot
+	dw	ENEMY_TRAP.SHOOT_LEFT_HANDLER
+	db	0 ; (unused)
+	dw	SET_NEW_STATE_HANDLER
+	db	ENEMY_STATE.NEXT
+; then pause and restart
+	dw	STATIONARY_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_M
+	dw	SET_NEW_STATE_HANDLER
+	db	-4 * ENEMY_STATE.SIZE; (restart)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Screens binary data (NAMTBL)
+NAMTBL_TEST_SCREEN:
+	incbin	"games/stevedore/screen.tmx.bin.zx7"
+	
+NAMTBL_PACKED_INTRO:
+	incbin	"games/stevedore/intro.tmx.bin.zx7"
+
+NAMTBL_PACKED_TABLE:
+	dw	.TUTORIAL_01
+	dw	.TUTORIAL_02
+	dw	.TUTORIAL_03
+	dw	.TUTORIAL_04
+	dw	.TUTORIAL_05
+	dw	.JUNGLE_01
+	dw	.VOLCANO_01
+	
+.TUTORIAL_01:
+	incbin	"games/stevedore/tutorial_01.tmx.bin.zx7"
+.TUTORIAL_02:
+	incbin	"games/stevedore/tutorial_02.tmx.bin.zx7"
+.TUTORIAL_03:
+	incbin	"games/stevedore/tutorial_03.tmx.bin.zx7"
+.TUTORIAL_04:
+	incbin	"games/stevedore/tutorial_04.tmx.bin.zx7"
+.TUTORIAL_05:
+	incbin	"games/stevedore/tutorial_05.tmx.bin.zx7"
+	
+.JUNGLE_01:
+	incbin	"games/stevedore/jungle_01.tmx.bin.zx7"
+	
+.VOLCANO_01:
+	incbin	"games/stevedore/volcano_01.tmx.bin.zx7"
+	
+	TUTORIAL_STAGES:	equ 4 ; 5
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Charset binary data (CHRTBL and CLRTBL)
 CHARSET_CHR_PACKED:
 	incbin	"games/stevedore/charset.pcx.chr.zx7"
@@ -1338,101 +1468,12 @@ SPRTBL_PACKED:
 	ROCK_SPRITE_COLOR:		equ 14
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
+
+	ARROW_RIGHT_SPRITE_PATTERN:	equ $a8
+	ARROW_LEFT_SPRITE_PATTERN:	equ $ac
+	ARROW_SPRITE_COLOR:		equ 14
 	
 	PLAYER_SPRITE_INTRO_PATTERN:	equ $b0
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Screens binary data (NAMTBL)
-NAMTBL_TEST_SCREEN:
-	incbin	"games/stevedore/screen.tmx.bin.zx7"
-	
-NAMTBL_PACKED_INTRO:
-	incbin	"games/stevedore/intro.tmx.bin.zx7"
-
-NAMTBL_PACKED_TABLE:
-	dw	.TUTORIAL_01
-	dw	.TUTORIAL_02
-	dw	.TUTORIAL_03
-	dw	.TUTORIAL_04
-	dw	.TUTORIAL_05
-	dw	.JUNGLE_01
-	dw	.VOLCANO_01
-	
-.TUTORIAL_01:
-	incbin	"games/stevedore/tutorial_01.tmx.bin.zx7"
-.TUTORIAL_02:
-	incbin	"games/stevedore/tutorial_02.tmx.bin.zx7"
-.TUTORIAL_03:
-	incbin	"games/stevedore/tutorial_03.tmx.bin.zx7"
-.TUTORIAL_04:
-	incbin	"games/stevedore/tutorial_04.tmx.bin.zx7"
-.TUTORIAL_05:
-	incbin	"games/stevedore/tutorial_05.tmx.bin.zx7"
-	
-.JUNGLE_01:
-	incbin	"games/stevedore/jungle_01.tmx.bin.zx7"
-	
-.VOLCANO_01:
-	incbin	"games/stevedore/volcano_01.tmx.bin.zx7"
-	
-	TUTORIAL_STAGES:	equ 4 ; 5
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Initial value of the globals
-GLOBALS_0:
-	dw	2500			; .hi_score
-	db	0			; game.current_stage (intro)
-	.SIZE:	equ $ - GLOBALS_0
-	
-; Initial value of the game-scope vars
-GAME_0:
-	db	0			; .current_stage
-	db	3			; .continues
-	dw	0			; .score
-	db	5			; .lives
-	.SIZE:	equ $ - GAME_0
-
-; Initial value of the stage-scoped vars
-STAGE_0:
-	db	0			; player.pushing
-	db	0			; star
-	.SIZE:	equ $ - STAGE_0
-
-; Initial (per stage) sprite attributes table
-SPRATR_0:
-; Player sprites
-	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_1
-	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_2
-; SPAT end marker
-	db	SPAT_END
-	
-; Initial (per stage) player vars
-PLAYER_0:
-	db	48, 128			; .y, .x
-	db	0			; .animation_delay
-	db	PLAYER_STATE_FLOOR	; .state
-	db	0			; .dy_index
-	.SIZE:	equ $ - PLAYER_0
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Literals
-TXT_STAGE:
-	db	"STAGE 00", $00
-	.SIZE:		equ $ - TXT_STAGE
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	
-TXT_LIVES:
-	db	"0 LIVES LEFT", $00
-	.SIZE: equ $ - TXT_LIVES
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	
-TXT_GAME_OVER:
-	db	"GAME OVER", $00
-	.SIZE: equ $ - TXT_GAME_OVER
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

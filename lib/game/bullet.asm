@@ -9,24 +9,15 @@
 ; Bounding box coordinates offset from the logical coordinates
 	BULLET_BOX_X_OFFSET:	equ -(CFG_BULLET_WIDTH / 2)
 	BULLET_BOX_Y_OFFSET:	equ -CFG_BULLET_HEIGHT
+
+	MASK_BULLET_SPEED:	equ $0f ; speed (in pixels / frame)
+	MASK_BULLET_DIRECTION:	equ $70 ; movement direction
+
+	BULLET_DIR_UP:		equ $10
+	BULLET_DIR_DOWN:	equ $20
+	BULLET_DIR_RIGHT:	equ $30
+	BULLET_DIR_LEFT:	equ $40
 ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; ; Symbolic constants for enemy states.
-
-; ; Any enemy state handler routine:
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; ret nz: if the state handler has not finished yet.
-; ;	The enemy update process will halt until the next frame.
-; ; ret z: if the state handler has finished.
-; ;	The enemy update process continues immediately with the next state.
-	; ENEMY_STATE.HANDLER_L:	equ 0 ; State handler address (low)
-	; ENEMY_STATE.HANDLER_H:	equ 1 ; State handler address (high)
-	; ENEMY_STATE.ARGS:	equ 2 ; State handler arguments
-	; ENEMY_STATE.SIZE:	equ 3
-	; ENEMY_STATE.NEXT:	equ ENEMY_STATE.SIZE ; (for legiblity)
-; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Empties the bullets array
@@ -40,62 +31,70 @@ RESET_BULLETS:
 	ret
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Initializes a enemy in the first empty enemy slot
-; ; param hl: pointer to the new enemy data (pattern, color, state pointer)
-; ; param de: logical coordinates (x, y)
-; ; touches: a, hl, de, bc
-; INIT_ENEMY:
-	; push	hl ; preserves source
-; ; Search for the first empty enemy slot
-	; ld	hl, enemies
-	; ld	bc, enemy.SIZE
-	; xor	a ; (marker value: y = 0)
-; .LOOP:
-	; cp	[hl]
-	; jr	z, .INIT ; empty slot found
-; ; Skips to the next element of the array
-	; add	hl, bc
-	; jr	.LOOP
+; -----------------------------------------------------------------------------
+; Initializes a new from the enemy coordinates in the first empty bullet slot
+; param hl: pointer to the new bullet data (pattern, color, speed and direction)
+; touches: a, hl, de, bc
+INIT_BULLET_FROM_ENEMY:
+	push	hl ; preserves source
+; Search for the first empty enemy slot
+	ld	hl, bullets
+	ld	bc, bullet.SIZE
+	xor	a ; (marker value: y = 0)
+.LOOP:
+	cp	[hl]
+	jr	z, .INIT ; empty slot found
+; Skips to the next element of the array
+	add	hl, bc
+	jr	.LOOP
 	
-; .INIT:
-; ; Stores the logical coordinates
-	; ld	[hl], e ; .y_backup
-	; inc	hl
-	; ld	[hl], d ; .x_backup
-	; inc	hl
-	; ld	[hl], e ; .y
-	; inc	hl
-	; ld	[hl], d ; .x
-	; inc	hl
-; ; Stores the pattern, color and initial handler
-	; ex	de, hl ; target in de
-	; pop	hl ; restores source in hl
-	; ldi	; .pattern
-	; ldi	; .color
-	; ldi	; .state_l
-	; ldi	; .state_h
-; ; Resets the animation delay and the frame counter
-	; xor	a
-	; ld	[de], a ; .animation_delay
-	; inc	de
-	; ld	[de], a ; .frame_counter
-	; ret
-; ; -----------------------------------------------------------------------------
+.INIT:
+; Stores the logical coordinates
+	push	ix ; hl = ix, de = empy bullet slot
+	pop	de
+	ex	de, hl
+	ldi	; .y
+	ldi	; .x
+; Stores the pattern, color and type (speed and direction)
+	pop	hl ; restores source in hl
+	ldi	; .pattern
+	ldi	; .color
+	ldi	; .type
+	ret
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Updates the enemies
-; UPDATE_ENEMIES:
-; ; For each enemy in the array
-	; ld	ix, enemies
-	; ld	b, CFG_ENEMY_COUNT
-; .ENEMY_LOOP:
-	; push	bc ; preserves counter in b
-; ; Is the enemy slot empty?
-	; xor	a ; (marker value: y = 0)
-	; cp	[ix + enemy.y]
-	; jp	z, .SKIP_ENEMY ; yes
-; ; no: update enemy
+; -----------------------------------------------------------------------------
+; Updates the bullets
+UPDATE_BULLETS:
+; For each bullet in the array
+	ld	ix, bullets
+	ld	b, CFG_BULLET_COUNT
+.LOOP:
+	push	bc ; preserves counter in b
+; Is the bullet slot empty?
+	xor	a ; (marker value: y = 0)
+	cp	[ix + bullet.y]
+	call	nz, .UPDATE ; no
+; Skips to the next bullet
+	ld	bc, bullet.SIZE
+	add	ix, bc
+	pop	bc ; restores counter
+	djnz	.LOOP
+	ret
+
+.UPDATE:
+	ld	e, [ix + bullet.y]
+	ld	d, [ix + bullet.x]
+	ld	c, [ix + bullet.pattern]
+	ld	b, [ix + bullet.color]
+	call	PUT_SPRITE
+	
+	; inc	[ix + bullet.x]
+	; inc	[ix + bullet.x]
+	; inc	[ix + bullet.x]
+	; inc	[ix + bullet.x]
+	
+	ret
 
 ; ; Dereferences the state pointer
 	; ld	l, [ix + enemy.state_l]
@@ -113,15 +112,7 @@ RESET_BULLETS:
 	; ld	bc, ENEMY_STATE.SIZE
 	; add	iy, bc
 	; jp	.HANDLER_LOOP
-	
-; .SKIP_ENEMY:
-; ; Skips to the next enemy
-	; ld	bc, enemy.SIZE
-	; add	ix, bc
-	; pop	bc ; restores counter
-	; djnz	.ENEMY_LOOP
-	; ret
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
 
 ; ;
 ; ; =============================================================================

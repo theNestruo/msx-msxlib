@@ -153,17 +153,17 @@ enemy:
 ; Current frame counter
 	.frame_counter:	equ $ - enemy
 	rb	1
-	.SIZE:	equ $ - enemy
+	.SIZE:		equ $ - enemy
 
 ; (rest of the array)
-	rb	(CFG_ENEMY_COUNT -1) * enemy.SIZE
+	rb	(CFG_ENEMY_COUNT -1) * .SIZE
 	enemies.SIZE:	equ $ - enemies
 ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Bullets array
-IFDEF CFG_ENEMY_COUNT
+IFDEF CFG_BULLET_COUNT
 bullets:
 
 bullet:
@@ -178,22 +178,13 @@ bullet:
 	rb	1
 	.color:		equ $ - bullet
 	rb	1
-; ; State pointer
-	; .state:		equ $ - bullet
-	; .state_l:	equ $ - bullet
-	; rb	1
-	; .state_h:	equ $ - bullet
-	; rb	1
-; ; Current animation delay (e.g.: when walking) (in frames)
-	; .animation_delay:	equ $ - bullet
-	; rb	1
-; ; Current frame counter
-	; .frame_counter:	equ $ - bullet
-	; rb	1
-	.SIZE:	equ $ - bullet
+; Bullet speed and direction
+	.type:		equ $ - bullet
+	rb	1
+	.SIZE:		equ $ - bullet
 
 ; (rest of the array)
-	rb	(CFG_BULLET_COUNT -1) * bullet.SIZE
+	rb	(CFG_BULLET_COUNT -1) * .SIZE
 	bullets.SIZE:	equ $ - bullets
 ENDIF
 ; -----------------------------------------------------------------------------
