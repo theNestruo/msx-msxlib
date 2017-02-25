@@ -148,6 +148,8 @@ SET_NEW_STATE_HANDLER:
 	rla
 	sbc	a, a
 	ld	b, a
+	
+.BC_OK:
 ; Sets the new state as the enemy state
 	push	iy ; hl = iy + bc
 	pop	hl
@@ -161,7 +163,7 @@ SET_NEW_STATE_HANDLER:
 	ld	[ix + enemy.animation_delay], a
 	ld	[ix + enemy.frame_counter], a
 ; ret nz (halt)
-	inc	a
+	dec	a
 	ret
 ; -----------------------------------------------------------------------------
 

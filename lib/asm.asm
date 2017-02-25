@@ -142,11 +142,21 @@ GET_ARRAY_IX:
 
 ; -----------------------------------------------------------------------------
 ; Convenience routine to return 0 and the z flag;
-; (mainly to be used in comparisons only)
+; (to be used in comparisons only; inline otherwise)
 ; ret a: 0
 ; ret z
 RET_ZERO:
 	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Convenience routine to return -1 ($ff) and the nz flag;
+; (to be used in comparisons only; inline otherwise)
+; ret a: -1 ($ff)
+; ret nz
+RET_NOT_ZERO:
+	or	-1
 	ret
 ; -----------------------------------------------------------------------------
 

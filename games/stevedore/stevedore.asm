@@ -543,6 +543,7 @@ ENDIF
 
 ; Game logic (2/2: interactions)
 	call	CHECK_PLAYER_ENEMIES_COLLISIONS
+	call	CHECK_PLAYER_BULLETS_COLLISIONS
 	
 ; Additional game logic: crushed (by a pushable)
 	call	GET_PLAYER_TILE_FLAGS
@@ -760,9 +761,9 @@ POST_PROCESS_STAGE_ELEMENT:
 	cp	SKELETON_FIRST_CHAR +1
 	jr	z, .NEW_SKELETON
 ; Is it a trap?
-	cp	TRAP_UPPER_LEFT_CHAR
+	cp	TRAP_LOWER_LEFT_CHAR
 	jp	z, .NEW_LEFT_TRAP
-	cp	TRAP_UPPER_RIGHT_CHAR
+	cp	TRAP_LOWER_RIGHT_CHAR
 	jr	z, .NEW_RIGHT_TRAP
 ; Is it '0', '1', '2', ...
 	sub	'0'
@@ -839,11 +840,19 @@ POST_PROCESS_STAGE_ELEMENT:
 	
 .NEW_LEFT_TRAP:
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+; (ensures the bullets start outside the tile)
+	ld	a, d
+	sub	5
+	ld	d, a
 	ld	hl, ENEMY_0.TRAP_LEFT
 	jp	INIT_ENEMY
 	
 .NEW_RIGHT_TRAP:
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+; (ensures the bullets start outside the tile)
+	ld	a, d
+	add	4
+	ld	d, a
 	ld	hl, ENEMY_0.TRAP_RIGHT
 	jp	INIT_ENEMY
 ; -----------------------------------------------------------------------------
@@ -982,7 +991,7 @@ ENEMY_SKELETON.HANDLER:
 ; Has the star been picked up?
 	ld	a, [star]
 	or	a
-	jr	z, .RET_NZ ; no
+	jp	z, RET_NOT_ZERO ; no
 
 ; yes: locates the skeleton characters
 	ld	e, [ix + enemy.y]
@@ -1000,15 +1009,13 @@ ENEMY_SKELETON.HANDLER:
 	call	VPOKE_NAMTBL_ADDRESS ; left char (NATMBL)
 	pop	ix ; restores ix
 ; Shows the sprite in the next frame
-	call	PUT_ENEMY_SPRITE
+	call	PUT_ENEMY_SPRITE ; (side effect: a = 0)
 ; Makes the enemy a walker (follower with pause)
 	ld	hl, ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
 	ld	[ix + enemy.state_h], h
 	ld	[ix + enemy.state_l], l
-	
-.RET_NZ:
 ; ret nz (halt)
-	inc	a
+	dec	a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -1016,38 +1023,40 @@ ENEMY_SKELETON.HANDLER:
 ENEMY_TRAP:
 
 .TRIGGER_RIGHT_HANDLER:
-.TRIGGER_LEFT_HANDLER:
 	call	CHECK_PLAYER_ENEMY_COLLISION.Y
-	jp	nc, .RET_NZ
+	jp	nc, RET_NOT_ZERO
 ; right?
 	ld	a, [player.x]
 	cp	[ix + enemy.x]
-	jr	c, .RET_NZ
-	
+	jp	c, RET_NOT_ZERO
 ; Sets the next state as the enemy state
-	push	iy ; hl = iy + bc
-	pop	hl
 	ld	bc, ENEMY_STATE.NEXT
-	add	hl, bc
-	ld	[ix + enemy.state_h], h
-	ld	[ix + enemy.state_l], l
+	jp	SET_NEW_STATE_HANDLER.BC_OK
 	
-.RET_NZ:
-; ret nz (halt)
-	or	1
-	ret
+.TRIGGER_LEFT_HANDLER:
+	call	CHECK_PLAYER_ENEMY_COLLISION.Y
+	jp	nc, RET_NOT_ZERO
+; left?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jp	nc, RET_NOT_ZERO
+; Sets the next state as the enemy state
+	ld	bc, ENEMY_STATE.NEXT
+	jp	SET_NEW_STATE_HANDLER.BC_OK
 	
 .SHOOT_RIGHT_HANDLER:
-.SHOOT_LEFT_HANDLER:
-	ld	hl, .BULLET_RIGHT_DATA
+	ld	hl, BULLET_0.ARROW_RIGHT
 	call	INIT_BULLET_FROM_ENEMY
 ; ret z (continue)
 	xor	a
 	ret
-.BULLET_RIGHT_DATA:
-	db	ARROW_RIGHT_SPRITE_PATTERN
-	db	ARROW_SPRITE_COLOR
-	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
+
+.SHOOT_LEFT_HANDLER:
+	ld	hl, BULLET_0.ARROW_LEFT
+	call	INIT_BULLET_FROM_ENEMY
+; ret z (continue)
+	xor	a
+	ret
 ; -----------------------------------------------------------------------------
 
 ;
@@ -1216,25 +1225,11 @@ ON_PLAYER_PUSH:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-ON_PLAYER_ENEMY_COLLISION:
-	jp	SET_PLAYER_DYING
-; ON_ENEMY_COLLISION_UX:
-	; ld	a, [ix + _ENEMY_STATE]
-	; cp	ENEMY_TRIGGER
-	; jr	nz, ON_BULLET_COLLISION_UX
-	
-	; push	ix
-	; ld	d, [ix + _ENEMY_Y]
-	; ld	e, [ix + _ENEMY_X]
-	; call	INIT_BULLET
-	; ld	[ix + _BULLET_PATTERN], BULLET_PATTERN_RIGHT
-	; ld	[ix + _BULLET_COLOR], BULLET_COLOR
-	; ld	[ix + _BULLET_STATE], BULLET_STATE_FLY_RIGHT
-	; pop	ix
-	; ret
+ON_PLAYER_ENEMY_COLLISION:	equ SET_PLAYER_DYING
+; -----------------------------------------------------------------------------
 
-; ON_BULLET_COLLISION_UX:
-	; jp	SET_PLAYER_DYING
+; -----------------------------------------------------------------------------
+ON_PLAYER_BULLET_COLLISION:	equ SET_PLAYER_DYING
 ; -----------------------------------------------------------------------------
 
 ;
@@ -1370,6 +1365,21 @@ ENEMY_0:
 	db	CFG_ENEMY_PAUSE_M
 	dw	SET_NEW_STATE_HANDLER
 	db	-4 * ENEMY_STATE.SIZE; (restart)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initial bullet data
+BULLET_0:
+
+.ARROW_RIGHT:
+	db	ARROW_RIGHT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
+	
+.ARROW_LEFT:
+	db	ARROW_LEFT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
