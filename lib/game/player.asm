@@ -178,7 +178,7 @@ GET_PLAYER_TILE_FLAGS_LEFT_FAST:
 	ld	a, [player.x]
 	add	PLAYER_BOX_X_OFFSET
 	and	$07
-	jp	nz, CHECK_NO_TILES ; no: return no flags
+	jp	nz, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -198,7 +198,7 @@ GET_PLAYER_TILE_FLAGS_RIGHT_FAST:
 	ld	a, [player.x]
 	add	PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH
 	and	$07
-	jp	nz, CHECK_NO_TILES ; no: return no flags
+	jp	nz, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -238,7 +238,7 @@ GET_PLAYER_TILE_FLAGS_ABOVE_FAST:
 	ld	a, [player.y]
 	add	PLAYER_BOX_Y_OFFSET
 	and	$07
-	jp	nz, CHECK_NO_TILES ; no: return no flags
+	jp	nz, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -274,12 +274,10 @@ GET_PLAYER_TILE_FLAGS_UNDER_FAST:
 ; Moving fast enough to cross the tile boundary?
 	ld	b, a ; delta-Y on b
 	ld	a, [player.y]
-	; and	$07
-	; cp	CFG_PLAYER_GRAVITY ; (any value lower than the maximum dy)
 	dec	a
 	or	$f8
 	add	b
-	jp	nc, CHECK_NO_TILES ; no: return no flags
+	jp	nc, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
 	
 	ld	a, b
 	jp	GET_PLAYER_H_TILE_FLAGS
@@ -316,11 +314,7 @@ GET_PLAYER_H_TILE_FLAGS:
 ; -----------------------------------------------------------------------------
 ; Convenience routine to read no flags
 ; (used in GET_PLAYER_TILE_FLAGS_*_FAST)
-; ret a: 0
-; ret z
-CHECK_NO_TILES:
-	xor	a
-	ret
+	GET_NO_PLAYER_TILE_FLAGS:	equ RET_ZERO
 ; -----------------------------------------------------------------------------
 
 ; EOF

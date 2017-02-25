@@ -304,7 +304,7 @@ GET_ENEMY_TILE_FLAGS_LEFT_FAST:
 	ld	a, [ix + enemy.x]
 	add	ENEMY_BOX_X_OFFSET
 	and	$07
-	jp	nz, CHECK_NO_TILES ; no: return no flags
+	jp	nz, GET_NO_ENEMY_TILE_FLAGS ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -326,7 +326,7 @@ GET_ENEMY_TILE_FLAGS_RIGHT_FAST:
 	ld	a, [ix + enemy.x]
 	add	ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
 	and	$07
-	jp	nz, CHECK_NO_TILES ; no: return no flags
+	jp	nz, GET_NO_ENEMY_TILE_FLAGS ; no: return no flags
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -344,6 +344,7 @@ GET_ENEMY_TILE_FLAGS_RIGHT:
 ; param ix: pointer to the current enemy
 ; param a: x-offset from the enemy logical coordinates
 ; ret a: OR-ed tile flags
+; touches: hl, bc, de
 GET_ENEMY_V_TILE_FLAGS:
 ; Enemy coordinates
 	ld	e, [ix + enemy.y]
@@ -358,6 +359,12 @@ GET_ENEMY_V_TILE_FLAGS:
 ; Enemy height
 	ld	b, CFG_ENEMY_HEIGHT
 	jp	GET_V_TILE_FLAGS
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Convenience routine to read no flags
+; (used in GET_ENEMY_TILE_FLAGS_*_FAST)
+	GET_NO_ENEMY_TILE_FLAGS:	equ RET_ZERO
 ; -----------------------------------------------------------------------------
 
 ; EOF

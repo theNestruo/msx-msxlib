@@ -760,9 +760,9 @@ POST_PROCESS_STAGE_ELEMENT:
 	cp	SKELETON_FIRST_CHAR +1
 	jr	z, .NEW_SKELETON
 ; Is it a trap?
-	cp	TRAP_LEFT_LOWER_CHAR
+	cp	TRAP_UPPER_LEFT_CHAR
 	jp	z, .NEW_LEFT_TRAP
-	cp	TRAP_RIGHT_LOWER_CHAR
+	cp	TRAP_UPPER_RIGHT_CHAR
 	jr	z, .NEW_RIGHT_TRAP
 ; Is it '0', '1', '2', ...
 	sub	'0'
@@ -1435,8 +1435,10 @@ CHARSET_CLR_PACKED:
 	
 	SKELETON_FIRST_CHAR:	equ $98
 	
-	TRAP_LEFT_LOWER_CHAR:	equ $de
-	TRAP_RIGHT_LOWER_CHAR:	equ $df
+	TRAP_UPPER_LEFT_CHAR:	equ $ce
+	TRAP_UPPER_RIGHT_CHAR:	equ $cf
+	TRAP_LOWER_LEFT_CHAR:	equ $de
+	TRAP_LOWER_RIGHT_CHAR:	equ $df
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

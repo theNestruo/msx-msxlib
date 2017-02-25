@@ -138,6 +138,7 @@ GET_TILE_FLAGS:
 ; param de: upper pixel coordinates (x, y)
 ; param b: height in pixels
 ; ret a: OR-ed tile flags
+; touches: hl, bc, de
 GET_V_TILE_FLAGS:
 ; Calculates how many pixels to check
 	ld	a, e
@@ -186,6 +187,7 @@ GET_V_TILE_FLAGS:
 ; param de: left pixel coordinates (x, y)
 ; param b: width in pixels
 ; ret a: OR-ed tile flags
+; touches: hl, bc, de
 GET_H_TILE_FLAGS:
 ; Calculates how many pixels to check
 	ld	a, d
