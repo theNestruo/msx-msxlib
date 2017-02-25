@@ -1,5 +1,4 @@
 
-
 ; -----------------------------------------------------------------------------
 IFDEF RESET_ENEMIES
 
@@ -17,6 +16,8 @@ enemy:
 	.pattern:	equ $ - enemy
 	rb	1
 	.color:		equ $ - enemy
+	rb	1
+	.flags:		equ $ - enemy
 	rb	1
 ; State pointer
 	.state:		equ $ - enemy

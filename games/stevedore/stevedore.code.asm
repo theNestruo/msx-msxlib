@@ -747,6 +747,8 @@ ENEMY_SKELETON.HANDLER:
 	pop	ix ; restores ix
 ; Shows the sprite in the next frame
 	call	PUT_ENEMY_SPRITE ; (side effect: a = 0)
+; Makes the enemy lethal
+	set	BIT_ENEMY_LETHAL, [ix + enemy.flags]
 ; Makes the enemy a walker (follower with pause)
 	ld	hl, ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
 	ld	[ix + enemy.state_h], h
@@ -962,7 +964,10 @@ ON_PLAYER_PUSH:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-ON_PLAYER_ENEMY_COLLISION:	equ SET_PLAYER_DYING
+ON_PLAYER_ENEMY_COLLISION:
+	bit	BIT_ENEMY_LETHAL, [ix + enemy.flags]
+	jp	nz, SET_PLAYER_DYING
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

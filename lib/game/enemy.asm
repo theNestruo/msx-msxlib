@@ -10,7 +10,7 @@
 ; Bounding box coordinates offset from the logical coordinates
 	ENEMY_BOX_X_OFFSET:	equ -(CFG_ENEMY_WIDTH / 2)
 	ENEMY_BOX_Y_OFFSET:	equ -CFG_ENEMY_HEIGHT
-
+	
 ; Enemy pattern modifiers (as bit indexes)
 	BIT_ENEMY_PATTERN_ANIM:	equ 2
 	BIT_ENEMY_PATTERN_LEFT:	equ 3
@@ -18,6 +18,12 @@
 ; Enemy pattern modifiers (as flags)
 	FLAG_ENEMY_PATTERN_ANIM:	equ (1 << BIT_ENEMY_PATTERN_ANIM) ; $04
 	FLAG_ENEMY_PATTERN_LEFT:	equ (1 << BIT_ENEMY_PATTERN_LEFT) ; $08
+
+; Enemy flags (as bit indexes)
+	BIT_ENEMY_LETHAL:	equ 0
+	
+; Enemy flags (as flags)
+	FLAG_ENEMY_LETHAL:	equ (1 << BIT_ENEMY_LETHAL) ; $01
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -78,6 +84,7 @@ INIT_ENEMY:
 	pop	hl ; restores source in hl
 	ldi	; .pattern
 	ldi	; .color
+	ldi	; .flags
 	ldi	; .state_l
 	ldi	; .state_h
 ; Resets the animation delay and the frame counter

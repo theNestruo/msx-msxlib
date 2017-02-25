@@ -68,11 +68,13 @@ ENEMY_0:
 .BAT:
 	db	BAT_SPRITE_PATTERN
 	db	BAT_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_FLYER
 	
 .SPIDER:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_FALLER
 	
 .OCTOPUS:
@@ -80,6 +82,7 @@ ENEMY_0:
 .SNAKE:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
 
 ; Skeleton: the skeleton is slept until the star is picked up,
@@ -87,6 +90,7 @@ ENEMY_0:
 .SKELETON:
 	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
 	db	SKELETON_SPRITE_COLOR
+	db	$00 ; (not lethal in the initial state)
 	dw	$ + 2
 ; Slept until the star is picked up
 	dw	ENEMY_SKELETON.HANDLER
@@ -95,11 +99,13 @@ ENEMY_0:
 .SAVAGE:
 	db	SAVAGE_SPRITE_PATTERN
 	db	SAVAGE_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_WALKER.FOLLOWER
 
 .TRAP_RIGHT:
 	db	ARROW_RIGHT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
+	db	$00 ; (not lethal)
 	dw	$ + 2
 ; Does the player overlaps y coordinate?
 	dw	ENEMY_TRAP.TRIGGER_RIGHT_HANDLER
@@ -118,6 +124,7 @@ ENEMY_0:
 .TRAP_LEFT:
 	db	ARROW_LEFT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
+	db	$00 ; (not lethal)
 	dw	$ + 2
 ; Does the player overlaps y coordinate?
 	dw	ENEMY_TRAP.TRIGGER_LEFT_HANDLER
