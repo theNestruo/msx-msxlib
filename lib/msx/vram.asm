@@ -8,7 +8,7 @@
 
 ; -----------------------------------------------------------------------------
 ; TO DO list:
-;	Support for CFG_SPRITES_EC_AWARE (e.g.: logical x = 4)
+;	Support for CFG_SPRITES_EC_AWARE in MOVE_SPRITE[S]
 ;	Support for CFG_SPRITES_FLICKERING
 ; -----------------------------------------------------------------------------
 
@@ -384,20 +384,6 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; param de: logical coordinates (x, y)
-; ret de: physical coordinates (x, y)
-; touches: a
-LOGICAL_TO_PHYSICAL_COORDINATES:
-	ld	a, e ; y -= 16, y--
-	add	CFG_SPRITES_Y_OFFSET
-	ld	e, a
-	ld	a, d ; x -= 8
-	add	CFG_SPRITES_X_OFFSET
-	ld	d, a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Resets the volatile sprites
 RESET_SPRITES:
 ; Fills with Y = SPAT_END
@@ -424,8 +410,53 @@ ENDIF
 ; param bc: attributes (pattern, color)
 ; touches: a, hl
 PUT_SPRITE:
-	call	LOGICAL_TO_PHYSICAL_COORDINATES
-; ------VVVV----falls through--------------------------------------------------
+IFDEF CFG_SPRITES_RESERVED
+	ld	hl, volatile_sprites
+ELSE
+	ld	hl, spratr_buffer
+ENDIF
+	ld	a, SPAT_END
+.LOOP:
+	cp	[hl]
+	jr	z, .HL_OK
+; Skip to the next sprite
+	inc	hl
+	inc	hl
+	inc	hl
+	inc	hl
+	jr	.LOOP
+.HL_OK:
+
+; Saves the values in the SPRATR buffer
+; y
+	ld	a, e
+	add	CFG_SPRITES_Y_OFFSET
+	ld	[hl], a
+; x: Early clock bit required?
+	inc	hl
+	ld	a, d
+	sub	-CFG_SPRITES_X_OFFSET
+	jr	nc, .NO_EC ; no
+; yes
+	add	32 ; (32 pixels because SPAT_EC)
+	ld	[hl], a
+; set SPAT_EC in color byte
+	ld	a, b
+	or	SPAT_EC
+	ld	b, a
+	jr	.PATTERN_COLOR
+.NO_EC:
+	ld	[hl], a
+	
+.PATTERN_COLOR:
+; pattern	
+	inc	hl
+	ld	[hl], c
+; color
+	inc	hl
+	ld	[hl], b
+	ret
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Appends a volatile sprite using physical coordinates
@@ -477,7 +508,12 @@ MOVE_SPRITES:
 ; param hl: SPRATR buffer pointer
 ; param de: logical coordinates (x, y)
 MOVE_SPRITE:
-	call	LOGICAL_TO_PHYSICAL_COORDINATES
+	ld	a, e ; y -= 16, y--
+	add	CFG_SPRITES_Y_OFFSET
+	ld	e, a
+	ld	a, d ; x -= 8
+	add	CFG_SPRITES_X_OFFSET
+	ld	d, a
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------

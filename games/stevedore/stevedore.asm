@@ -70,7 +70,7 @@
 ; Number of sprites reserved at the beginning of the SPRATR buffer
 ; (i.e.: first sprite number for the "volatile" sprites)
 	CFG_SPRITES_RESERVED:	equ 2
-
+	
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
 ; NAMTBL buffer text routines
@@ -503,21 +503,24 @@ NEW_STAGE:
 GAME_LOOP:
 ; Prepares next frame (1/2)
 	call	PUT_PLAYER_SPRITE
-	
-; Synchronization (halt)
+
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 1
 	call	SET_BDRCLR ; black: free frame time
+ENDIF
+	
+; Synchronization (halt)
 	halt
+	
+IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 4
 	call	SET_BDRCLR ; blue: VDP busy
-ELSE
-	halt
 ENDIF
 
 ; Blit buffers to VRAM
 	call	EXECUTE_VPOKES
 	call	LDIRVM_SPRATR
+	
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 12 ; green: game logic
 	call	SET_BDRCLR
@@ -557,13 +560,15 @@ ENDIF
 	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_FINISH
 	jr	z, STAGE_OVER ; stage over
-	cp	PLAYER_STATE_DEAD
-	jr	z, PLAYER_OVER ; player is dead
+	jr	PLAYER_OVER ; player is dead
+	; cp	PLAYER_STATE_DEAD
+	; jr	z, PLAYER_OVER ; player is dead
 
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 6
 	call	SET_BDRCLR ; red: this is bad
 ENDIF
+
 .THIS_IS_BAD:
 	halt
 	call	BEEP

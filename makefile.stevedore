@@ -63,11 +63,12 @@ SRCS_MSXLIB=\
 	lib\msx\vram.asm \
 	lib\msx\vram_x.asm \
 	lib\game\tiles.asm \
+	lib\game\collision.asm \
 	lib\game\player.asm \
 	lib\game\player_x.asm \
 	lib\game\enemy.asm \
 	lib\game\enemy_x.asm \
-	lib\game\collision.asm \
+	lib\game\bullet.asm
 
 SRCS_LIBEXT=\
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
