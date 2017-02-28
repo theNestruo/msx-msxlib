@@ -37,14 +37,8 @@ MAIN_INIT:
 	ldir
 ; ------VVVV----falls through--------------------------------------------------
 	
-IFEXIST NAMTBL_TEST_SCREEN
-; Is SELECT key pressed?
-	halt
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	6, [hl]
-	call	z, INTRO ; yes: skip test screen
-	
-	ld	hl, NAMTBL_TEST_SCREEN
+IFEXIST NAMTBL_PACKED_TABLE.TEST
+	ld	hl, NAMTBL_PACKED_TABLE.TEST
 	ld	de, namtbl_buffer
 	call	UNPACK
 	call	INIT_STAGE
@@ -62,60 +56,124 @@ INTRO:
 	call	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 ; Loads intro screen into NAMTBL buffer
-	ld	hl, NAMTBL_PACKED_INTRO
+	ld	hl, INTRO_DATA.NAMTBL_PACKED
 	ld	de, namtbl_buffer
 	call	UNPACK
 ; Mimics in-game loop preamble and initialization	
 	call	INIT_STAGE
-; Fade in
-	call	ENASCR_FADE_IN
-
-; Intro sequence #1: the fall
-
 ; Special initialization
 	ld	hl, player.state
 	set	BIT_STATE_LEFT, [hl]
+	call	PUT_PLAYER_SPRITE
+; Fade in
+	call	ENASCR_FADE_IN
+	call	LDIRVM_SPRATR
+
+; Intro sequence #1: "Push space key"
+
+; Courtesy pause
+	call	TRIGGER_PAUSE_FOUR_SECONDS
+	jr	nz, .SKIP_WAIT
+
+; Prints "push space key" text
+	ld	hl, TXT_PUSH_SPACE_KEY
+	ld	de, namtbl_buffer + 16 * SCR_WIDTH + TXT_PUSH_SPACE_KEY.CENTER
+	call	PRINT_TXT
+	halt
+	call	LDIRVM_NAMTBL
+
+; Pauses until trigger
+.TRIGGER_LOOP_1:
+	halt
+	call	GET_TRIGGER
+	jr	z, .TRIGGER_LOOP_1
+
+; Makes "push space key" text blink
+	ld	b, 10 ; times to blink
+.BLINK_LOOP:
+	push	bc ; preserves counter
+; Removes the "push space key" text
+	ld	hl, namtbl_buffer + 16 *SCR_WIDTH
+	call	CLEAR_LINE
+; Blit and pause
+	call	LDIRVM_NAMTBL
+	halt
+	halt
+	halt
+; Prints "push space key" text
+	ld	hl, TXT_PUSH_SPACE_KEY
+	ld	de, namtbl_buffer + 16 *SCR_WIDTH + TXT_PUSH_SPACE_KEY.CENTER
+	call	PRINT_TXT
+; Blit and pause
+	call	LDIRVM_NAMTBL
+	halt
+	halt
+	halt
+	pop	bc ; restores counter
+	djnz	.BLINK_LOOP
+; Removes the "push space key" text
+	ld	hl, namtbl_buffer + 16 *SCR_WIDTH
+	call	CLEAR_LINE
+	
+; Intro sequence #2: the fall
+
+.SKIP_WAIT:
+; Updates screen 1/2: broken bridge
+	ld	hl, INTRO_DATA.BROKEN_BRIDGE_CHARS
+	ld	de, namtbl_buffer + 3 *SCR_WIDTH + 15
+	ldi	; 3 bytes
+	ldi
+	ldi
+; Updates screen 2/2: floor
+	ld	hl, INTRO_DATA.FLOOR_CHARS
+	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 12
+	ld	bc, 9 ; 9 bytes
+	ldir
+; Sets the player falling
 	call	SET_PLAYER_FALLING
-.LOOP_1:
+	call	PUT_PLAYER_SPRITE
 ; Synchronization (halt) and blit buffers to VRAM
+	halt
+	call	LDIRVM_NAMTBL
+	call	LDIRVM_SPRATR
+
+.FALL_LOOP:
+; Mimics game logic, synchronization (halt) and blit buffer to VRAM
+	call	UPDATE_PLAYER
 	call	PUT_PLAYER_SPRITE
 	halt
 	call	LDIRVM_SPRATR
-; Mimics game logic
-	call	UPDATE_PLAYER
-; Check exit condition
+; Checks exit condition
 	ld	a, [player.state]
 	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_AIR
-	jr	z, .LOOP_1 ; no
+	jr	z, .FALL_LOOP ; no
 
-; Intro sequence #2: the floor
+; Intro sequence #3: the darkness
 
-; Crashed sprite
+; Sets the player crashed (sprite only)
 	ld	a, PLAYER_SPRITE_INTRO_PATTERN
 	ld	[player_spratr.pattern], a
 	add	4
 	ld	[player_spratr.pattern +4], a
 	call	LDIRVM_SPRATR
 
-; Intro sequence #3: the darkness
-
-; Loop preamble
+; Slow fade out
 	ld	hl, NAMTBL
 	ld	b, 16 ; 16 lines
 .LOOP_2:
 	push	bc ; preserves counter
 	push	hl ; preserves line
 ; Synchronization (halt)
+	halt	; (slowly: 3 frames)
 	halt
-	halt	; (slowly)
 	halt
 	pop	hl ; restores line
 ; Erases one line in VRAM
 	ld	bc, SCR_WIDTH
 	push	bc ; preserves SCR_WIDTH
 	push	hl ; preserves line (again)
-	ld	a, $20 ; " " ASCII
+	xor	a
 	call	FILVRM
 	pop	hl ; restores line (again)
 	pop	bc ; restores SCR_WIDTH
@@ -135,13 +193,14 @@ INTRO:
 ; Special initialization
 	ld	hl, player.state
 	set	BIT_STATE_LEFT, [hl]
-; Pause until trigger
-.LOOP_3:
+	
+; Pauses until trigger
+.TRIGGER_LOOP_2:
 	halt
 	call	GET_TRIGGER
-	jr	z, .LOOP_3
+	jr	z, .TRIGGER_LOOP_2
 
-; Awakens player
+; Awakens the player, synchronization (halt) and blit buffer to VRAM
 	call	PUT_PLAYER_SPRITE
 	halt
 	call	LDIRVM_SPRATR

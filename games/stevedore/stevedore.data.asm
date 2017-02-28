@@ -7,20 +7,29 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
+TXT_PUSH_SPACE_KEY:
+	db	"PUSH SPACE KEY"
+	.SIZE:		equ $ - TXT_PUSH_SPACE_KEY
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	db	$00
+	
 TXT_STAGE:
-	db	"STAGE 00", $00
+	db	"STAGE 00"
 	.SIZE:		equ $ - TXT_STAGE
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	db	$00
 	
 TXT_LIVES:
-	db	"0 LIVES LEFT", $00
-	.SIZE: equ $ - TXT_LIVES
+	db	"0 LIVES LEFT"
+	.SIZE: 		equ $ - TXT_LIVES
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	db	$00
 	
 TXT_GAME_OVER:
-	db	"GAME OVER", $00
-	.SIZE: equ $ - TXT_GAME_OVER
+	db	"GAME OVER"
+	.SIZE: 		equ $ - TXT_GAME_OVER
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	db	$00
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -158,12 +167,20 @@ BULLET_0:
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
-NAMTBL_TEST_SCREEN:
-	incbin	"games/stevedore/screen.tmx.bin.zx7"
-	
-NAMTBL_PACKED_INTRO:
-	incbin	"games/stevedore/intro.tmx.bin.zx7"
+INTRO_DATA:
 
+.NAMTBL_PACKED:
+	incbin	"games/stevedore/intro.tmx.bin.zx7"
+	
+.BROKEN_BRIDGE_CHARS:
+	db	$b4, $00, $b1 ; 3 bytes
+	
+.FLOOR_CHARS:
+	db	$a5, $85, $a4, $e5, $e4, $e5, $85, $a4, $a5 ; 9 bytes
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
 	dw	.TUTORIAL_01
 	dw	.TUTORIAL_02
@@ -189,8 +206,11 @@ NAMTBL_PACKED_TABLE:
 	
 .VOLCANO_01:
 	incbin	"games/stevedore/volcano_01.tmx.bin.zx7"
+
+; .TEST:
+	incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
-	TUTORIAL_STAGES:	equ 4 ; 5
+	TUTORIAL_STAGES:	equ 5
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
