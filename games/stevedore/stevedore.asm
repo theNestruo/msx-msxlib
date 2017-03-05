@@ -7,7 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Define to visually debug frame timing
-	CFG_DEBUG_BDRCLR:
+	; CFG_DEBUG_BDRCLR:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -31,25 +31,6 @@
 ; -----------------------------------------------------------------------------
 ; Generic Z80 assembly convenience routines
 	include "lib/asm.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Unpacker routine
-
-; Unpack to RAM routine (optional)
-; param hl: packed data source address
-; param de: destination buffer address
-
-; Pletter (v0.5c1, XL2S Entertainment)
-	; include	"libext/pletter05c/pletter05c-unpackRam.tniasm.asm"
-
-; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
-; "Standard" version (69 bytes only)
-	UNPACK: equ dzx7_standard
-	include	"libext/zx7/dzx7_standard.tniasm.asm"
-
-; Buffer size to check it actually fits before system variables
-	CFG_RAM_RESERVE_BUFFER:	equ 2048
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -94,7 +75,6 @@
 ; Spriteables routines (2x2 chars that eventually become a sprite)
 	include "lib/msx/vram_x.asm"
 ; -----------------------------------------------------------------------------
-
 
 ;
 ; =============================================================================
@@ -260,6 +240,38 @@ PLAYER_DY_TABLE:
 	include	"lib/game/collision.asm"
 ; -----------------------------------------------------------------------------
 
+;
+; =============================================================================
+;	MSXlib external routines
+; =============================================================================
+;
+
+; -----------------------------------------------------------------------------
+; Unpacker routine
+
+; Unpack to RAM routine (optional)
+; param hl: packed data source address
+; param de: destination buffer address
+
+; Pletter (v0.5c1, XL2S Entertainment)
+	; include	"libext/pletter05c/pletter05c-unpackRam.tniasm.asm"
+
+; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
+; "Standard" version (69 bytes only)
+	UNPACK: equ dzx7_standard
+	include	"libext/zx7/dzx7_standard.tniasm.asm"
+
+; Buffer size to check it actually fits before system variables
+	CFG_RAM_RESERVE_BUFFER:	equ 2048
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Replayer routine
+
+; WYZPlayer v0.47c
+	include	"libext/wyzplayer/wyzplayer047c-rom.tniasm.asm"
+; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
@@ -293,6 +305,24 @@ PADDING:
 ; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
 	include	"lib/ram.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; MSXlib external routines
+
+; WYZPlayer v0.47c variables
+	include	"libext/wyzplayer/wyzplayer047c-ram.tniasm.asm"
+	
+; WYZPlayer sound buffers. Recommended at least $10 bytes per channel
+wyzplayer_buffer:
+.a:
+	rb	$20
+.b:
+	rb	$20
+.c:
+	rb	$20
+.p:
+	rb	$20
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

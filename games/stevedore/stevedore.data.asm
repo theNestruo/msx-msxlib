@@ -188,7 +188,7 @@ NAMTBL_PACKED_TABLE:
 	dw	.TUTORIAL_04
 	dw	.TUTORIAL_05
 	dw	.JUNGLE_01
-	dw	.VOLCANO_01
+	; dw	.VOLCANO_01
 	
 .TUTORIAL_01:
 	incbin	"games/stevedore/tutorial_01.tmx.bin.zx7"
@@ -204,13 +204,13 @@ NAMTBL_PACKED_TABLE:
 .JUNGLE_01:
 	incbin	"games/stevedore/jungle_01.tmx.bin.zx7"
 	
-.VOLCANO_01:
-	incbin	"games/stevedore/volcano_01.tmx.bin.zx7"
+; .VOLCANO_01:
+	; incbin	"games/stevedore/volcano_01.tmx.bin.zx7"
 
 ; .TEST:
-	incbin	"games/stevedore/screen.tmx.bin.zx7"
+	; incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
-	TUTORIAL_STAGES:	equ 5
+	; TUTORIAL_STAGES:	equ 5
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -287,4 +287,14 @@ SPRTBL_PACKED:
 	PLAYER_SPRITE_INTRO_PATTERN:	equ $b0
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+; WYZPlayer data
+TABLA_SONG:
+	dw	.SONG_0
+.SONG_0:
+	incbin	"games/stevedore/knightmare_start.mus"
+
+	include	"games/stevedore/knightmare_start.mus.asm"
+; -----------------------------------------------------------------------------
+		
 ; EOF

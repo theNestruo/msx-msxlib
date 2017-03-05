@@ -120,9 +120,6 @@ ENDIF ; CFG_INIT_16KB_RAM
 	xor	a
 	ld	[CLIKSW], a
 
-; PSG: silence
-	call	GICINI
-
 ; Zeroes all the used RAM
 	ld	hl, ram_start
 	ld	de, ram_start +1
@@ -145,8 +142,39 @@ ENDIF ; CFG_INIT_16KB_RAM
 	; ld	bc, .FRAME_RATE_SIZE ; (unecessary)
 	ldir
 
+; PSG: silence
+	call	GICINI
+
+; WYZPlayer v0.47c initialization
+IFEXIST PLAYER_OFF
+	call	PLAYER_OFF
+	LD	HL, wyzplayer_buffer.a
+	LD	[CANAL_A],HL
+	LD	HL, wyzplayer_buffer.b
+	LD	[CANAL_B],HL
+	LD	HL, wyzplayer_buffer.c
+	LD	[CANAL_C],HL
+	LD	HL, wyzplayer_buffer.p
+	LD	[CANAL_P],HL
+; Installs the WYZPlayer hook
+	halt	; sincronización
+	di
+; ...instala el reproductor de PT3 en la interrupción
+	ld	hl, WYZPLAYER.HOOK
+	ld	de, HKEYI
+	ld	bc, HOOK_SIZE
+	ldir
+	ei
+ENDIF ; IFEXIST PLAYER_OFF
+
 ; salta hasta el punto de entrada principal del juego
 	jp	MAIN_INIT
 ; -----------------------------------------------------------------------------
+
+WYZPLAYER.HOOK:
+	jp	INICIO
+; padding to match HOOK_SIZE
+	ret
+	ret
 
 ; EOF

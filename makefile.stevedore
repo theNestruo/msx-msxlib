@@ -14,21 +14,10 @@ SRCS=\
 	$(GAME_PATH)\$(GAME).data.asm \
 	$(GAME_PATH)\$(GAME).ram.asm
 	
-GFXS=\
-	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION)
-
-GFXS_INTERMEDIATE=\
-	$(GAME_PATH)\charset.pcx.chr \
-	$(GAME_PATH)\charset.pcx.clr
-
-SPRS=\
-	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION)
-
-SPRS_INTERMEDIATE=\
-	$(GAME_PATH)\sprites.pcx.spr
-
 DATAS=\
+	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\intro.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\tutorial_01.tmx.bin.$(PACK_EXTENSION) \
@@ -40,6 +29,9 @@ DATAS=\
 	$(GAME_PATH)\volcano_01.tmx.bin.$(PACK_EXTENSION)
 
 DATAS_INTERMEDIATE=\
+	$(GAME_PATH)\charset.pcx.chr \
+	$(GAME_PATH)\charset.pcx.clr \
+	$(GAME_PATH)\sprites.pcx.spr \
 	$(GAME_PATH)\screen.tmx.bin \
 	$(GAME_PATH)\intro.tmx.bin \
 	$(GAME_PATH)\tutorial_01.tmx.bin \
@@ -120,6 +112,8 @@ SRCS_MSXLIB=\
 
 SRCS_LIBEXT=\
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
+	libext\wyzplayer\wyzplayer047c-rom.tniasm.asm \
+	libext\wyzplayer\wyzplayer047c-ram.tniasm.asm \
 	libext\zx7\dzx7_standard.tniasm.asm
 
 #

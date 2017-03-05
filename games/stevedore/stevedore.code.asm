@@ -54,7 +54,7 @@ INTRO:
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	2, [hl]
 	call	z, MAIN_MENU ; yes: skip intro / tutorial
-	
+
 ; Loads intro screen into NAMTBL buffer
 	ld	hl, INTRO_DATA.NAMTBL_PACKED
 	ld	de, namtbl_buffer
@@ -68,6 +68,10 @@ INTRO:
 ; Fade in
 	call	ENASCR_FADE_IN
 	call	LDIRVM_SPRATR
+
+; Loads song #0
+	LD	A, 0
+	CALL	CARGA_CANCION
 
 ; Intro sequence #1: "Push space key"
 
@@ -246,9 +250,9 @@ NEW_GAME:
 ; New stage / new life entry point
 NEW_STAGE:
 ; Skip this section in tutorial stages
-	ld	a, [game.current_stage]
-	cp	TUTORIAL_STAGES
-	jr	nc, .NORMAL
+	; ld	a, [game.current_stage]
+	; cp	TUTORIAL_STAGES
+	; jr	nc, .NORMAL
 	
 ; Tutorial stage (quick init)
 
@@ -269,7 +273,7 @@ NEW_STAGE:
 ; "stage N"
 	dec	de
 	ld	a, [game.current_stage]
-	add	$31 - TUTORIAL_STAGES ; "1"
+	add	$31 ;  - TUTORIAL_STAGES ; "1"
 	ld	[de], a
 	
 ; "LIVES 0"
@@ -413,10 +417,10 @@ STAGE_OVER:
 	inc	[hl]
 	
 ; Is it a tutorial stage?
-	ld	a, [game.current_stage]
-	cp	TUTORIAL_STAGES
-	jp	c, NEW_STAGE ; yes: next stage directly
-	jp	z, TUTORIAL_OVER ; no: tutorial finished
+	; ld	a, [game.current_stage]
+	; cp	TUTORIAL_STAGES
+	; jp	c, NEW_STAGE ; yes: next stage directly
+	; jp	z, TUTORIAL_OVER ; no: tutorial finished
 	
 ; Stage over screen
 	;	...
@@ -438,17 +442,17 @@ PLAYER_OVER:
 ; Fade out
 	call	DISSCR_FADE_OUT
 	
-; Is it a tutorial stage?
-	ld	a, [game.current_stage]
-	cp	TUTORIAL_STAGES
-	jp	c, NEW_STAGE ; yes: re-enter current stage, no life lost
+; ; Is it a tutorial stage?
+	; ld	a, [game.current_stage]
+	; cp	TUTORIAL_STAGES
+	; jp	c, NEW_STAGE ; yes: re-enter current stage, no life lost
 	
-; Life loss logic
-	ld	hl, game.lives
-	xor	a
-	cp	[hl]
-	jr	z, GAME_OVER ; no lives left
-	dec	[hl]
+; ; Life loss logic
+	; ld	hl, game.lives
+	; xor	a
+	; cp	[hl]
+	; jr	z, GAME_OVER ; no lives left
+	; dec	[hl]
 
 .SKIP:	
 ; Re-enter current stage
