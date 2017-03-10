@@ -19,6 +19,9 @@ ram_start:
 
 ; NAMBTL and SPRATR buffers
 	include	"lib\msx\vram.ram.asm"
+	
+; Replayer vars and buffers: WYZPlayer v0.47c-based implementation
+	include "lib\msx\replayer.ram.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

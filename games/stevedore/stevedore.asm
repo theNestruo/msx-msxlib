@@ -15,7 +15,7 @@
 
 ; Define if the ROM is larger than 16kB (typically, 32kB)
 ; Includes search for page 2 slot/subslot at start
-	; CFG_INIT_32KB_ROM:
+	CFG_INIT_32KB_ROM:
 
 ; Define if the game needs 16kB instead of 8kB
 ; RAM will start at the beginning of the page 2 instead of $e000
@@ -75,6 +75,17 @@
 ; Spriteables routines (2x2 chars that eventually become a sprite)
 	include "lib/msx/vram_x.asm"
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Replayer routines (WYZPlayer v0.47c-based implementation)
+
+; Define to enable the ability of installing the replayer in the interrupt
+	CFG_REPLAYER_INSTALLABLE:
+
+; Replayer routines (WYZPlayer v0.47c-based implementation)
+	include	"lib\msx\replayer.asm"
+; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
@@ -265,13 +276,6 @@ PLAYER_DY_TABLE:
 	CFG_RAM_RESERVE_BUFFER:	equ 2048
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Replayer routine
-
-; WYZPlayer v0.47c
-	include	"libext/wyzplayer/wyzplayer047c-rom.tniasm.asm"
-; -----------------------------------------------------------------------------
-
 
 ;
 ; =============================================================================
@@ -305,24 +309,6 @@ PADDING:
 ; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
 	include	"lib/ram.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; MSXlib external routines
-
-; WYZPlayer v0.47c variables
-	include	"libext/wyzplayer/wyzplayer047c-ram.tniasm.asm"
-	
-; WYZPlayer sound buffers. Recommended at least $10 bytes per channel
-wyzplayer_buffer:
-.a:
-	rb	$20
-.b:
-	rb	$20
-.c:
-	rb	$20
-.p:
-	rb	$20
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

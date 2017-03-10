@@ -35,6 +35,10 @@ MAIN_INIT:
 	ld	de, globals
 	ld	bc, GLOBALS_0.SIZE
 	ldir
+	
+; Initializes the replayer and installs it in the interruption
+	call	REPLAYER.RESET
+	call	REPLAYER.INSTALL
 ; ------VVVV----falls through--------------------------------------------------
 	
 IFEXIST NAMTBL_PACKED_TABLE.TEST
@@ -70,8 +74,8 @@ INTRO:
 	call	LDIRVM_SPRATR
 
 ; Loads song #0
-	LD	A, 0
-	CALL	CARGA_CANCION
+	xor	a
+	call	REPLAYER.PLAY
 
 ; Intro sequence #1: "Push space key"
 

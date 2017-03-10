@@ -44,16 +44,16 @@ ROM_START:
 	call	INICIO
 	jr	.LOOP
 
-; WYZPlayer v0.47c
-	include	"libext/wyzplayer/wyzplayer047c-rom.tniasm.asm"
+; Replayer routines (WYZPlayer v0.47c-based implementation)
+	include	"lib\msx\replayer.asm"
 
 ; WYZPlayer test data
-TEST_WYZ:
-	include	"games/wyzplayer-test/knightmare_start.mus.asm"
 TABLA_SONG:
 	dw	.SONG_0
 .SONG_0:
 	incbin	"games/wyzplayer-test/knightmare_start.mus"
+
+	include	"games/wyzplayer-test/knightmare_start.mus.asm"
 
 ; Padding to a 8kB boundary
 	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
@@ -62,21 +62,6 @@ TABLA_SONG:
 ; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
 	include	"lib/ram.asm"
-
-; WYZPlayer v0.47c variables
-	include	"libext/wyzplayer/wyzplayer047c-ram.tniasm.asm"
-	
-; WYZPlayer sound buffers. Recommended at least $10 bytes per channel
-wyzplayer_buffer:
-.a:
-	rb	$20
-.b:
-	rb	$20
-.c:
-	rb	$20
-.p:
-	rb	$20
-
 ram_end:
 ; -----------------------------------------------------------------------------
 
