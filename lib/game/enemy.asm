@@ -184,7 +184,8 @@ SET_NEW_STATE_HANDLER:
 ; ret z (continue) if the state does not change (no overlapping coordinates)
 ; ret nz (halt) if the state changes
 .ON_X_COLLISION:
-	call	CHECK_PLAYER_ENEMY_COLLISION.X
+	ld	l, PLAYER_ENEMY_X_SIZE
+	call	CHECK_PLAYER_COLLISION.X
 	jp	c, SET_NEW_STATE_HANDLER
 ; ret z (continue)
 	xor	a
@@ -201,7 +202,8 @@ SET_NEW_STATE_HANDLER:
 ; ret z (continue) if the state does not change (no overlapping coordinates)
 ; ret nz (halt) if the state changes
 .ON_Y_COLLISION:
-	call	CHECK_PLAYER_ENEMY_COLLISION.Y
+	ld	h, PLAYER_ENEMY_Y_SIZE
+	call	CHECK_PLAYER_COLLISION.Y
 	jp	c, SET_NEW_STATE_HANDLER
 ; ret z (continue)
 	xor	a

@@ -65,9 +65,6 @@ INTRO:
 	call	UNPACK
 ; Mimics in-game loop preamble and initialization	
 	call	INIT_STAGE
-; Special initialization
-	ld	hl, player.state
-	set	BIT_STATE_LEFT, [hl]
 	call	PUT_PLAYER_SPRITE
 ; Fade in
 	call	ENASCR_FADE_IN
@@ -198,9 +195,6 @@ INTRO:
 	call	UNPACK
 ; Mimics in-game loop preamble and initialization	
 	call	INIT_STAGE
-; Special initialization
-	ld	hl, player.state
-	set	BIT_STATE_LEFT, [hl]
 	
 ; Pauses until trigger
 .TRIGGER_LOOP_2:
@@ -829,7 +823,8 @@ ENEMY_SKELETON.HANDLER:
 ENEMY_TRAP:
 
 .TRIGGER_RIGHT_HANDLER:
-	call	CHECK_PLAYER_ENEMY_COLLISION.Y
+	ld	h, PLAYER_ENEMY_Y_SIZE
+	call	CHECK_PLAYER_COLLISION.Y
 	jp	nc, RET_NOT_ZERO
 ; right?
 	ld	a, [player.x]
@@ -840,7 +835,8 @@ ENEMY_TRAP:
 	jp	SET_NEW_STATE_HANDLER.BC_OK
 	
 .TRIGGER_LEFT_HANDLER:
-	call	CHECK_PLAYER_ENEMY_COLLISION.Y
+	ld	h, PLAYER_ENEMY_Y_SIZE
+	call	CHECK_PLAYER_COLLISION.Y
 	jp	nc, RET_NOT_ZERO
 ; left?
 	ld	a, [player.x]
@@ -887,7 +883,7 @@ ON_PLAYER_WALK_ON:
 	jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
 
 .ITEM_JUMP_TABLE:
-	dw	.KEY		; key
+	dw	.KEY	; key
 	dw	.STAR	; star
 	dw	.BONUS	; coin
 	dw	.BONUS	; fruit: cherry
