@@ -115,7 +115,7 @@ IFDEF CFG_SPRITEABLES
 	SPRITEABLE_DIR_DOWN:		equ $20
 	SPRITEABLE_DIR_RIGHT:		equ $30
 	SPRITEABLE_DIR_LEFT:		equ $40
-	SPRITEABLE_STOPPED:		equ $80 ; no movement (locked)
+	SPRITEABLE_STOPPED:		equ $80 ; no further movement (locked)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -151,6 +151,12 @@ INIT_SPRITEABLE:
 ; Saves the first foreground character
 	ld	a, [de]
 	ld	[ix + _SPRITEABLE_FOREGROUND], a
+	inc	a
+	ld	[ix + _SPRITEABLE_FOREGROUND +1], a
+	inc	a
+	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
+	inc	a
+	ld	[ix + _SPRITEABLE_FOREGROUND +3], a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -219,7 +225,8 @@ UPDATE_SPRITEABLES:
 
 ; Stops the spriteable (for the next frame)
 .STOP:
-	; xor	a ; 0 = SPRITEABLE_IDLE ; (unecessary)
+	ld	a, SPRITEABLE_STOPPED ; (keeps the "stopped" flag only)
+	and	b
 	ld	[ix + _SPRITEABLE_STATUS], a
 ; "vpokes" the spriteable foreground
 	call	VPOKE_SPRITEABLE_FOREGROUND
@@ -255,6 +262,7 @@ PUT_SPRITEABLE_SPRITE:
 ; Coordinates adjust depending on the direction
 	ld	c, a ; preserves pending movement
 	ld	a, b ; restores status
+	and	MASK_SPRITEABLE_DIRECTION
 	cp	SPRITEABLE_DIR_RIGHT
 	jr	c, .UP_OR_DOWN ; direction < RIGHT, ergo UP or DOWN
 ; direction >= RIGHT, ergo RIGHT or LEFT
@@ -471,16 +479,16 @@ VPOKE_SPRITEABLE_FOREGROUND:
 	call	VPOKE_SPRITEABLE_FIRST
 ; Upper right character
 	inc	hl
-	inc	a
+	ld	a, [ix +_SPRITEABLE_FOREGROUND +1]
 	call	VPOKE_SPRITEABLE_NEXT
 ; Lower left character
 	ld	de, SCR_WIDTH -1
 	add	hl, de
-	inc	a
+	ld	a, [ix +_SPRITEABLE_FOREGROUND +2]
 	call	VPOKE_SPRITEABLE_NEXT
 ; Lower right character
 	inc	hl
-	inc	a
+	ld	a, [ix +_SPRITEABLE_FOREGROUND +3]
 	jr	VPOKE_SPRITEABLE_NEXT
 ; -----------------------------------------------------------------------------
 

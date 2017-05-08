@@ -12,6 +12,11 @@
 ; Playground size
 	PLAYGROUND_FIRST_ROW:	equ 0
 	PLAYGROUND_LAST_ROW:	equ 23
+	
+; The flags the define the state of the stage
+	BIT_STAGE_KEY:		equ 0 ; Key picked up
+	BIT_STAGE_STAR:		equ 1 ; Star picked up
+	BIT_STAGE_DOOR_OPEN:	equ 2 ; Doors open
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -47,6 +52,11 @@ IFEXIST NAMTBL_PACKED_TABLE.TEST
 	call	UNPACK
 	call	INIT_STAGE
 	call	ENASCR_NO_FADE
+	
+; Loads song #0
+	xor	a
+	call	REPLAYER.PLAY
+
 	jp	GAME_LOOP
 ENDIF
 
@@ -333,6 +343,7 @@ ENDIF
 
 ; Game logic (1/2: updates)
 	call	UPDATE_SPRITEABLES
+	call	UPDATE_CHARSET		; (custom)
 	call	UPDATE_BOXES_AND_ROCKS	; (custom)
 	call	UPDATE_PLAYER
 	call	UPDATE_FRAMES_PUSHING	; (custom)
@@ -656,115 +667,178 @@ POST_PROCESS_STAGE_ELEMENT:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Actualiza el movimiento automático de los elementos empujables
-; (esto es: inicia su movimiento de caída)
+UPDATE_CHARSET:
+; Key picked up?
+	ld	hl, stage.flags
+	bit	BIT_STAGE_KEY, [hl]
+	ret	z ; no
+; Doors already open?
+	bit	BIT_STAGE_DOOR_OPEN, [hl]
+	ret	nz ; yes
+; Replaces the doors with the open charset (1/2: CHRTBL)
+	ld	hl, CHARSET_EXTRA_CHR
+	ld	de, CHRTBL + CHAR_FIRST_DOOR * 8
+	call	.THREE_BANKS
+; Replaces the doors with the open charset (2/2: CLRTBL)
+	ld	hl, CHARSET_EXTRA_CLR
+	ld	de, CLRTBL + CHAR_FIRST_DOOR * 8
+	; jr	.THREE_BANKS ; falls through
+	
+; Replaces 64 bytes in three banks
+.THREE_BANKS:
+	call	.ONE_BANK
+	call	.ONE_BANK
+	; jr	.ONE_BANK ; falls through
+
+; Replaces 64 bytes in one bank
+.ONE_BANK:
+	push	de ; preserves destination
+	push	hl ; preserves source
+	ld	bc, 64
+	call	LDIRVM
+	pop	de ; restores source in de
+	pop	hl ; restores destination in hl
+	ld	bc, CHRTBL_SIZE
+	add	hl, bc ; moves destination to next bank
+	ex	de, hl ; source and destination in proper registers
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Automatic update of the spriteables/pushables movement
+; (i.e.: start falling, stop at water, etc.)
 UPDATE_BOXES_AND_ROCKS:
-; ¿Hay pushables?
+; For each spriteable/pushable in the array
 	ld	a, [spriteables.count]
 	or	a
-	ret	z ; no
-; sí
-	ld	b, a ; b = contador
+	ret	z ; no pushables
+	ld	b, a ; b = spriteables.count
 	ld	ix, spriteables.array
 .LOOP:
-	push	bc ; preserva el contador
-; ¿Está activo?
+	push	bc ; preserves counter
+; Is the spriteable already moving?
 	ld	a, [ix +_SPRITEABLE_STATUS]
 	or	a
-	jr	nz, .NEXT ; sí: pasa al siguiente
-	
-; no
-	ld	a, [ix +_SPRITEABLE_BACKGROUND]
-	and	$fe ; (para descartar el bit más bajo)
-; ¿condiciones especiales (entrando en agua)?
-	cp	CHAR_WATER_SURFACE
-	jr	nz, .NO_WATER ; no
-; sí: ¿es una caja?
-	ld	a, [ix +_SPRITEABLE_PATTERN]
-	cp	BOX_SPRITE_PATTERN
-	jr	z, .BOX_ON_WATER ; sí
-	jr	.ROCK_ON_WATER ; no (es una roca)
-.NO_WATER:
+	call	z, .CHECK_FALLING ; no; checks if it is going to fall
+; Skips to the next element of the array
+	ld	bc, SPRITEABLE_SIZE
+	add	ix, bc
+	pop	bc ; restores counter
+	djnz	.LOOP
+	ret
 
-; ¿condiciones especiales (entrando en lava)?
-	cp	CHAR_LAVA_SURFACE
-	jr	nz, .NO_LAVA ; no
-; sí: ¿es una caja?
-	ld	a, [ix +_SPRITEABLE_PATTERN]
-	cp	BOX_SPRITE_PATTERN
-	jr	z, .BOX_ON_LAVA ; sí
-	jr	.ROCK_ON_LAVA ; no (es una roca)
-.NO_LAVA:
-
-.CHECK:
-; Lee el caracter bajo la parte izquierda del spriteable
+.CHECK_FALLING:
+; Reads the character under the left part of the spriteable
 	ld	hl, namtbl_buffer +SCR_WIDTH *2 ; (+2,+0)
 	ld	e, [ix +_SPRITEABLE_OFFSET_L]
 	ld	d, [ix +_SPRITEABLE_OFFSET_H]
 	add	hl, de
-	push	hl ; preserva el puntero al buffer namtbl
+	push	hl ; preserves buffer namtbl pointer
 	ld	a, [hl]
 	call	GET_TILE_FLAGS
-	ld	c, a ; preserva el valor
-; Lee el caracter bajo la parte derecha del spriteable
-	pop	hl ; restaura puntero al buffer namtbl
-	inc	hl
-	ld	a, [hl]
-	call	GET_TILE_FLAGS
-	or	c ; combina el valor
-; ¿Es sólido?
+	pop	hl ; restores buffer namtbl pointer
+; Is it solid?
 	bit	BIT_WORLD_SOLID, a
-	jr	nz, .NEXT ; sí
-	cp	(1 << BIT_WORLD_FLOOR) OR (1 << BIT_WORLD_STAIRS)
-	jr	z, .NEXT ; sí
-; no: inicia el movimiento hacia abajo
+	ret	nz ; yes
+; no: Reads the character under the right part of the spriteable
+	inc	hl ; (+1,+0)
+	ld	a, [hl]
+	call	GET_TILE_FLAGS
+; Is it solid?
+	bit	BIT_WORLD_SOLID, a
+	ret	nz ; yes
+	
+; Starts moving the spriteable down
 	call	MOVE_SPRITEABLE_DOWN
+	
+; Is the lower half of the spriteable in water or lava?
+	ld	a, [ix +_SPRITEABLE_BACKGROUND +2] ; (+0,+1)
+	ld	b, a ; preserves value in b
+	and	$f8 ; (discards lower bits)
+	cp	CHAR_WATER_SURFACE
+	ret	nz ; no
+	
+; Yes: is the spriteable a box?
+	ld	a, [ix +_SPRITEABLE_PATTERN]
+	cp	BOX_SPRITE_PATTERN
+	jr	z, .BOX ; yes
+; no: it is a rock
 
-.NEXT:
-; Pasa al siguiente elemento
-	ld	bc, SPRITEABLE_SIZE
-	add	ix, bc
-	pop	bc ; restaura el contador
-	djnz	.LOOP
+.ROCK:
+; Calculate new lower characters
+	ld	a, b ; restores background value
+	and	$06 ; (discards lower bit)
+	or	$a8
+; Sets the new lower characters
+	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
+	inc	a
+	ld	[ix + _SPRITEABLE_FOREGROUND +3], a
+; Is the upper half of the rock in water or lava?
+	ld	a, [ix +_SPRITEABLE_BACKGROUND]
+	ld	b, a ; preserves value in b
+	and	$f8 ; (discards lower bits)
+	cp	CHAR_WATER_SURFACE
+	ret	nz ; no
+; Yes: calculate new upper characters
+	ld	a, b ; restores background value
+	and	$06 ; (discards lower bit)
+	or	$a0
+; Sets the new upper character
+	ld	[ix + _SPRITEABLE_FOREGROUND], a
+	inc	a
+	ld	[ix + _SPRITEABLE_FOREGROUND +1], a
+; Is the upper half of the rock in deep water or lava?
+	bit	1, b
+	ret	z ; no
+; yes: change the sprite color
+	bit	2, b
+	ld	a, ROCK_SPRITE_COLOR_WATER
+	jr	z, .A_OK
+	ld	a, ROCK_SPRITE_COLOR_LAVA
+.A_OK:
+	ld	[ix + _SPRITEABLE_COLOR], a
 	ret
 	
-.BOX_ON_WATER:
-; Cambia los caracteres que se volcarán y los vuelca inmediatamente
-	ld	a, BOX_FIRST_CHAR_WATER
-	ld	[ix + _SPRITEABLE_FOREGROUND], a
-	call	VPOKE_SPRITEABLE_FOREGROUND
-	jr	.STOP_BOX
-.BOX_ON_LAVA:
-; Elimina los caracteres de la caja y recupera el fondo inmediatamente
+.BOX:
+; Checks if it is water or lava
+	ld	a, b ; restores background value
+	bit	2, b
+	jr	nz, .BOX_IN_LAVA ; lava
+
+; Water: calculate new lower characters
+	and	$06 ; (discards lower bit)
+	add	$9c
+; Sets the new lower characters
+	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
+	inc	a
+	ld	[ix + _SPRITEABLE_FOREGROUND +3], a
+; Is the upper half of the box in water?
+	bit	1, b
+	ret	z ; no
+; Yes: sets the new upper characters
+	ld	[ix + _SPRITEABLE_FOREGROUND], $9a
+	ld	[ix + _SPRITEABLE_FOREGROUND +1], $9a +1
+; Stops the spriteable (after this movement)
+	set	7, [ix + _SPRITEABLE_STATUS]
+	ret
+	
+.BOX_IN_LAVA:
+; Recovers the background immediately
 	call	NAMTBL_BUFFER_SPRITEABLE_BACKGROUND
-	call	VPOKE_SPRITEABLE_BACKGROUND
-	; jr	.STOP_BOX ; falls through
-.STOP_BOX:
-; Detiene el spriteable
-	ld	a, SPRITEABLE_STOPPED
-	ld	[ix + _SPRITEABLE_STATUS], a
-; no continúa procesando la caída
-	jr	.NEXT
-	
-.ROCK_ON_WATER:
-; Cambia los caracteres que se volcarán
-	ld	a, ROCK_FIRST_CHAR_WATER
+; Prevents printing the foreground again after this movement
+	ld	a, [ix + _SPRITEABLE_BACKGROUND]
 	ld	[ix + _SPRITEABLE_FOREGROUND], a
-; Cambia el color del sprite
-	ld	a, ROCK_SPRITE_COLOR_WATER
-	ld	[ix + _SPRITEABLE_COLOR], a
-; continúa procesando la caída
-	jr	.CHECK
-	
-.ROCK_ON_LAVA:
-; Cambia los caracteres que se volcarán
-	ld	a, ROCK_FIRST_CHAR_LAVA
-	ld	[ix + _SPRITEABLE_FOREGROUND], a
-; Cambia el color del sprite
-	ld	a, ROCK_SPRITE_COLOR_LAVA
-	ld	[ix + _SPRITEABLE_COLOR], a
-; continúa procesando la caída
-	jr	.CHECK
+	ld	a, [ix + _SPRITEABLE_BACKGROUND +1]
+	ld	[ix + _SPRITEABLE_FOREGROUND +1], a
+	ld	a, [ix + _SPRITEABLE_BACKGROUND +2]
+	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
+	ld	a, [ix + _SPRITEABLE_BACKGROUND +3]
+	ld	[ix + _SPRITEABLE_FOREGROUND +3], a
+; Changes the sprite color
+	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR_LAVA
+; Stops the spriteable (after this movement)
+	set	7, [ix + _SPRITEABLE_STATUS]
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -787,8 +861,8 @@ UPDATE_FRAMES_PUSHING:
 ; then, it becomes of type walker (follower with pause)
 ENEMY_SKELETON.HANDLER:
 ; Has the star been picked up?
-	ld	a, [star]
-	or	a
+	ld	hl, stage.flags
+	bit	BIT_STAGE_STAR, [hl]
 	jp	z, RET_NOT_ZERO ; no
 
 ; yes: locates the skeleton characters
@@ -890,42 +964,20 @@ ON_PLAYER_WALK_ON:
 	dw	.BONUS	; fruit: strawberry
 	dw	.BONUS	; fruit: apple
 	dw	.BONUS	; octopus
-; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
+; key
 .KEY:
-; Travels the NAMTBL buffer
-	ld	hl, namtbl_buffer
-	ld	bc, NAMTBL_SIZE
-.LOOP:
-; Is a closed-door char?
-	ld	a, [hl]
-	cp	CHAR_FIRST_CLOSED_DOOR
-	jr	c, .NEXT ; no (< CHAR_FIRST_CLOSED_DOOR)
-	cp	CHAR_LAST_CLOSED_DOOR + 1
-	jr	nc, .NEXT ; no (> CHAR_LAST_CLOSED_DOOR)
-; yes: make it an open-door char
-	push	bc ; preserves counter
-	push	hl ; preserves offset
-	add	CHAR_FIRST_OPEN_DOOR - CHAR_FIRST_CLOSED_DOOR
-	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE
-	pop	hl ; restaura puntero
-	pop	bc ; restaura contador
-.NEXT:
-; Busca el siguiente elemento
-	cpi	; inc hl, dec bc
-	ret	po
-	jr	.LOOP
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-.STAR:
-	ld	a, 1
-	ld	[star], a
+	ld	hl, stage.flags
+	set	BIT_STAGE_KEY, [hl]
 	ret
-; -----------------------------------------------------------------------------
-	
-; -----------------------------------------------------------------------------
+
+; star
+.STAR:
+	ld	hl, stage.flags
+	set	BIT_STAGE_STAR, [hl]
+	ret
+
+; coins, fruits, octopus
 .BONUS:
 	ret
 ; -----------------------------------------------------------------------------
@@ -936,6 +988,10 @@ ON_PLAYER_WIDE_ON:
 ; Cursor down?
 	ld	hl, stick
 	bit	BIT_STICK_DOWN, [hl]
+	ret	z ; no
+; Key picked up?
+	ld	hl, stage.flags
+	bit	BIT_STAGE_KEY, [hl]
 	ret	z ; no
 ; yes: set "stage finish" state
 	ld	a, PLAYER_STATE_FINISH

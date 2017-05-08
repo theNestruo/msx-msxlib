@@ -32,8 +32,8 @@ stage:
 ; Number of consecutive frames the player has been pushing an object
 player.pushing:
 	rb	1
-; The player has picked up the star
-star:
+; The flags the define the state of the stage
+stage.flags:
 	rb	1
 ; -----------------------------------------------------------------------------
 

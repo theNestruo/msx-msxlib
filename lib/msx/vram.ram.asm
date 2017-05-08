@@ -52,7 +52,7 @@ spriteables:
 	rb	1
 ; caracteres que definen el tile convertible
 	_SPRITEABLE_FOREGROUND:	equ $ - spriteables.array
-	rb	1
+	rb	4
 ; caracteres de fondo cubiertos por el tile convertible
 	_SPRITEABLE_BACKGROUND:	equ $ - spriteables.array
 	rb	4

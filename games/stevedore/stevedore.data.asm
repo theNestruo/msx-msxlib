@@ -50,7 +50,7 @@ GAME_0:
 ; Initial value of the stage-scoped vars
 STAGE_0:
 	db	0			; player.pushing
-	db	0			; star
+	db	0			; .flags
 	.SIZE:	equ $ - STAGE_0
 
 ; Initial (per stage) sprite attributes table
@@ -176,7 +176,7 @@ INTRO_DATA:
 	db	$b4, $00, $b1 ; 3 bytes
 	
 .FLOOR_CHARS:
-	db	$a5, $85, $a4, $e5, $e4, $e5, $85, $a4, $a5 ; 9 bytes
+	db	$02, $10, $01, $85, $84, $85, $02, $10, $01 ; 9 bytes
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -189,6 +189,9 @@ NAMTBL_PACKED_TABLE:
 	dw	.TUTORIAL_05
 	dw	.JUNGLE_01
 	; dw	.VOLCANO_01
+	
+.TEST:
+	incbin	"games/stevedore/screen.tmx.bin.zx7"
 	
 .TUTORIAL_01:
 	incbin	"games/stevedore/tutorial_01.tmx.bin.zx7"
@@ -207,9 +210,6 @@ NAMTBL_PACKED_TABLE:
 ; .VOLCANO_01:
 	; incbin	"games/stevedore/volcano_01.tmx.bin.zx7"
 
-; .TEST:
-	; incbin	"games/stevedore/screen.tmx.bin.zx7"
-	
 	; TUTORIAL_STAGES:	equ 5
 ; -----------------------------------------------------------------------------
 
@@ -221,28 +221,32 @@ CHARSET_CHR_PACKED:
 CHARSET_CLR_PACKED:
 	incbin	"games/stevedore/charset.pcx.clr.zx7"
 	
+CHARSET_EXTRA_CHR:
+	incbin	"games/stevedore/charset_extra.pcx.chr"
+	
+CHARSET_EXTRA_CLR:
+	incbin	"games/stevedore/charset_extra.pcx.clr"
+	
 ; Charset-related symbolic constants
-	CHAR_FIRST_ITEM:	equ $01
-	CHAR_FIRST_OPEN_DOOR:	equ $08
-	CHAR_FIRST_CLOSED_DOOR:	equ $88
-	CHAR_LAST_CLOSED_DOOR:	equ $8f
+	SKELETON_FIRST_CHAR:	equ $1a
 	
-	CHAR_WATER_SURFACE:	equ $1a
-	CHAR_LAVA_SURFACE:	equ $1c
+	TRAP_UPPER_LEFT_CHAR:	equ $6e
+	TRAP_UPPER_RIGHT_CHAR:	equ $6f
+	TRAP_LOWER_LEFT_CHAR:	equ $7e
+	TRAP_LOWER_RIGHT_CHAR:	equ $7f
 	
-	BOX_FIRST_CHAR:		equ $10
-	BOX_FIRST_CHAR_WATER:	equ $f4
+	CHAR_WATER_SURFACE:	equ $c8
+	; CHAR_WATER_DEEP:	equ $ca
+	CHAR_LAVA_SURFACE:	equ $cc
+	; CHAR_LAVA_DEEP:		equ $ce
 	
-	ROCK_FIRST_CHAR:	equ $14
-	ROCK_FIRST_CHAR_WATER:	equ $f8
-	ROCK_FIRST_CHAR_LAVA:	equ $fc
-	
-	SKELETON_FIRST_CHAR:	equ $98
-	
-	TRAP_UPPER_LEFT_CHAR:	equ $ce
-	TRAP_UPPER_RIGHT_CHAR:	equ $cf
-	TRAP_LOWER_LEFT_CHAR:	equ $de
-	TRAP_LOWER_RIGHT_CHAR:	equ $df
+	BOX_FIRST_CHAR:		equ $d0
+	ROCK_FIRST_CHAR:	equ $d4
+
+	CHAR_FIRST_ITEM:	equ $e0
+	CHAR_FIRST_DOOR:	equ $f8
+	; CHAR_FIRST_CLOSED_DOOR:	equ $88
+	; CHAR_LAST_CLOSED_DOOR:	equ $8f
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -290,11 +294,21 @@ SPRTBL_PACKED:
 ; -----------------------------------------------------------------------------
 ; WYZPlayer data
 TABLA_SONG:
-	dw	.SONG_0
+	dw	.SONG_0, .SONG_1, .SONG_2, .SONG_3, .SONG_4, .SONG_5
 .SONG_0:
-	incbin	"games/stevedore/knightmare_start.mus"
+	incbin	"games/stevedore/UWOLFantasma.mus"
+.SONG_1:
+	incbin	"games/stevedore/UWOLPiramide.mus"
+.SONG_2:
+	incbin	"games/stevedore/UWOLGameOver.mus"
+.SONG_3:
+	incbin	"games/stevedore/UWOLEndingKO.mus"
+.SONG_4:
+	incbin	"games/stevedore/UWOLEndingOK.mus"
+.SONG_5:
+	incbin	"games/stevedore/DonusTrak.mus"
 
-	include	"games/stevedore/knightmare_start.mus.asm"
+	include	"games/stevedore/uwol.mus.asm"
 ; -----------------------------------------------------------------------------
 		
 ; EOF
