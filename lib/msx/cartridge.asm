@@ -120,6 +120,25 @@ ENDIF ; CFG_INIT_16KB_RAM
 	xor	a
 	ld	[CLIKSW], a
 
+IFEXIST SET_PALETTE
+IFEXIST CFG_CUSTOM_PALETTE
+; MSX2 VDP: Custom palette
+	ld	a, [MSXID3]
+	or	a
+	jr	z, .PALETTE_OK
+; Is the GRAPH key down?
+	ld	hl, NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	bit	2, [hl]
+	jr	z, .PALETTE_OK ; yes
+; no: sets custom palette
+	ld	hl, CFG_CUSTOM_PALETTE
+	call	SET_PALETTE
+ELSE
+ENDIF
+
+.PALETTE_OK:
+ENDIF
+
 ; Zeroes all the used RAM
 	ld	hl, ram_start
 	ld	de, ram_start +1

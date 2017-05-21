@@ -99,6 +99,7 @@ SRCS_MSXLIB=\
 	lib\msx\input.asm \
 	lib\msx\input.ram.asm \
 	lib\msx\vram.asm \
+	lib\msx\vram_msx2.asm \
 	lib\msx\vram_x.asm \
 	lib\msx\vram.ram.asm \
 	lib\game\tiles.asm \
@@ -130,8 +131,6 @@ clean:
 	$(REMOVE) $(SYM_INTERMEDIATE) tniasm.sym tniasm.tmp
 
 cleandata:
-	$(REMOVE) $(GFXS) $(GFXS_INTERMEDIATE)
-	$(REMOVE) $(SPRS) $(SPRS_INTERMEDIATE)
 	$(REMOVE) $(DATAS) $(DATAS_INTERMEDIATE)
 
 cleanall: clean cleandata
