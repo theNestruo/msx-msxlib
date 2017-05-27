@@ -21,7 +21,7 @@
 ; RAM will start at the beginning of the page 2 instead of $e000
 ; and availability will be checked at start
 	; CFG_INIT_16KB_RAM:
-	
+
 ; MSX symbolic constants
 	include	"lib/msx/symbols.asm"
 ; MSX cartridge (ROM) header, entry point and initialization
@@ -43,15 +43,15 @@
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
 ; NAMTBL buffer text routines
 ; Logical coordinates sprite routines
-	
+
 ; Logical-to-physical sprite coordinates offsets (pixels)
 	CFG_SPRITES_X_OFFSET:	equ -8
 	CFG_SPRITES_Y_OFFSET:	equ -17
-	
+
 ; Number of sprites reserved at the beginning of the SPRATR buffer
 ; (i.e.: first sprite number for the "volatile" sprites)
 	CFG_SPRITES_RESERVED:	equ 2
-	
+
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
 ; NAMTBL buffer text routines
@@ -62,18 +62,19 @@
 ; -----------------------------------------------------------------------------
 ; Palette routines for MSX2 VDP
 
-; Custom initial palette in $0GRB format (with R, G, B in 0..7)
-CFG_CUSTOM_PALETTE:
-	;	0/8    1/9    2/10   3/11   4/12   5/13   6/14   7/15
-; Default MSX2 palette                                 
+; Custom initial palette in $0GRB format (with R, G, B in 0..7). Examples:
+; Default MSX2 palette
 	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
 	; dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
 ; CoolColors (c) Fabio R. Schmidlin, 1997
 	; dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
 	; dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
-; Custom palette
-	dw	$0000, $0000, $0612, $0734, $0104, $0315, $0130, $0537
-	dw	$0251, $0473, $0552, $0774, $0301, $0334, $0556, $0777
+; TMS approximate (Wolf's Polka)
+	; dw	$0000, $0000, $0522, $0623, $0326, $0337, $0261, $0637
+	; dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
+CFG_CUSTOM_PALETTE:
+	dw	$0000, $0000, $0523, $0634, $0104, $0326, $0140, $0537
+	dw	$0362, $0472, $0672, $0774, $0301, $0333, $0555, $0777
 
 ; Palette routines for MSX2 VDP
 	include "lib/msx/vram_msx2.asm"
@@ -221,7 +222,7 @@ PLAYER_DY_TABLE:
 	.TOP_OFFSET:			equ PLAYER_DY_TABLE.TOP_OFFSET
 	.FALL_OFFSET:			equ PLAYER_DY_TABLE.FALL_OFFSET
 	.SIZE:				equ PLAYER_DY_TABLE.SIZE
-	
+
 ; Enemies terminal falling speed (pixels/frame)
 	CFG_ENEMY_GRAVITY:		equ CFG_PLAYER_GRAVITY
 
@@ -240,7 +241,7 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_PAUSE_S:	equ 16 ; short pause (~16 frames)
 	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
-	
+
 ; Default enemy types (platformer game)
 ; Convenience enemy state handlers (platformer game)
 ; Convenience enemy helper routines (platform games)
@@ -355,7 +356,7 @@ ENDIF
 
 	bytes_ram_MSXlib:	equ globals - ram_start
 	bytes_ram_game:		equ ram_end - globals
-	
+
 	bytes_total_rom:	equ PADDING - ROM_START
 	bytes_total_ram:	equ ram_end - ram_start
 

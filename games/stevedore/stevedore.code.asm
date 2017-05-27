@@ -46,8 +46,8 @@ MAIN_INIT:
 	call	REPLAYER.INSTALL
 ; ------VVVV----falls through--------------------------------------------------
 	
-IFEXIST NAMTBL_PACKED_TABLE.TEST
-	ld	hl, NAMTBL_PACKED_TABLE.TEST
+IFEXIST NAMTBL_PACKED_TABLE.TEST_SCREEN
+	ld	hl, NAMTBL_PACKED_TABLE.TEST_SCREEN
 	ld	de, namtbl_buffer
 	call	UNPACK
 	call	INIT_STAGE
@@ -200,7 +200,7 @@ INTRO:
 ; Intro sequence #4: the awakening
 
 ; Loads first tutorial stage screen into NAMTBL buffer
-	ld	hl, NAMTBL_PACKED_TABLE.TUTORIAL_01
+	ld	hl, NAMTBL_PACKED_TABLE.INTRO_STAGE
 	ld	de, namtbl_buffer
 	call	UNPACK
 ; Mimics in-game loop preamble and initialization	
