@@ -51,6 +51,7 @@ GAME_0:
 STAGE_0:
 	db	0			; player.pushing
 	db	0			; .flags
+	db	0			; .frame_counter
 	.SIZE:	equ $ - STAGE_0
 
 ; Initial (per stage) sprite attributes table
@@ -190,6 +191,10 @@ NAMTBL_PACKED_TABLE:
 	; dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
 	; dw	.STAGE_26, .STAGE_27, .STAGE_28, .STAGE_29, .STAGE_30
 
+; Test screen
+.TEST_SCREEN:
+	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"
 
@@ -235,46 +240,43 @@ NAMTBL_PACKED_TABLE:
 ; .STAGE_29:	incbin	"games/stevedore/maps/stage_29.tmx.bin.zx7"
 ; .STAGE_30:	incbin	"games/stevedore/maps/stage_30.tmx.bin.zx7"
 
-; Test screen
-; .TEST_SCREEN:
-	; incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Charset binary data (CHRTBL and CLRTBL)
-CHARSET_CHR_PACKED:
+CHARSET_PACKED:
+.CHR:
 	incbin	"games/stevedore/gfx/charset.pcx.chr.zx7"
-	
-CHARSET_CLR_PACKED:
+.CLR:
 	incbin	"games/stevedore/gfx/charset.pcx.clr.zx7"
-	
-CHARSET_EXTRA_CHR:
-	incbin	"games/stevedore/gfx/charset_extra.pcx.chr"
-	
-CHARSET_EXTRA_CLR:
-	incbin	"games/stevedore/gfx/charset_extra.pcx.clr"
 	
 ; Charset-related symbolic constants
 	SKELETON_FIRST_CHAR:	equ $1a
-	
-	TRAP_UPPER_LEFT_CHAR:	equ $6e
-	TRAP_UPPER_RIGHT_CHAR:	equ $6f
-	TRAP_LOWER_LEFT_CHAR:	equ $7e
-	TRAP_LOWER_RIGHT_CHAR:	equ $7f
-	
-	CHAR_WATER_SURFACE:	equ $c8
-	; CHAR_WATER_DEEP:	equ $ca
-	CHAR_LAVA_SURFACE:	equ $cc
-	; CHAR_LAVA_DEEP:		equ $ce
-	
-	BOX_FIRST_CHAR:		equ $d0
-	ROCK_FIRST_CHAR:	equ $d4
-
+	TRAP_UPPER_RIGHT_CHAR:	equ $6e
+	TRAP_UPPER_LEFT_CHAR:	equ $6f
+	TRAP_LOWER_RIGHT_CHAR:	equ $7e
+	TRAP_LOWER_LEFT_CHAR:	equ $7f
+	BOX_FIRST_CHAR:		equ $d8
+	ROCK_FIRST_CHAR:	equ $dc
 	CHAR_FIRST_ITEM:	equ $e0
+	CHAR_WATER_SURFACE:	equ $f0
+	CHAR_LAVA_SURFACE:	equ $f4
 	CHAR_FIRST_DOOR:	equ $f8
-	; CHAR_FIRST_CLOSED_DOOR:	equ $88
-	; CHAR_LAST_CLOSED_DOOR:	equ $8f
+	
+CHARSET_DYNAMIC:
+.CHR:
+	incbin	"games/stevedore/gfx/charset_dynamic.pcx.chr"
+	.SIZE:			equ $ - CHARSET_DYNAMIC
+.CLR:
+	incbin	"games/stevedore/gfx/charset_dynamic.pcx.clr"
+
+	CHAR_FIRST_CLOSED_DOOR:	equ $00
+	CHAR_FIRST_OPEN_DOOR:	equ $08
+	DOORS_CHARS_SIZE:	equ 2 *4 ; 2 doors, 4 characters
+	CHAR_FIRST_SURFACES:	equ $10
+	SURFACE_CHARS_SIZE:	equ 2 *4 ; 2 surfaces, 4 characters
+	
+; Dynamic charset-related symbolic constants
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

@@ -17,8 +17,8 @@ SRCS=\
 DATAS=\
 	$(GAME_PATH)\gfx\charset.pcx.chr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\gfx\charset.pcx.clr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\gfx\charset_extra.pcx.chr \
-	$(GAME_PATH)\gfx\charset_extra.pcx.clr \
+	$(GAME_PATH)\gfx\charset_dynamic.pcx.chr \
+	$(GAME_PATH)\gfx\charset_dynamic.pcx.clr \
 	$(GAME_PATH)\gfx\sprites.pcx.spr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\test_screen.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\intro_screen.tmx.bin.$(PACK_EXTENSION) \

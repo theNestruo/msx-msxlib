@@ -125,16 +125,15 @@ CFG_CUSTOM_PALETTE:
 ; Table of tile flags in pairs (up to index, tile flags)
 TILE_FLAGS_TABLE:
 	db	$5f, $00 ; [$00..$5f] : 0
-	db	$af, $03 ; [$60..$af] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	db	$b7, $02 ; [$b0..$b7] : BIT_WORLD_FLOOR
-	db	$bf, $06 ; [$b8..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_STAIRS
-	db	$c5, $04 ; [$c0..$c5] : BIT_WORLD_STAIRS
-	db	$cf, $08 ; [$c6..$cf] : BIT_WORLD_DEATH
-	db	$d7, $83 ; [$d0..$d7] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID | BIT_WORLD_PUSH
-	db	$df, $00 ; [$00..$5f] : 0
-	db	$e5, $10 ; [$01..$07] : BIT_WORLD_WALK_ON (items)
-	db	$f7, $00 ; [$00..$5f] : 0
-	db	$ff, $20 ; [$d8..$df] : BIT_WORLD_WIDE_ON (doors)
+	db	$bf, $03 ; [$60..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	db	$c7, $06 ; [$c0..$c7] : BIT_WORLD_FLOOR | BIT_WORLD_STAIRS
+	db	$cf, $04 ; [$c8..$cf] : BIT_WORLD_STAIRS
+	db	$d7, $02 ; [$d0..$d7] : BIT_WORLD_FLOOR
+	db	$df, $83 ; [$d8..$df] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID | BIT_WORLD_PUSH
+	db	$e5, $10 ; [$e0..$e5] : BIT_WORLD_WALK_ON (items)
+	db	$ed, $00 ; [$e6..$ed] : 0 (empty)
+	db	$f7, $08 ; [$ee..$f7] : BIT_WORLD_DEATH
+	db	$ff, $20 ; [$f8..$ff] : BIT_WORLD_WIDE_ON (doors)
 
 ; Sprite-tile helper routines
 	include	"lib/game/tiles.asm"

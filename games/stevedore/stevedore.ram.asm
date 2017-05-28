@@ -35,6 +35,8 @@ player.pushing:
 ; The flags the define the state of the stage
 stage.flags:
 	rb	1
+stage.framecounter:
+	rb	1
 ; -----------------------------------------------------------------------------
 
 ; EOF

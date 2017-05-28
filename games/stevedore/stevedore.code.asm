@@ -23,10 +23,10 @@
 ; Game entry point
 MAIN_INIT:
 ; Charset (1/2: CHRTBL)
-	ld	hl, CHARSET_CHR_PACKED
+	ld	hl, CHARSET_PACKED.CHR
 	call	UNPACK_LDIRVM_CHRTBL
 ; Charset (2/2: CLRTBL)
-	ld	hl, CHARSET_CLR_PACKED
+	ld	hl, CHARSET_PACKED.CLR
 	call	UNPACK_LDIRVM_CLRTBL
 	
 ; Sprite pattern table (SPRTBL)
@@ -536,6 +536,8 @@ INIT_STAGE:
 	call	RESET_BULLETS
 	call	RESET_VPOKES
 	call	RESET_SPRITEABLES
+	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_CLOSED_DOOR * 8
+	call	UPDATE_DOORS_CHARS
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -668,6 +670,24 @@ POST_PROCESS_STAGE_ELEMENT:
 
 ; -----------------------------------------------------------------------------
 UPDATE_CHARSET:
+	ld	a, [stage.framecounter]
+	and	$c0
+	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_SURFACES * 8
+	call	ADD_HL_A
+	ld	de, CHRTBL + CHAR_WATER_SURFACE * 8
+	call	UPDATE_DOORS_CHARS.THREE_BANKS
+	ld	bc, CHARSET_DYNAMIC.SIZE
+	add	hl, bc
+	ld	de, CLRTBL + CHAR_WATER_SURFACE * 8
+	call	UPDATE_DOORS_CHARS.THREE_BANKS
+	
+	ld	a, 8 ; SURFACE_CHARS_SIZE *8
+	ld	hl, stage.framecounter
+	add	a, [hl]
+	ld	[hl], a
+
+
+
 ; Key picked up?
 	ld	hl, stage.flags
 	bit	BIT_STAGE_KEY, [hl]
@@ -675,12 +695,17 @@ UPDATE_CHARSET:
 ; Doors already open?
 	bit	BIT_STAGE_DOOR_OPEN, [hl]
 	ret	nz ; yes
+	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_OPEN_DOOR * 8
+	; jr	UPDATE_DOORS_CHARS ; falls through
+	
+; param hl
+UPDATE_DOORS_CHARS:
 ; Replaces the doors with the open charset (1/2: CHRTBL)
-	ld	hl, CHARSET_EXTRA_CHR
 	ld	de, CHRTBL + CHAR_FIRST_DOOR * 8
 	call	.THREE_BANKS
 ; Replaces the doors with the open charset (2/2: CLRTBL)
-	ld	hl, CHARSET_EXTRA_CLR
+	ld	bc, CHARSET_DYNAMIC.SIZE
+	add	hl, bc
 	ld	de, CLRTBL + CHAR_FIRST_DOOR * 8
 	; jr	.THREE_BANKS ; falls through
 	
@@ -694,7 +719,7 @@ UPDATE_CHARSET:
 .ONE_BANK:
 	push	de ; preserves destination
 	push	hl ; preserves source
-	ld	bc, 64
+	ld	bc, DOORS_CHARS_SIZE * 8
 	call	LDIRVM
 	pop	de ; restores source in de
 	pop	hl ; restores destination in hl
@@ -768,7 +793,7 @@ UPDATE_BOXES_AND_ROCKS:
 ; Calculate new lower characters
 	ld	a, b ; restores background value
 	and	$06 ; (discards lower bit)
-	or	$a8
+	or	$b8
 ; Sets the new lower characters
 	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
 	inc	a
@@ -782,7 +807,7 @@ UPDATE_BOXES_AND_ROCKS:
 ; Yes: calculate new upper characters
 	ld	a, b ; restores background value
 	and	$06 ; (discards lower bit)
-	or	$a0
+	or	$b0
 ; Sets the new upper character
 	ld	[ix + _SPRITEABLE_FOREGROUND], a
 	inc	a
@@ -807,7 +832,7 @@ UPDATE_BOXES_AND_ROCKS:
 
 ; Water: calculate new lower characters
 	and	$06 ; (discards lower bit)
-	add	$9c
+	add	$ac
 ; Sets the new lower characters
 	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
 	inc	a
