@@ -270,11 +270,11 @@ CHARSET_DYNAMIC:
 .CLR:
 	incbin	"games/stevedore/gfx/charset_dynamic.pcx.clr"
 
+	.ROW_SIZE:		equ 2 *4 *8; 2 doors/surfaces, 4 characters
+
 	CHAR_FIRST_CLOSED_DOOR:	equ $00
 	CHAR_FIRST_OPEN_DOOR:	equ $08
-	DOORS_CHARS_SIZE:	equ 2 *4 ; 2 doors, 4 characters
 	CHAR_FIRST_SURFACES:	equ $10
-	SURFACE_CHARS_SIZE:	equ 2 *4 ; 2 surfaces, 4 characters
 	
 ; Dynamic charset-related symbolic constants
 ; -----------------------------------------------------------------------------

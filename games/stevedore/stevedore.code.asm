@@ -16,7 +16,6 @@
 ; The flags the define the state of the stage
 	BIT_STAGE_KEY:		equ 0 ; Key picked up
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
-	BIT_STAGE_DOOR_OPEN:	equ 2 ; Doors open
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -343,7 +342,7 @@ ENDIF
 
 ; Game logic (1/2: updates)
 	call	UPDATE_SPRITEABLES
-	call	UPDATE_CHARSET		; (custom)
+	call	UPDATE_DYNAMIC_CHARSET	; (custom)
 	call	UPDATE_BOXES_AND_ROCKS	; (custom)
 	call	UPDATE_PLAYER
 	call	UPDATE_FRAMES_PUSHING	; (custom)
@@ -536,8 +535,9 @@ INIT_STAGE:
 	call	RESET_BULLETS
 	call	RESET_VPOKES
 	call	RESET_SPRITEABLES
-	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_CLOSED_DOOR * 8
-	call	UPDATE_DOORS_CHARS
+	call	SET_DOORS_CHARSET.CLOSED
+	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_SURFACES * 8
+	call	SET_DYNAMIC_CHARSET
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -669,48 +669,69 @@ POST_PROCESS_STAGE_ELEMENT:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-UPDATE_CHARSET:
-	ld	a, [stage.framecounter]
-	and	$c0
-	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_SURFACES * 8
-	call	ADD_HL_A
-	ld	de, CHRTBL + CHAR_WATER_SURFACE * 8
-	call	UPDATE_DOORS_CHARS.THREE_BANKS
-	ld	bc, CHARSET_DYNAMIC.SIZE
-	add	hl, bc
-	ld	de, CLRTBL + CHAR_WATER_SURFACE * 8
-	call	UPDATE_DOORS_CHARS.THREE_BANKS
-	
-	ld	a, 8 ; SURFACE_CHARS_SIZE *8
-	ld	hl, stage.framecounter
-	add	a, [hl]
-	ld	[hl], a
+; Sets the doors charset to either the closed or the open doors
+SET_DOORS_CHARSET:
 
+.CLOSED:
+; Chooses the closed doors from the dynamic charset
+	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_CLOSED_DOOR * 8
+	jr	.HL_OK
 
-
-; Key picked up?
-	ld	hl, stage.flags
-	bit	BIT_STAGE_KEY, [hl]
-	ret	z ; no
-; Doors already open?
-	bit	BIT_STAGE_DOOR_OPEN, [hl]
-	ret	nz ; yes
+.OPEN:
+; Chooses the open doors from the dynamic charset
 	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_OPEN_DOOR * 8
-	; jr	UPDATE_DOORS_CHARS ; falls through
+	; jr	.HL_OK ; falls through
 	
-; param hl
-UPDATE_DOORS_CHARS:
-; Replaces the doors with the open charset (1/2: CHRTBL)
+.HL_OK:
+; (1/2: CHRTBL)
 	ld	de, CHRTBL + CHAR_FIRST_DOOR * 8
-	call	.THREE_BANKS
-; Replaces the doors with the open charset (2/2: CLRTBL)
+	call	UPDATE_CXRTBL
+; (2/2: CLRTBL)
 	ld	bc, CHARSET_DYNAMIC.SIZE
 	add	hl, bc
 	ld	de, CLRTBL + CHAR_FIRST_DOOR * 8
-	; jr	.THREE_BANKS ; falls through
+	jr	UPDATE_CXRTBL
+; -----------------------------------------------------------------------------
 	
+; -----------------------------------------------------------------------------
+; Updates the water and lava surfaces
+UPDATE_DYNAMIC_CHARSET:
+; Updates the framecounter
+	ld	a, $40 / 8 ; each 8 frames
+	ld	hl, stage.framecounter
+	add	a, [hl]
+	ld	[hl], a
+	ld	b, a ; preserves framecounter
+; Should the charset be updated in this frame?
+	and	$3f
+	ret	nz ; no
+; yes: locates proper source
+	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_SURFACES * 8
+	ld	a, b ; restores framecounter
+	; and	$c0 ; unnecessary (due ret nz)
+	call	ADD_HL_A
+; ------VVVV----falls through--------------------------------------------------
+	
+; -----------------------------------------------------------------------------
+; Initializes the water and lava surfaces
+; param hl: source address (i.e.: CHARSET_DYNAMIC.CHR + CHAR_FIRST_SURFACES * 8)
+SET_DYNAMIC_CHARSET:
+; (1/2: CHRTBL)
+	ld	de, CHRTBL + CHAR_WATER_SURFACE * 8
+	call	UPDATE_CXRTBL
+; (2/2: CLRTBL)
+	ld	bc, CHARSET_DYNAMIC.SIZE
+	add	hl, bc
+	ld	de, CLRTBL + CHAR_WATER_SURFACE * 8
+	jr	UPDATE_CXRTBL
+; ------VVVV----falls through--------------------------------------------------
+	
+; -----------------------------------------------------------------------------
+; Updates a row of chars from the dynamic charset (ie.: 8 characters)
+; param hl: source address inside the dynamic charset
+; param de: destination in VRAM
+UPDATE_CXRTBL:
 ; Replaces 64 bytes in three banks
-.THREE_BANKS:
 	call	.ONE_BANK
 	call	.ONE_BANK
 	; jr	.ONE_BANK ; falls through
@@ -719,7 +740,7 @@ UPDATE_DOORS_CHARS:
 .ONE_BANK:
 	push	de ; preserves destination
 	push	hl ; preserves source
-	ld	bc, DOORS_CHARS_SIZE * 8
+	ld	bc, CHARSET_DYNAMIC.ROW_SIZE
 	call	LDIRVM
 	pop	de ; restores source in de
 	pop	hl ; restores destination in hl
@@ -841,8 +862,8 @@ UPDATE_BOXES_AND_ROCKS:
 	bit	1, b
 	ret	z ; no
 ; Yes: sets the new upper characters
-	ld	[ix + _SPRITEABLE_FOREGROUND], $9a
-	ld	[ix + _SPRITEABLE_FOREGROUND +1], $9a +1
+	ld	[ix + _SPRITEABLE_FOREGROUND], $aa
+	ld	[ix + _SPRITEABLE_FOREGROUND +1], $aa +1
 ; Stops the spriteable (after this movement)
 	set	7, [ix + _SPRITEABLE_STATUS]
 	ret
@@ -994,7 +1015,7 @@ ON_PLAYER_WALK_ON:
 .KEY:
 	ld	hl, stage.flags
 	set	BIT_STAGE_KEY, [hl]
-	ret
+	jp	SET_DOORS_CHARSET.OPEN
 
 ; star
 .STAR:
