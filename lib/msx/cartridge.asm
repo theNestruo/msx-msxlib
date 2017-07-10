@@ -32,6 +32,16 @@ ENDIF ; CFG_INIT_16KB_RAM
 	db	6	; frames per tenth
 	
 	.FRAME_RATE_SIZE:	equ $ - .FRAME_RATE_60HZ_0
+	
+IFEXIST SET_PALETTE
+IFEXIST CFG_CUSTOM_PALETTE
+ELSE
+.COOL_COLORS_PALETTE:
+; CoolColors (c) Fabio R. Schmidlin, 1997
+	dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
+	dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
+ENDIF ; CFG_CUSTOM_PALETTE
+ENDIF ; SET_PALETTE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -121,7 +131,6 @@ ENDIF ; CFG_INIT_16KB_RAM
 	ld	[CLIKSW], a
 
 IFEXIST SET_PALETTE
-IFEXIST CFG_CUSTOM_PALETTE
 ; MSX2 VDP: Custom palette
 	ld	a, [MSXID3]
 	or	a
@@ -131,11 +140,12 @@ IFEXIST CFG_CUSTOM_PALETTE
 	bit	2, [hl]
 	jr	z, .PALETTE_OK ; yes
 ; no: sets custom palette
+IFEXIST CFG_CUSTOM_PALETTE
 	ld	hl, CFG_CUSTOM_PALETTE
-	call	SET_PALETTE
 ELSE
+	ld	hl, .COOL_COLORS_PALETTE
 ENDIF
-
+	call	SET_PALETTE
 .PALETTE_OK:
 ENDIF
 

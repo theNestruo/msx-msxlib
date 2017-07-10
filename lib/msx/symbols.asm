@@ -165,6 +165,7 @@
 	OLDKEY:	equ $fbda ; Previous state of the keyboard matrix (11b)
 	NEWKEY:	equ $fbe5 ; Current state of the keyboard matrix (11b)
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
+	JIFFY:	equ $fc9e ; Software clock; each VDP interrupt gets increased by 1
 	EXPTBL:	equ $fcc1 ; Set to $80 during power-up if Primary Slot is expanded (4b)
 	SLTTBL:	equ $fcc5 ; Mirror of the four possible Secondary Slot Registers (4b)
 

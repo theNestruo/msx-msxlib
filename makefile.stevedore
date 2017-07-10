@@ -113,8 +113,8 @@ SRCS_MSXLIB=\
 
 SRCS_LIBEXT=\
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
-	libext\wyzplayer\wyzplayer047c-rom.tniasm.asm \
-	libext\wyzplayer\wyzplayer047c-ram.tniasm.asm \
+	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
+	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
 	libext\zx7\dzx7_standard.tniasm.asm
 
 #

@@ -130,7 +130,7 @@ ENEMY_TYPE_FALLER:
 ; Does the player overlaps x coordinate?
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
-	dw	SET_NEW_STATE_HANDLER ; .ON_X_COLLISION
+	dw	SET_NEW_STATE_HANDLER.ON_X_COLLISION
 	db	2 * ENEMY_STATE.SIZE ; (skip one)
 ; No: the enemy remains stationary
 	dw	STATIONARY_ENEMY_HANDLER
@@ -143,7 +143,7 @@ ENEMY_TYPE_FALLER:
 	db	0 ; 0 = forever
 	dw	SET_NEW_STATE_HANDLER
 	db	ENEMY_STATE.NEXT
-; then
+; then rises back up
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	RISER_ENEMY_HANDLER

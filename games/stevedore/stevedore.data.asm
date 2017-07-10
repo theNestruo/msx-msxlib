@@ -30,6 +30,22 @@ TXT_GAME_OVER:
 	.SIZE: 		equ $ - TXT_GAME_OVER
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 	db	$00
+	
+	db	"SORRY, STEVEDORE"
+	db	"BUT THE LIGHTHOUSE KEEPER"
+	db	"IS IN ANOTHER BUILDING"
+	db	"WAS KIDNAPPED BY PIRATES"
+	db	"SHIPWRECKED"
+	db	"FELL INTO A CAVE"
+	db	"WAS CAPTURED BY PANTOJOS"
+	
+	db	"WAREHOUSE (TUTORIAL)"
+	db	"LIGHTHOUSE"
+	db	"ABANDONED SHIP"
+	db	"SHIPWRECK ISLAND"	; (jungle)
+	db	"UNCANNY CAVE"		; (volcano)
+	db	"ANCIENT TEMPLE RUINS"	; (temple)
+	
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -85,7 +101,7 @@ ENEMY_0:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL
-	dw	ENEMY_TYPE_FALLER
+	dw	ENEMY_TYPE_FALLER.WITH_TRIGGER
 	
 .OCTOPUS:
 
@@ -192,8 +208,8 @@ NAMTBL_PACKED_TABLE:
 	; dw	.STAGE_26, .STAGE_27, .STAGE_28, .STAGE_29, .STAGE_30
 
 ; Test screen
-.TEST_SCREEN:
-	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+; .TEST_SCREEN:
+	; incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"

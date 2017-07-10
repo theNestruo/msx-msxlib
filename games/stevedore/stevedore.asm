@@ -62,19 +62,13 @@
 ; -----------------------------------------------------------------------------
 ; Palette routines for MSX2 VDP
 
-; Custom initial palette in $0GRB format (with R, G, B in 0..7). Examples:
-; Default MSX2 palette
-	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
-	; dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
-; CoolColors (c) Fabio R. Schmidlin, 1997
-	; dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
-	; dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
-; TMS approximate (Wolf's Polka)
-	; dw	$0000, $0000, $0522, $0623, $0326, $0337, $0261, $0637
-	; dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
+; Custom initial palette in $0GRB format (with R, G, B in 0..7).
 CFG_CUSTOM_PALETTE:
 	dw	$0000, $0000, $0523, $0634, $0104, $0326, $0140, $0537
 	dw	$0362, $0472, $0672, $0774, $0301, $0333, $0555, $0777
+; Example: Default MSX2 palette
+	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
+	; dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
 
 ; Palette routines for MSX2 VDP
 	include "lib/msx/vram_msx2.asm"

@@ -86,7 +86,7 @@ ENDIF ; CFG_REPLAYER_INSTALLABLE
 
 ; -----------------------------------------------------------------------------
 ; WYZPlayer v0.47c
-	include	"libext/wyzplayer/wyzplayer047c-rom.tniasm.asm"
+	include	"libext/wyzplayer/WYZPROPLAY47cMSX.ASM"
 ; -----------------------------------------------------------------------------
 
 ; EOF

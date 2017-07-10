@@ -7,6 +7,7 @@ TO BE WRITTEN
 * [Pletter 0.5c1](http://xl2s.eu.pn/pletter.html) (c) XL2S Entertainment 2008
 * [WYZPlayer 0.47c](https://github.com/AugustoRuiz/WYZTracker)
 * [ZX7](https://github.com/z88dk/z88dk/tree/master/libsrc/_DEVELOPMENT/compress/zx7/z80)
+* [CoolColors] (c) Fabio R. Schmidlin, 1997
 
 ## External tools
 

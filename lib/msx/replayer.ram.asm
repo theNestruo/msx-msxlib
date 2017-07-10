@@ -19,7 +19,7 @@ ENDIF
 IFDEF CARGA_CANCION
 
 ; WYZPlayer v0.47c variables
-	include	"libext/wyzplayer/wyzplayer047c-ram.tniasm.asm"
+	include	"libext/wyzplayer/WYZPROPLAY47c_RAM.tniasm.ASM"
 
 ; WYZPlayer sound buffers. Recommended at least $10 bytes per channel
 wyzplayer_buffer:

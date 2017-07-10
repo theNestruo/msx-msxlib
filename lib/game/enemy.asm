@@ -174,41 +174,41 @@ SET_NEW_STATE_HANDLER:
 	ret
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Sets a new current state for the current enemy,
-; ; relative to the current state,
-; ; when the player and the enemy are in overlapping x coordinates
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
-; ; ret z (continue) if the state does not change (no overlapping coordinates)
-; ; ret nz (halt) if the state changes
-; .ON_X_COLLISION:
-	; ld	l, PLAYER_ENEMY_X_SIZE
-	; call	CHECK_PLAYER_COLLISION.X
-	; jp	c, SET_NEW_STATE_HANDLER
-; ; ret z (continue)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Sets a new current state for the current enemy,
+; relative to the current state,
+; when the player and the enemy are in overlapping x coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
+; ret z (continue) if the state does not change (no overlapping coordinates)
+; ret nz (halt) if the state changes
+.ON_X_COLLISION:
+	ld	l, PLAYER_ENEMY_X_SIZE
+	call	CHECK_PLAYER_COLLISION.X
+	jp	c, SET_NEW_STATE_HANDLER
+; ret z (continue)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Sets a new current state for the current enemy,
-; ; relative to the current state,
-; ; when the player and the enemy are in overlapping y coordinates
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
-; ; ret z (continue) if the state does not change (no overlapping coordinates)
-; ; ret nz (halt) if the state changes
-; .ON_Y_COLLISION:
-	; ld	h, PLAYER_ENEMY_Y_SIZE
-	; call	CHECK_PLAYER_COLLISION.Y
-	; jp	c, SET_NEW_STATE_HANDLER
-; ; ret z (continue)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Sets a new current state for the current enemy,
+; relative to the current state,
+; when the player and the enemy are in overlapping y coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
+; ret z (continue) if the state does not change (no overlapping coordinates)
+; ret nz (halt) if the state changes
+.ON_Y_COLLISION:
+	ld	h, PLAYER_ENEMY_Y_SIZE
+	call	CHECK_PLAYER_COLLISION.Y
+	jp	c, SET_NEW_STATE_HANDLER
+; ret z (continue)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Updates animation counter and toggles the animation flag,
