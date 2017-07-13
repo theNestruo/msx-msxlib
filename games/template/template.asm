@@ -34,25 +34,6 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Unpacker routine
-
-; Unpack to RAM routine (optional)
-; param hl: packed data source address
-; param de: destination buffer address
-
-; Pletter (v0.5c1, XL2S Entertainment)
-	; include	"libext/pletter05c/pletter05c-unpackRam.tniasm.asm"
-
-; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
-; "Standard" version (69 bytes only)
-	UNPACK: equ dzx7_standard
-	include	"libext/zx7/dzx7_standard.tniasm.asm"
-
-; Buffer size to check it actually fits before system variables
-	CFG_RAM_RESERVE_BUFFER:	equ 2048
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Input, timing & pause routines (BIOS-based)
 	include "lib/msx/input.asm"
 ; -----------------------------------------------------------------------------
@@ -79,6 +60,19 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Palette routines for MSX2 VDP
+
+; Custom initial palette in $0GRB format (with R, G, B in 0..7).
+CFG_CUSTOM_PALETTE:
+; Example: Default MSX2 palette
+	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
+	; dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
+
+; Palette routines for MSX2 VDP
+	; include "lib/msx/vram_msx2.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; "vpoke" routines (deferred WRTVRMs routines)
 ; Spriteables routines (2x2 chars that eventually become a sprite)
 
@@ -94,6 +88,17 @@
 ; Spriteables routines (2x2 chars that eventually become a sprite)
 	; include "lib/msx/vram_x.asm"
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Replayer routines (WYZPlayer v0.47c-based implementation)
+
+; Define to enable the ability of installing the replayer in the interrupt
+	; CFG_REPLAYER_INSTALLABLE:
+
+; Replayer routines (WYZPlayer v0.47c-based implementation)
+	; include	"lib\msx\replayer.asm"
+; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
@@ -137,7 +142,8 @@ TILE_FLAGS_TABLE:
 	CFG_PLAYER_ANIMATION_DELAY:	equ 6
 
 ; Custom player states (starting from 4 << 2)
-	PLAYER_STATE_PUSH:	equ (4 << 2) ; $10
+	; PLAYER_STATE_UVW:	equ (4 << 2) ; $10
+	; PLAYER_STATE_XYZ:	equ (5 << 2) ; $14
 	; ...
 
 ; Maps player states to sprite patterns
@@ -147,7 +153,7 @@ PLAYER_SPRATR_TABLE:
 	db	$20,	$28,	$20,	$28	; PLAYER_STATE_STAIRS
 	db	$08,	$08,	$18,	$18	; PLAYER_STATE_AIR
 	db	$30,	$38,	$30,	$38	; PLAYER_STATE_DYING
-	;	...
+	;	...				; PLAYER_STATE_...
 
 ; Maps player states to assembly routines
 PLAYER_UPDATE_TABLE:
@@ -155,22 +161,22 @@ PLAYER_UPDATE_TABLE:
 	dw	UPDATE_PLAYER_STAIRS	; PLAYER_STATE_STAIRS
 	dw	UPDATE_PLAYER_AIR	; PLAYER_STATE_AIR
 	dw	UPDATE_PLAYER_DYING	; PLAYER_STATE_DYING
-	;	...
-
-; Terminal falling speed (pixels/frame)
-	CFG_PLAYER_GRAVITY:		equ 4
+	;	...			; PLAYER_STATE_...
 
 ; Delta-Y (dY) table for jumping and falling
 PLAYER_DY_TABLE:
 	db	-4, -4			; (2,-8)
 	db	-2, -2, -2		; (5,-14)
 	db	-1, -1, -1, -1, -1, -1	; (11,-20)
+	.TOP_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	 0,  0,  0,  0,  0,  0	; (17,-20)
 	.FALL_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
 	db	2, 2, 2			; (26,-8) / (9,12)
-	db	CFG_PLAYER_GRAVITY	; (terminal falling speed)
 	.SIZE:		equ $ - PLAYER_DY_TABLE
+
+; Terminal falling speed (pixels/frame)
+	CFG_PLAYER_GRAVITY:		equ 4
 
 ; Player related routines (generic)
 ; Player-tile helper routines
@@ -196,6 +202,15 @@ PLAYER_DY_TABLE:
 
 ; Enemies animation delay (frames)
 	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
+
+; Enemies delta-Y (dY) table for jumping and falling
+	ENEMY_DY_TABLE:			equ PLAYER_DY_TABLE
+	.TOP_OFFSET:			equ PLAYER_DY_TABLE.TOP_OFFSET
+	.FALL_OFFSET:			equ PLAYER_DY_TABLE.FALL_OFFSET
+	.SIZE:				equ PLAYER_DY_TABLE.SIZE
+
+; Enemies terminal falling speed (pixels/frame)
+	CFG_ENEMY_GRAVITY:		equ CFG_PLAYER_GRAVITY
 	
 ; Enemies related routines (generic)
 ; Convenience enemy state handlers (generic)
@@ -204,31 +219,75 @@ PLAYER_DY_TABLE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Default enemy control routines (platformer game)
+; Default enemy types (platformer game)
+; Convenience enemy state handlers (platformer game)
+; Convenience enemy helper routines (platform games)
 
 ; Pauses (frames) for the default enemy routines
 	CFG_ENEMY_PAUSE_S:	equ 16 ; short pause (~16 frames)
 	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
-	
-; Default enemy control routines (platformer game)
+
+; Default enemy types (platformer game)
+; Convenience enemy state handlers (platformer game)
+; Convenience enemy helper routines (platform games)
 	include	"lib/game/enemy_x.asm"
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+; Bullet related routines (generic)
+; Bullet-tile helper routines
+
+; Maximum simultaneous number of bullets
+	; CFG_BULLET_COUNT:		equ 8
+
+; Logical bullet sprite sizes (bounding box size) (pixels)
+	; CFG_BULLET_WIDTH:		equ 4
+	; CFG_BULLET_HEIGHT:		equ 4
+
+; Offsets to create a new bullet from an emey position (pixels)
+	; CFG_ENEMY_TO_BULLET_X_OFFSET:	equ 0
+	; CFG_ENEMY_TO_BULLET_Y_OFFSET:	equ -8
+
+; Bullet related routines (generic)
+; Bullet-tile helper routines
+	; include	"lib/game/bullet.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Enemy-player helper routines
+	include	"lib/game/collision.asm"
+; -----------------------------------------------------------------------------
+
 ;
 ; =============================================================================
-; 	Custom parameterization and symbolic constants
+;	MSXlib external routines
 ; =============================================================================
 ;
 
 ; -----------------------------------------------------------------------------
-; 	SYMBOL:	equ value
-;	...
+; Unpacker routine
+
+; Unpack to RAM routine (optional)
+; param hl: packed data source address
+; param de: destination buffer address
+
+; Pletter (v0.5c1, XL2S Entertainment)
+	; include	"libext/pletter05c/pletter05c-unpackRam.tniasm.asm"
+
+; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
+; "Standard" version (69 bytes only)
+	UNPACK: equ dzx7_standard
+	include	"libext/zx7/dzx7_standard.tniasm.asm"
+
+; Buffer size to check it actually fits before system variables
+	CFG_RAM_RESERVE_BUFFER:	equ 2048
 ; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
-; 	Game main flow
+; 	Game code and data
 ; =============================================================================
 ;
 
@@ -236,10 +295,10 @@ PLAYER_DY_TABLE:
 ; Game entry point
 MAIN_INIT:
 ; Charset (1/2: CHRTBL)
-	ld	hl, CHARSET_CHR_PACKED
+	ld	hl, CHARSET_PACKED.CHR
 	call	UNPACK_LDIRVM_CHRTBL
 ; Charset (2/2: CLRTBL)
-	ld	hl, CHARSET_CLR_PACKED
+	ld	hl, CHARSET_PACKED.CLR
 	call	UNPACK_LDIRVM_CLRTBL
 	
 ; Sprite pattern table (SPRTBL)
@@ -397,11 +456,14 @@ ENDIF
 	call	GET_STICK_BITS
 	call	GET_TRIGGER
 
-; Game logic
+; Game logic (1/2: updates)
 	call	UPDATE_PLAYER
 	call	UPDATE_ENEMIES
 	; call	UPDATE_BULLETS
-	; call	CHECK_COLLISIONS_ENEMIES
+
+; Game logic (2/2: interactions)
+	call	CHECK_PLAYER_ENEMIES_COLLISIONS
+	; call	CHECK_PLAYER_BULLETS_COLLISIONS
 	
 ; Check exit condition
 	ld	a, [player.state]
@@ -415,6 +477,7 @@ ENDIF
 	cp	PLAYER_STATE_DEAD
 	jr	z, PLAYER_OVER ; player is dead
 
+; (this should never happen)
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 6
 	call	SET_BDRCLR ; red: this is bad
@@ -542,6 +605,41 @@ INIT_STAGE:
 ; =============================================================================
 ;
 
+; -----------------------------------------------------------------------------
+; Tile collision (single char): e.g. Items
+; ON_PLAYER_WALK_ON:
+	;	...TBD...
+; Removes the item in the NAMTBL buffer and VRAM
+	; xor	a
+	; pop	hl ; restores NAMTBL buffer pointer
+	; jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wide tile collision (player width): e.g. Exit door
+; ON_PLAYER_WIDE_ON:
+	;	...TBD...
+; Set "stage finish" state
+	; ld	a, PLAYER_STATE_FINISH
+	; jp	SET_PLAYER_STATE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Pushing a pushable object: e.g. switches
+; ON_PLAYER_PUSH:
+	;	...TBD...
+	; ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Collision of the player with an enemy
+ON_PLAYER_ENEMY_COLLISION:	equ SET_PLAYER_DYING
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Collision of the player with an enemy bullet
+ON_PLAYER_BULLET_COLLISION:	equ SET_PLAYER_DYING
+; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
@@ -550,55 +648,33 @@ INIT_STAGE:
 ;
 
 ; -----------------------------------------------------------------------------
-; Charset binary data (CHRTBL and CLRTBL)
-CHARSET_CHR_PACKED:
-	incbin	"games/template/charset.pcx.chr.zx7"
+; Literals
+TXT_STAGE:
+	db	"STAGE 00", $00
+	.SIZE:		equ $ - TXT_STAGE
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 	
-CHARSET_CLR_PACKED:
-	incbin	"games/template/charset.pcx.clr.zx7"
+TXT_LIVES:
+	db	"0 LIVES LEFT", $00
+	.SIZE: equ $ - TXT_LIVES
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 	
-; Charset-related symbolic constants
-	; ...
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Sprites binary data (SPRTBL)
-SPRTBL_PACKED:
-	incbin	"games/template/sprites.pcx.spr.zx7"
-	
-; Sprite-related symbolic constants (SPRATR)
-	; ...
-	
-; Sprite-related data (SPRATR)
-PLAYER_SPRATR_0:
-	db	SPAT_OB, 0, 0, 9	; 1st player sprite
-	db	SPAT_OB, 0, 0, 15	; 2nd player sprite
-	db	SPAT_END		; SPAT end marker
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Screens binary data (NAMTBL)
-NAMTBL_PACKED_TABLE:
-	dw	.SCREEN	; stage 0
-	dw	.SCREEN	; stage 1
-	dw	.SCREEN	; stage 2
-	dw	.SCREEN	; stage 3
-	dw	.SCREEN	; stage 5
-	;	...
-	
-.SCREEN:
-	incbin	"games/template/screen.tmx.bin.zx7"
+TXT_GAME_OVER:
+	db	"GAME OVER", $00
+	.SIZE: equ $ - TXT_GAME_OVER
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	dw	2500			; .hi_score
+	dw	1000			; .hi_score
 	;	...			; ...
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
+	db	0			; .current_stage
 	db	3			; .continues
 	dw	0			; .score
 	db	5			; .lives
@@ -626,21 +702,44 @@ PLAYER_0:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Literals
-TXT_STAGE:
-	db	"STAGE 00", $00
-	.SIZE:		equ $ - TXT_STAGE
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+; Screens binary data (NAMTBL)
+NAMTBL_PACKED_TABLE:
+	dw	.SCREEN	; stage 0
+	dw	.SCREEN	; stage 1
+	dw	.SCREEN	; stage 2
+	dw	.SCREEN	; stage 3
+	dw	.SCREEN	; stage 5
+	;	...
 	
-TXT_LIVES:
-	db	"0 LIVES LEFT", $00
-	.SIZE: equ $ - TXT_LIVES
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+.SCREEN:
+	incbin	"games/template/screen.tmx.bin.zx7"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Charset binary data (CHRTBL and CLRTBL)
+CHARSET_PACKED:
+.CHR:
+	incbin	"games/template/charset.pcx.chr.zx7"
+.CLR:
+	incbin	"games/template/charset.pcx.clr.zx7"
 	
-TXT_GAME_OVER:
-	db	"GAME OVER", $00
-	.SIZE: equ $ - TXT_GAME_OVER
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+; Charset-related symbolic constants
+	; ...
+; -----------------------------------------------------------------------------
+	
+; -----------------------------------------------------------------------------
+; Sprites binary data (SPRTBL)
+SPRTBL_PACKED:
+	incbin	"games/stevedore/gfx/sprites.pcx.spr.zx7"
+
+; Sprite-related symbolic constants (SPRATR)
+	; ...
+	
+; Sprite-related data (SPRATR)
+	; db	SPAT_OB, 0, 0, 9	; 1st player sprite
+	; db	SPAT_OB, 0, 0, 15	; 2nd player sprite
+	; db	SPAT_END		; SPAT end marker
+	; ...
 ; -----------------------------------------------------------------------------
 
 
@@ -707,8 +806,8 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; (for debugging purposes only)
 	bytes_rom_MSXlib_code:	equ MAIN_INIT - ROM_START
-	bytes_rom_game_code:	equ CHARSET_CHR_PACKED - MAIN_INIT
-	bytes_rom_game_data:	equ PADDING - CHARSET_CHR_PACKED
+	bytes_rom_game_code:	equ TXT_STAGE - MAIN_INIT
+	bytes_rom_game_data:	equ PADDING - TXT_STAGE
 
 	bytes_ram_MSXlib:	equ globals - ram_start
 	bytes_ram_game:		equ ram_end - globals

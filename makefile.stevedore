@@ -144,7 +144,7 @@ debug: $(ROM_INTERMEDIATE) $(SYM_INTERMEDIATE)
 deploy: $(ROM)
 
 # secondary targets
-.secondary: $(GFXS_INTERMEDIATE) $(SPRS_INTERMEDIATE) $(DATAS_INTERMEDIATE)
+.secondary: $(DATAS_INTERMEDIATE)
 
 #
 # main targets

@@ -5,6 +5,27 @@
 
 GAME=template
 
+GAME_PATH=\
+	games\$(GAME)
+
+SRCS=\
+	$(GAME_PATH)\$(GAME).asm \
+	$(GAME_PATH)\$(GAME).code.asm \
+	$(GAME_PATH)\$(GAME).data.asm \
+	$(GAME_PATH)\$(GAME).ram.asm
+
+DATAS=\
+	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
+
+DATAS_INTERMEDIATE=\
+	$(GAME_PATH)\charset.pcx.chr \
+	$(GAME_PATH)\charset.pcx.clr \
+	$(GAME_PATH)\sprites.pcx.spr \
+	$(GAME_PATH)\screen.tmx.bin
+
 #
 # tools
 #
@@ -38,9 +59,6 @@ RENAME=cmd /c ren
 #
 # paths and file lists
 #
-
-GAME_PATH=\
-	games\$(GAME)
 	
 TEMPLATE_PATH=\
 	games\template
@@ -59,40 +77,29 @@ SRCS_MSXLIB=\
 	lib\asm.asm \
 	lib\msx\symbols.asm \
 	lib\msx\cartridge.asm \
+	lib\msx\cartridge.ram.asm \
 	lib\msx\input.asm \
+	lib\msx\input.ram.asm \
 	lib\msx\vram.asm \
+	lib\msx\vram_msx2.asm \
 	lib\msx\vram_x.asm \
+	lib\msx\vram.ram.asm \
 	lib\game\tiles.asm \
 	lib\game\collision.asm \
 	lib\game\player.asm \
 	lib\game\player_x.asm \
+	lib\game\player.ram.asm \
 	lib\game\enemy.asm \
 	lib\game\enemy_x.asm \
-	lib\game\bullet.asm
+	lib\game\enemy.ram.asm \
+	lib\game\bullet.asm \
+	lib\game\bullet.ram.asm
 
 SRCS_LIBEXT=\
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
+	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
+	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
 	libext\zx7\dzx7_standard.tniasm.asm
-
-GFXS=\
-	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION)
-
-GFXS_INTERMEDIATE=\
-	$(GAME_PATH)\charset.pcx.chr \
-	$(GAME_PATH)\charset.pcx.clr
-
-SPRS=\
-	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION)
-
-SPRS_INTERMEDIATE=\
-	$(GAME_PATH)\sprites.pcx.spr
-
-DATAS=\
-	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
-
-DATAS_INTERMEDIATE=\
-	$(GAME_PATH)\screen.tmx.bin
 
 #
 # phony targets
@@ -106,8 +113,6 @@ clean:
 	$(REMOVE) $(SYM_INTERMEDIATE) tniasm.sym tniasm.tmp
 
 cleandata:
-	$(REMOVE) $(GFXS) $(GFXS_INTERMEDIATE)
-	$(REMOVE) $(SPRS) $(SPRS_INTERMEDIATE)
 	$(REMOVE) $(DATAS) $(DATAS_INTERMEDIATE)
 
 cleanall: clean cleandata
@@ -123,7 +128,7 @@ debug: $(ROM_INTERMEDIATE) $(SYM_INTERMEDIATE)
 deploy: $(ROM)
 
 # secondary targets
-.secondary: $(GFXS_INTERMEDIATE) $(SPRS_INTERMEDIATE) $(DATAS_INTERMEDIATE)
+.secondary: $(DATAS_INTERMEDIATE)
 
 #
 # main targets
