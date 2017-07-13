@@ -78,7 +78,7 @@ CFG_CUSTOM_PALETTE:
 
 ; Define to enable the "vpoke" routines (deferred WRTVRMs)
 ; Maximum number of "vpokes" per frame
-	; CFG_VPOKES: 		equ 64
+	CFG_VPOKES: 		equ 64
 
 ; Define to enable the spriteable routines
 ; Maximum number of simultaneous spriteables
@@ -86,7 +86,7 @@ CFG_CUSTOM_PALETTE:
 
 ; "vpoke" routines (deferred WRTVRMs routines)
 ; Spriteables routines (2x2 chars that eventually become a sprite)
-	; include "lib/msx/vram_x.asm"
+	include "lib/msx/vram_x.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -116,12 +116,15 @@ CFG_CUSTOM_PALETTE:
 
 ; Table of tile flags in pairs (up to index, tile flags)
 TILE_FLAGS_TABLE:
-	db	$7f, $00 ; [$00..$7f] : 0
-	db	$81, $00 ; [$80..$81] : 0
-	db	$8f, $03 ; [$82..$8f] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	db	$91, $00 ; [$90..$91] : 0
-	db	$9f, $03 ; [$92..$9f] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	db	$ff, $00 ; [$ac..$af] : 0
+	db	$1f, $00 ; [$00..$1f] : 0 (background)
+	db	$7f, $00 ; [$00..$7f] : 0 (font)
+	db	$9f, $00 ; [$80..$9f] : 0 (more background)
+	db	$bf, $03 ; [$a0..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	db	$c7, $02 ; [$c0..$c7] : BIT_WORLD_FLOOR
+	db	$cf, $04 ; [$c8..$cf] : BIT_WORLD_STAIRS
+	db	$d7, $08 ; [$d0..$d7] : BIT_WORLD_DEATH
+	db	$df, $10 ; [$d8..$df] : BIT_WORLD_WALK_ON (e.g. items)
+	db	$ff, $20 ; [$e0..$ff] : BIT_WORLD_WIDE_ON (e.g. doors)
 
 ; Sprite-tile helper routines
 	include	"lib/game/tiles.asm"
@@ -132,7 +135,7 @@ TILE_FLAGS_TABLE:
 ; Default player control routines (platformer game)
 
 ; Logical sprite sizes (bounding box size) (pixels)
-	CFG_PLAYER_WIDTH:		equ 10
+	CFG_PLAYER_WIDTH:		equ 8
 	CFG_PLAYER_HEIGHT:		equ 16
 
 ; Number of player sprites (i.e.: number of colors)
@@ -431,19 +434,23 @@ GAME_LOOP:
 ; Prepares next frame (1/2)
 	call	PUT_PLAYER_SPRITE
 	
-; Synchronization (halt)
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 1
 	call	SET_BDRCLR ; black: free frame time
+ENDIF
+
+; Synchronization (halt)
 	halt
+	
+IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 4
 	call	SET_BDRCLR ; blue: VDP busy
-ELSE
-	halt
 ENDIF
 
 ; Blit buffers to VRAM
+	call	EXECUTE_VPOKES
 	call	LDIRVM_SPRATR
+
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 12 ; green: game logic
 	call	SET_BDRCLR
@@ -607,12 +614,17 @@ INIT_STAGE:
 
 ; -----------------------------------------------------------------------------
 ; Tile collision (single char): e.g. Items
-; ON_PLAYER_WALK_ON:
+ON_PLAYER_WALK_ON:
+; Reads the tile index and NAMTBL offset and buffer pointer
+	call	GET_PLAYER_TILE_VALUE
+	push	hl ; preserves NAMTBL buffer pointer
+; Executes item action
+	sub	CHARSET.ITEM_0
 	;	...TBD...
 ; Removes the item in the NAMTBL buffer and VRAM
-	; xor	a
-	; pop	hl ; restores NAMTBL buffer pointer
-	; jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
+	xor	a
+	pop	hl ; restores NAMTBL buffer pointer
+	jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -724,6 +736,8 @@ CHARSET_PACKED:
 	incbin	"games/template/charset.pcx.clr.zx7"
 	
 ; Charset-related symbolic constants
+CHARSET:
+	.ITEM_0:	equ $d8 ; First item
 	; ...
 ; -----------------------------------------------------------------------------
 	
@@ -742,13 +756,13 @@ SPRTBL_PACKED:
 	; ...
 ; -----------------------------------------------------------------------------
 
-
 ; -----------------------------------------------------------------------------
 ; Padding to a 8kB boundary
 PADDING:
 	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
 	.SIZE:	equ $ - PADDING
 ; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
