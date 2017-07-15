@@ -7,7 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Define to visually debug frame timing
-	; CFG_DEBUG_BDRCLR:
+	CFG_DEBUG_BDRCLR:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -191,6 +191,11 @@ PLAYER_DY_TABLE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Default player control routines (platformer game)
+
+; Controls if the player jumps with BIT_STRICK_UP or with BIT_TRIGGER_A/B
+	CFG_PLAYER_JUMP_INPUT:	equ BIT_TRIGGER_A
+	
 ; Default player control routines (platformer game)
 	include	"lib/game/player_x.asm"
 ; -----------------------------------------------------------------------------

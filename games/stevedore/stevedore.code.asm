@@ -99,7 +99,8 @@ INTRO:
 ; Pauses until trigger
 .TRIGGER_LOOP_1:
 	halt
-	call	GET_TRIGGER
+	call	READ_INPUT
+	and	1 << BIT_TRIGGER_A
 	jr	z, .TRIGGER_LOOP_1
 
 ; Makes "push space key" text blink
@@ -208,7 +209,8 @@ INTRO:
 ; Pauses until trigger
 .TRIGGER_LOOP_2:
 	halt
-	call	GET_TRIGGER
+	call	READ_INPUT
+	and	1 << BIT_TRIGGER_A
 	jr	z, .TRIGGER_LOOP_2
 
 ; Awakens the player, synchronization (halt) and blit buffer to VRAM
@@ -312,15 +314,15 @@ GAME_LOOP:
 	call	PUT_PLAYER_SPRITE
 
 IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 1
-	call	SET_BDRCLR ; black: free frame time
+	ld	b, 12
+	call	SET_BDRCLR ; green: free frame time
 ENDIF
 	
 ; Synchronization (halt)
 	halt
 	
 IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 4
+	ld	b, 5
 	call	SET_BDRCLR ; blue: VDP busy
 ENDIF
 
@@ -329,7 +331,7 @@ ENDIF
 	call	LDIRVM_SPRATR
 	
 IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 12 ; green: game logic
+	ld	b, 1 ; black: game logic
 	call	SET_BDRCLR
 ENDIF
 
@@ -337,8 +339,7 @@ ENDIF
 	call	RESET_SPRITES
 
 ; Read input devices
-	call	GET_STICK_BITS
-	call	GET_TRIGGER
+	call	READ_INPUT
 
 ; Game logic (1/2: updates)
 	call	UPDATE_SPRITEABLES
@@ -1032,7 +1033,7 @@ ON_PLAYER_WALK_ON:
 ; Wide tile collision (player width)
 ON_PLAYER_WIDE_ON:
 ; Cursor down?
-	ld	hl, stick
+	ld	hl, input.edge
 	bit	BIT_STICK_DOWN, [hl]
 	ret	z ; no
 ; Key picked up?

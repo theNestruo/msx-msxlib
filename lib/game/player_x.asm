@@ -89,7 +89,7 @@ SET_PLAYER_FLOOR:
 ; Control routine when the player is on the floor
 UPDATE_PLAYER_FLOOR:
 ; Trying to get on stairs?
-	ld	hl, stick
+	ld	hl, input.level
 	bit	BIT_STICK_UP, [hl]
 	jr	nz, .CHECK_UPSTAIRS ; yes (upstairs)
 	bit	BIT_STICK_DOWN, [hl]
@@ -97,8 +97,8 @@ UPDATE_PLAYER_FLOOR:
 
 .NO_STAIRS:
 ; Jumping?
-	ld	hl, stick_edge
-	bit	BIT_STICK_UP, [hl]
+	ld	hl, input.edge
+	bit	CFG_PLAYER_JUMP_INPUT, [hl]
 	jp	nz, SET_PLAYER_JUMPING ; yes
 	
 ; Moves horizontally with animation
@@ -154,7 +154,7 @@ UPDATE_PLAYER_STAIRS:
 	
 .ON:
 ; Manages vertical movement
-	ld	hl, stick
+	ld	hl, input.level
 	bit	BIT_STICK_DOWN, [hl]
 	jr	nz, .DOWN
 	bit	BIT_STICK_UP, [hl]
@@ -301,7 +301,7 @@ SET_PLAYER_DEAD:
 ; Moves the player left or right, according input
 MOVE_PLAYER_LR:
 ; Manages horizontal movement
-	ld	hl, stick
+	ld	hl, input.level
 	bit	BIT_STICK_RIGHT, [hl]
 	jr	nz, .RIGHT
 	bit	BIT_STICK_LEFT, [hl]
@@ -328,7 +328,7 @@ MOVE_PLAYER_LR:
 ; Moves the player left or right, according input, with animation
 MOVE_PLAYER_LR_ANIMATE:
 ; Manages horizontal movement
-	ld	hl, stick
+	ld	hl, input.level
 	bit	BIT_STICK_LEFT, [hl]
 	jr	nz, .LEFT
 	bit	BIT_STICK_RIGHT, [hl]

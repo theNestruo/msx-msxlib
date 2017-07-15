@@ -208,8 +208,8 @@ NAMTBL_PACKED_TABLE:
 	; dw	.STAGE_26, .STAGE_27, .STAGE_28, .STAGE_29, .STAGE_30
 
 ; Test screen
-; .TEST_SCREEN:
-	; incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.TEST_SCREEN:
+	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"

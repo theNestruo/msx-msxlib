@@ -4,14 +4,16 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
-; Bits returned by GET_STICK_BITS
+; Bits returned by GET_INPUT_BITS
 	BIT_STICK_UP:		equ 0
 	BIT_STICK_RIGHT:	equ 1
 	BIT_STICK_DOWN:		equ 2
 	BIT_STICK_LEFT:		equ 3
+	BIT_TRIGGER_A:		equ 4
+	; BIT_TRIGGER_B:	equ 5 ; (not implemented yet)
 
 ; Bit map values table
-STICK_BITS_TABLE:
+INPUT_BITMAP_STICK_TABLE:
 	db	0						 ; 0
 	db	(1 << BIT_STICK_UP)				 ; 1
 	db	(1 << BIT_STICK_UP)	+ (1 << BIT_STICK_RIGHT) ; 2
@@ -21,6 +23,42 @@ STICK_BITS_TABLE:
 	db	(1 << BIT_STICK_DOWN)	+ (1 << BIT_STICK_LEFT)	 ; 6
 	db				  (1 << BIT_STICK_LEFT)	 ; 7
 	db	(1 << BIT_STICK_UP)	+ (1 << BIT_STICK_LEFT)	 ; 8
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Reads both keyboard and joystick 1 as a bit map
+; ret [input.level]: current bit map (level)
+; ret a / [input.edge]: bits that went from off to on (edge)
+READ_INPUT:
+	ld	hl, input.level
+	ld	a, [hl]
+	push	af ; (preserves previous level)
+	
+; Reads the cursors/stick value
+	call	GET_STICK
+; Translates as bit map value
+	ld	hl, INPUT_BITMAP_STICK_TABLE
+	call	ADD_HL_A
+	ld	a, [hl]
+	ld	[input.level], a
+; Reads trigger value	
+	call	GET_TRIGGER
+	or	a
+	jr	z, .ELSE ; not pressed
+; Pressed: sets the bit value
+	ld	hl, input.level
+	set	BIT_TRIGGER_A, [hl]
+.ELSE:
+	
+; Computes edge value from level value
+	pop	af ; (restores previous level)
+	cpl	; a = !previous
+	ld	hl, input.level
+	ld	b, [hl] ; b = current
+	and	b ; a = !previous & current
+	inc	hl ; hl = input.edge
+	ld	[hl], a
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -39,51 +77,18 @@ GET_STICK:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Reads both keyboard and joystick 1 as a bit map
-; ret [stick]: current bit map (level)
-; ret a / [stick_edge]: bits that went from off to on (edge)
-GET_STICK_BITS:
-; Reads the value
-	call	GET_STICK
-; Reads the bit map value
-	ld	hl, STICK_BITS_TABLE
-	call	ADD_HL_A
-	ld	b, [hl] ; b = level
-; Builts edge value from level value
-	ld	hl, stick
-	ld	a, [hl] ; previous level in a
-	ld	[hl], b ; updates level
-	cpl
-	and	b ; a = current & !previous
-	inc	hl ; hl = stick_edge
-	ld	[hl], a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Reads both keyboard and joystick 1 trigger
-; ret a / [trigger]: current GTTRIG read value (level)
-; ret nz: if the trigger went from off to on (edge)
+; ret a: GTTRIG read value
 GET_TRIGGER:
 ; Reads keyboard
 	xor	a
 	call	GTTRIG
 ; Had value?
 	or	a
-	jr	nz, .ON ; yes
+	ret	nz ; yes
 ; No: reads joystick
 	inc	a ; a = 1
-	call	GTTRIG
-	or	a
-	jr	nz, .ON
-; off
-	ld	[trigger], a
-	ret	; ret z
-.ON:
-	ld	hl, trigger
-	cp	[hl] ; for ret z / nz
-	ld	[hl], a
-	ret
+	jp	GTSTCK
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -160,7 +165,8 @@ TRIGGER_PAUSE_A:
 TRIGGER_PAUSE:
 	push	bc ; preserves counter
 	halt
-	call	GET_TRIGGER
+	call	READ_INPUT
+	and	1 << BIT_TRIGGER_A
 	pop	bc ; restores counter
 	ret	nz ; trigger
 	djnz	TRIGGER_PAUSE
