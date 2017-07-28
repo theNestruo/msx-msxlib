@@ -45,7 +45,16 @@ MAIN_INIT:
 	call	REPLAYER.INSTALL
 ; ------VVVV----falls through--------------------------------------------------
 	
+; -----------------------------------------------------------------------------
+; Intro sequence
+INTRO:
+; Is ESC key pressed?
+	halt
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	2, [hl]
+	
 IFEXIST NAMTBL_PACKED_TABLE.TEST_SCREEN
+	jr	nz, .SKIP_TEST_SCREEN
 	ld	hl, NAMTBL_PACKED_TABLE.TEST_SCREEN
 	ld	de, namtbl_buffer
 	call	UNPACK
@@ -57,16 +66,10 @@ IFEXIST NAMTBL_PACKED_TABLE.TEST_SCREEN
 	call	REPLAYER.PLAY
 
 	jp	GAME_LOOP
-ENDIF
-
-; -----------------------------------------------------------------------------
-; Intro sequence
-INTRO:
-; Is ESC key pressed?
-	halt
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	2, [hl]
+.SKIP_TEST_SCREEN:
+ELSE
 	call	z, MAIN_MENU ; yes: skip intro / tutorial
+ENDIF
 
 ; Loads intro screen into NAMTBL buffer
 	ld	hl, INTRO_DATA.NAMTBL_PACKED

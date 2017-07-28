@@ -190,7 +190,7 @@ INTRO_DATA:
 	incbin	"games/stevedore/maps/intro_screen.tmx.bin.zx7"
 	
 .BROKEN_BRIDGE_CHARS:
-	db	$b2, $00, $b0 ; 3 bytes
+	db	$c2, $00, $c0 ; 3 bytes
 	
 .FLOOR_CHARS:
 	db	$02, $10, $01, $85, $84, $85, $02, $10, $01 ; 9 bytes
@@ -201,15 +201,11 @@ INTRO_DATA:
 NAMTBL_PACKED_TABLE:
 	dw	.INTRO_STAGE
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
-	; dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
-	; dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
-	; dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
-	; dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
-	; dw	.STAGE_26, .STAGE_27, .STAGE_28, .STAGE_29, .STAGE_30
-
-; Test screen
-.TEST_SCREEN:
-	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
+	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
+	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
+	dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
+	dw	.STAGE_26, .STAGE_27, .STAGE_28, .STAGE_29, .STAGE_30
 
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"
@@ -217,45 +213,47 @@ NAMTBL_PACKED_TABLE:
 ; Tutorial (warehouse)
 .STAGE_01:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
 .STAGE_02:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
-.STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
-.STAGE_04:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
-.STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
+.STAGE_03:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_04:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_05:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
-; ; Lighthouse
-; .STAGE_06:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
-; .STAGE_07:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
-; .STAGE_08:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
-; .STAGE_09:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
-; .STAGE_10:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
+; Lighthouse
+.STAGE_06:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_07:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_08:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
+.STAGE_09:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_10:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
-; ; Ship
-; .STAGE_11:	incbin	"games/stevedore/maps/stage_11.tmx.bin.zx7"
-; .STAGE_12:	incbin	"games/stevedore/maps/stage_12.tmx.bin.zx7"
-; .STAGE_13:	incbin	"games/stevedore/maps/stage_13.tmx.bin.zx7"
-; .STAGE_14:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
-; .STAGE_15:	incbin	"games/stevedore/maps/stage_15.tmx.bin.zx7"
+; Ship
+.STAGE_11:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_12:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_13:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_14:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_15:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
-; ; Jungle
-; .STAGE_16:	incbin	"games/stevedore/maps/stage_16.tmx.bin.zx7"
-; .STAGE_17:	incbin	"games/stevedore/maps/stage_17.tmx.bin.zx7"
-; .STAGE_18:	incbin	"games/stevedore/maps/stage_18.tmx.bin.zx7"
-; .STAGE_19:	incbin	"games/stevedore/maps/stage_19.tmx.bin.zx7"
-; .STAGE_20:	incbin	"games/stevedore/maps/stage_20.tmx.bin.zx7"
+; Jungle
+.STAGE_16:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_17:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_18:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_19:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_20:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
-; ; Volcano
-; .STAGE_21:	incbin	"games/stevedore/maps/stage_21.tmx.bin.zx7"
-; .STAGE_22:	incbin	"games/stevedore/maps/stage_22.tmx.bin.zx7"
-; .STAGE_23:	incbin	"games/stevedore/maps/stage_23.tmx.bin.zx7"
-; .STAGE_24:	incbin	"games/stevedore/maps/stage_24.tmx.bin.zx7"
-; .STAGE_25:	incbin	"games/stevedore/maps/stage_25.tmx.bin.zx7"
+; Volcano
+.STAGE_21:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_22:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_23:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_24:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_25:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
-; ; Temple
-; .STAGE_26:	incbin	"games/stevedore/maps/stage_26.tmx.bin.zx7"
-; .STAGE_27:	incbin	"games/stevedore/maps/stage_27.tmx.bin.zx7"
-; .STAGE_28:	incbin	"games/stevedore/maps/stage_28.tmx.bin.zx7"
-; .STAGE_29:	incbin	"games/stevedore/maps/stage_29.tmx.bin.zx7"
-; .STAGE_30:	incbin	"games/stevedore/maps/stage_30.tmx.bin.zx7"
+; Temple
+.STAGE_26:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_27:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_28:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_29:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_30:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
+; Test screen
+.TEST_SCREEN:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
