@@ -188,6 +188,11 @@ PLAYER_DY_TABLE:
 
 ; -----------------------------------------------------------------------------
 ; Default player control routines (platformer game)
+
+; Controls if the player jumps with BIT_STRICK_UP or with BIT_TRIGGER_A/B
+	CFG_PLAYER_JUMP_INPUT:	equ BIT_TRIGGER_A
+	
+; Default player control routines (platformer game)
 	include	"lib/game/player_x.asm"
 ; -----------------------------------------------------------------------------
 
@@ -460,8 +465,7 @@ ENDIF
 	call	RESET_SPRITES
 
 ; Read input devices
-	call	GET_STICK_BITS
-	call	GET_TRIGGER
+	call	READ_INPUT
 
 ; Game logic (1/2: updates)
 	call	UPDATE_PLAYER
