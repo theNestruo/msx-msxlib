@@ -82,8 +82,8 @@ ENDIF
 	call	ENASCR_FADE_IN
 	call	LDIRVM_SPRATR
 
-; Loads song #0
-	xor	a
+; Loads song #1
+	ld	a, 1
 	call	REPLAYER.PLAY
 
 ; Intro sequence #1: "Push space key"
@@ -390,6 +390,7 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 .CTRL_STOP_CHECK:
+; Check CTRL+STOP
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	4, [hl]
 	ret	nz ; no STOP
@@ -403,11 +404,6 @@ ENDIF
 	bit	BIT_STATE_FINISH, a
 	ret	nz ; yes: do nothing
 
-; ; no: It is a tutorial stage?
-	; ld	a, [game.current_stage]
-	; cp	TUTORIAL_STAGES
-	; jr	c, TUTORIAL_OVER ; yes: skip tutorial
-	
 ; no: Is the player already dying?
 	ld	a, [player.state]
 	and	$ff XOR FLAGS_STATE

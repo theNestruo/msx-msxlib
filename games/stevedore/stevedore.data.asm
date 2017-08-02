@@ -213,9 +213,10 @@ NAMTBL_PACKED_TABLE:
 ; Tutorial (warehouse)
 .STAGE_01:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
 .STAGE_02:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
-.STAGE_03:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_04:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_05:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
+.STAGE_04:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
+.TEST_SCREEN:
+.STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 
 ; Lighthouse
 .STAGE_06:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
@@ -253,7 +254,7 @@ NAMTBL_PACKED_TABLE:
 .STAGE_30:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
 ; Test screen
-.TEST_SCREEN:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+; .TEST_SCREEN:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
