@@ -215,10 +215,10 @@ NAMTBL_PACKED_TABLE:
 .STAGE_02:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
 .STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
 .STAGE_04:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
-.TEST_SCREEN:
 .STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 
 ; Lighthouse
+.TEST_SCREEN:
 .STAGE_06:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 .STAGE_07:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 .STAGE_08:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
