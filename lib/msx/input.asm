@@ -117,7 +117,7 @@ WAIT_ONE_SECOND:
 ; -----------------------------------------------------------------------------
 ; Pause
 ; param b: pause length (in frames)
-; touches: b, hl
+; touches: b
 WAIT_FRAMES:
 	halt
 	djnz	WAIT_FRAMES
@@ -129,11 +129,11 @@ WAIT_FRAMES:
 ; ret nz: if the trigger went from off to on (edge)
 ; ret z: if the pause timed out
 ; touches: a, bc, de, hl
-TRIGGER_PAUSE_FOUR_SECONDS:
+WAIT_TRIGGER_FOUR_SECONDS:
 	ld	a, [frame_rate]
 	add	a
 	add	a
-	jr	TRIGGER_PAUSE_A
+	jr	WAIT_TRIGGER_FRAMES_A
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -141,7 +141,7 @@ TRIGGER_PAUSE_FOUR_SECONDS:
 ; ret nz: if the trigger went from off to on (edge)
 ; ret z: if the pause timed out
 ; touches: a, bc, de, hl
-TRIGGER_PAUSE_ONE_SECOND:
+WAIT_TRIGGER_ONE_SECOND:
 	ld	a, [frame_rate]
 	; jr	TRIGGER_PAUSE_A ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
@@ -152,7 +152,7 @@ TRIGGER_PAUSE_ONE_SECOND:
 ; ret nz: if the trigger went from off to on (edge)
 ; ret z: if the pause timed out
 ; touches: a, bc, de, hl
-TRIGGER_PAUSE_A:
+WAIT_TRIGGER_FRAMES_A:
 	ld	b, a
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -162,15 +162,27 @@ TRIGGER_PAUSE_A:
 ; ret nz: if the trigger went from off to on (edge)
 ; ret z: if the pause timed out
 ; touches: a, bc, de, hl
-TRIGGER_PAUSE:
+WAIT_TRIGGER_FRAMES:
 	push	bc ; preserves counter
 	halt
 	call	READ_INPUT
 	and	1 << BIT_TRIGGER_A
 	pop	bc ; restores counter
 	ret	nz ; trigger
-	djnz	TRIGGER_PAUSE
+	djnz	WAIT_TRIGGER_FRAMES
 	ret	; no trigger (z)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Waits for the trigger
+; ret nz always: the trigger went from off to on (edge)
+; touches: a, bc, de, hl
+WAIT_TRIGGER:
+	halt
+	call	READ_INPUT
+	and	1 << BIT_TRIGGER_A
+	jr	z, WAIT_TRIGGER
+	ret	; trigger (nz)
 ; -----------------------------------------------------------------------------
 
 ; EOF

@@ -28,7 +28,11 @@ DATAS=\
 	$(GAME_PATH)\maps\stage_03.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_04.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_05.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\maps\stage_08.tmx.bin.$(PACK_EXTENSION)
+	$(GAME_PATH)\maps\stage_06.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_07.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_08.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_09.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_10.tmx.bin.$(PACK_EXTENSION)
 
 DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\gfx\charset.pcx.chr \
@@ -42,7 +46,11 @@ DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\maps\stage_03.tmx.bin \
 	$(GAME_PATH)\maps\stage_04.tmx.bin \
 	$(GAME_PATH)\maps\stage_05.tmx.bin \
-	$(GAME_PATH)\maps\stage_08.tmx.bin
+	$(GAME_PATH)\maps\stage_06.tmx.bin \
+	$(GAME_PATH)\maps\stage_07.tmx.bin \
+	$(GAME_PATH)\maps\stage_08.tmx.bin \
+	$(GAME_PATH)\maps\stage_09.tmx.bin \
+	$(GAME_PATH)\maps\stage_10.tmx.bin
 
 #
 # tools

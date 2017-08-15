@@ -292,7 +292,7 @@ LDIRVM_NAMTBL_FADE_INOUT:
 ; param hl: source string
 ; param de: NAMTBL buffer pointer (beginning of the line)
 ; touches: a, bc, de, hl
-PRINT_CENTERED_TXT:
+PRINT_CENTERED_TEXT:
 	call	LOCATE_CENTER
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -301,7 +301,7 @@ PRINT_CENTERED_TXT:
 ; param hl: source string
 ; param de: NAMTBL buffer pointer
 ; touches: a, bc, de, hl
-PRINT_TXT:
+PRINT_TEXT:
 	xor	a
 .LOOP:
 	cp	[hl]
@@ -316,10 +316,10 @@ PRINT_TXT:
 ; param hl: source string
 ; param de: NAMTBL buffer pointer (beginning of the line)
 ; touches: a, bc, de, hl
-PRINT_TXTS:
+PRINT_TEXTS:
 ; Writes one string
 	push	de ; preserves destination
-	call	PRINT_TXT
+	call	PRINT_TEXT
 	pop	de ; restores destination
 ; Are there more strings?
 	inc	hl ; skips the \0
@@ -331,7 +331,7 @@ PRINT_TXTS:
 	ld	bc, SCR_WIDTH; hl += 32
 	add	hl, bc
 	ex	de, hl ; destination in de
-	jr	PRINT_TXTS
+	jr	PRINT_TEXTS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -368,6 +368,34 @@ CLEAR_LINE:
 	ld	bc, SCR_WIDTH -1
 	ld	[hl], $20 ; " " ASCII
 	ldir
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Prints two digits of a BCD value in the NAMTBL buffer
+; param hl: source BCD value
+; param de: NAMTBL buffer pointer
+; ret de: updated NAMTBL buffer pointer
+PRINT_BCD:
+	xor	a
+; Extracts first digit
+	rld
+; Prints first digit
+	push	af
+	add	$30 ; "0"
+	ld	[de], a
+	inc	de
+	pop	af
+; Extracts second digit
+	rld
+; Prints second digit
+	push	af
+	add	$30 ; "0"
+	ld	[de], a
+	inc	de
+	pop	af
+; Restores original [hl] value	
+	rld
 	ret
 ; -----------------------------------------------------------------------------
 

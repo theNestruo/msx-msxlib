@@ -9,9 +9,9 @@
 ; Number of frames required to actually push an object
 	FRAMES_TO_PUSH:		equ 12
 
-; Playground size
-	PLAYGROUND_FIRST_ROW:	equ 0
-	PLAYGROUND_LAST_ROW:	equ 23
+; Number of stages per zone
+	TUTORIAL_STAGES:	equ 5
+	STAGES_PER_ZONE:	equ 5
 	
 ; The flags the define the state of the stage
 	BIT_STAGE_KEY:		equ 0 ; Key picked up
@@ -48,27 +48,28 @@ MAIN_INIT:
 ; -----------------------------------------------------------------------------
 ; Intro sequence
 INTRO:
-; Is ESC key pressed?
+; Is SEL key pressed?
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	2, [hl]
+	bit	6, [hl]
+	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 IFEXIST NAMTBL_PACKED_TABLE.TEST_SCREEN
-	jr	nz, .SKIP_TEST_SCREEN
+; Is ESC key pressed?
+	bit	2, [hl]
+	jr	z, .DONT_USE_TEST_SCREEN ; yes: do not go to test screen
+; Loads test screen
 	ld	hl, NAMTBL_PACKED_TABLE.TEST_SCREEN
 	ld	de, namtbl_buffer
 	call	UNPACK
 	call	INIT_STAGE
 	call	ENASCR_NO_FADE
-	
 ; Loads song #0
 	xor	a
 	call	REPLAYER.PLAY
-
+; Directly to game loop
 	jp	GAME_LOOP
-.SKIP_TEST_SCREEN:
-ELSE
-	call	z, MAIN_MENU ; yes: skip intro / tutorial
+.DONT_USE_TEST_SCREEN:
 ENDIF
 
 ; Loads intro screen into NAMTBL buffer
@@ -87,51 +88,8 @@ ENDIF
 	call	REPLAYER.PLAY
 
 ; Intro sequence #1: "Push space key"
-
-; Courtesy pause
-	call	TRIGGER_PAUSE_FOUR_SECONDS
-	jr	nz, .SKIP_WAIT
-
-; Prints "push space key" text
-	ld	hl, TXT_PUSH_SPACE_KEY
-	ld	de, namtbl_buffer + 16 * SCR_WIDTH + TXT_PUSH_SPACE_KEY.CENTER
-	call	PRINT_TXT
-	halt
-	call	LDIRVM_NAMTBL
-
-; Pauses until trigger
-.TRIGGER_LOOP_1:
-	halt
-	call	READ_INPUT
-	and	1 << BIT_TRIGGER_A
-	jr	z, .TRIGGER_LOOP_1
-
-; Makes "push space key" text blink
-	ld	b, 10 ; times to blink
-.BLINK_LOOP:
-	push	bc ; preserves counter
-; Removes the "push space key" text
-	ld	hl, namtbl_buffer + 16 *SCR_WIDTH
-	call	CLEAR_LINE
-; Blit and pause
-	call	LDIRVM_NAMTBL
-	halt
-	halt
-	halt
-; Prints "push space key" text
-	ld	hl, TXT_PUSH_SPACE_KEY
-	ld	de, namtbl_buffer + 16 *SCR_WIDTH + TXT_PUSH_SPACE_KEY.CENTER
-	call	PRINT_TXT
-; Blit and pause
-	call	LDIRVM_NAMTBL
-	halt
-	halt
-	halt
-	pop	bc ; restores counter
-	djnz	.BLINK_LOOP
-; Removes the "push space key" text
-	ld	hl, namtbl_buffer + 16 *SCR_WIDTH
-	call	CLEAR_LINE
+	call	WAIT_TRIGGER_FOUR_SECONDS ; (courtesy pause)
+	call	z, PUSH_SPACE_KEY_ROUTINE
 	
 ; Intro sequence #2: the fall
 
@@ -229,23 +187,35 @@ ENDIF
 ; Main menu
 MAIN_MENU:
 ; Main menu entry point and initialization
-	;	...TBD...
+	ld	a, [globals.max_stage]
+	ld	[menu.selected_stage], a
 	
 ; Main menu draw
-	; call	CLS_NAMTBL
+	call	CLS_NAMTBL
+	
 	;	...TBD...
+	ld	hl, TXT_STAGE_SELECT
+	ld	de, namtbl_buffer + 16 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+
+	call	PRINT_SELECTED_STAGE
+	
+	ld	hl, TXT_PUSH_SPACE_KEY
+	ld	de, namtbl_buffer + 21 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
 	
 ; Fade in
-	; call	ENASCR_FADE_IN
+	call	ENASCR_FADE_IN
 
 ; Main menu loop
-.LOOP:
-	halt
+	call	WAIT_TRIGGER ; (temporary patch)
+; .LOOP:
+	; halt
 	;	...TBD...
 	; jr	.LOOP
 	
 ; Fade out
-	; call	DISSCR_FADE_OUT
+	call	DISSCR_FADE_OUT
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
@@ -256,15 +226,21 @@ NEW_GAME:
 	ld	de, game
 	ld	bc, GAME_0.SIZE
 	ldir
+; (temporary patch)
+	ld	a, [menu.selected_stage]
+	ld	[game.stage], a
+	add	0
+	daa
+	ld	[game.stage_bcd], a ; FIXME
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; New stage / new life entry point
 NEW_STAGE:
 ; Skip this section in tutorial stages
-	; ld	a, [game.current_stage]
-	; cp	TUTORIAL_STAGES
-	; jr	nc, .NORMAL
+	ld	a, [game.stage]
+	cp	TUTORIAL_STAGES
+	jr	nc, .NORMAL
 	
 ; Tutorial stage (quick init)
 
@@ -278,30 +254,29 @@ NEW_STAGE:
 ; Prepares the "new stage" screen
 	call	CLS_NAMTBL
 	
-; "STAGE 0"
+; "STAGE"
 	ld	hl, TXT_STAGE
 	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_STAGE.CENTER
-	call	PRINT_TXT
-; "stage N"
-	dec	de
-	ld	a, [game.current_stage]
-	add	$31 ;  - TUTORIAL_STAGES ; "1"
-	ld	[de], a
+	call	PRINT_TEXT
+; " NN"
+	inc	de ; " "
+	ld	hl, game.stage_bcd
+	call	PRINT_BCD
 	
-; "LIVES 0"
-	ld	hl, TXT_LIVES
+; "N"
 	ld	de, namtbl_buffer + 10 * SCR_WIDTH + TXT_LIVES.CENTER
-	push	de
-	call	PRINT_TXT
-; "lives N"
-	pop	de
 	ld	a, [game.lives]
 	add	$30 ; "0"
 	ld	[de], a
+	inc	de
+; " LIVES LEFT"
+	inc	de ; " "
+	ld	hl, TXT_LIVES
+	call	PRINT_TEXT
 
 ; Fade in
 	call	ENASCR_FADE_IN
-	call	TRIGGER_PAUSE_ONE_SECOND
+	call	WAIT_TRIGGER_ONE_SECOND
 	
 ; Loads and initializes the current stage
 	call	LOAD_AND_INIT_CURRENT_STAGE
@@ -391,13 +366,8 @@ ENDIF
 ; -----------------------------------------------------------------------------
 .CTRL_STOP_CHECK:
 ; Check CTRL+STOP
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	4, [hl]
-	ret	nz ; no STOP
-	
-	dec	hl ; hl = NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
-	bit	1, [hl]
-	ret	nz ; no CTRL
+	call	BREAKX
+	ret	nc ; no CTRL+STOP
 	
 ; Has the player already finished?
 	ld	a, [player.state]
@@ -421,14 +391,14 @@ STAGE_OVER:
 	call	DISSCR_FADE_OUT
 
 ; Next stage logic
-	ld	hl, game.current_stage
+	ld	hl, game.stage
 	inc	[hl]
 	
 ; Is it a tutorial stage?
-	; ld	a, [game.current_stage]
-	; cp	TUTORIAL_STAGES
-	; jp	c, NEW_STAGE ; yes: next stage directly
-	; jp	z, TUTORIAL_OVER ; no: tutorial finished
+	ld	a, [hl] ; game.stage
+	cp	TUTORIAL_STAGES
+	jp	c, NEW_STAGE ; yes: next stage directly
+	jp	z, MAIN_MENU ; tutorial finished: main menu directly
 	
 ; Stage over screen
 	;	...
@@ -438,31 +408,23 @@ STAGE_OVER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-TUTORIAL_OVER:
-; Fade out and go to main menu
-	call	DISSCR_FADE_OUT
-	jp	MAIN_MENU
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; In-game loop finish due death of the player
 PLAYER_OVER:
 ; Fade out
 	call	DISSCR_FADE_OUT
 	
-; ; Is it a tutorial stage?
-	; ld	a, [game.current_stage]
-	; cp	TUTORIAL_STAGES
-	; jp	c, NEW_STAGE ; yes: re-enter current stage, no life lost
+; Is it a tutorial stage?
+	ld	a, [game.stage]
+	cp	TUTORIAL_STAGES
+	jp	c, NEW_STAGE ; yes: re-enter current stage, no life lost
 	
-; ; Life loss logic
-	; ld	hl, game.lives
-	; xor	a
-	; cp	[hl]
-	; jr	z, GAME_OVER ; no lives left
-	; dec	[hl]
+; Life loss logic
+	ld	hl, game.lives
+	xor	a
+	cp	[hl]
+	jr	z, GAME_OVER ; no lives left
+	dec	[hl]
 
-.SKIP:	
 ; Re-enter current stage
 	jp	NEW_STAGE
 ; -----------------------------------------------------------------------------
@@ -474,12 +436,12 @@ GAME_OVER:
 	call	CLS_NAMTBL
 ; "GAME OVER"
 	ld	hl, TXT_GAME_OVER
-	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_GAME_OVER.CENTER
-	call	PRINT_TXT
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
 	
 ; Fade in
 	call	LDIRVM_NAMTBL_FADE_INOUT
-	call	TRIGGER_PAUSE_FOUR_SECONDS
+	call	WAIT_TRIGGER_FOUR_SECONDS
 	call	DISSCR_FADE_OUT
 	
 	jp	MAIN_MENU
@@ -492,11 +454,93 @@ GAME_OVER:
 ;
 
 ; -----------------------------------------------------------------------------
+PRINT_SELECTED_STAGE:
+	ld	hl, namtbl_buffer + 18 * SCR_WIDTH + 4
+	call	CLEAR_LINE
+	
+	ld	hl, menu.selected_stage
+	xor	a
+	cp	[hl]
+	jr	z, .NO_LEFT
+	ld	a, $3c ; "<"
+	ld	[namtbl_buffer + 18 * SCR_WIDTH + 4], a
+.NO_LEFT:
+	ld	a, [globals.max_stage]
+	cp	[hl]
+	jr	z, .NO_RIGHT
+	ld	a, $3e ; ">"
+	ld	[namtbl_buffer + 18 * SCR_WIDTH + 27], a
+.NO_RIGHT:
+	
+	ld	hl, TXT_STAGE_SELECT._0
+	ld	a, [menu.selected_stage]
+.LOOP:
+	sub	STAGES_PER_ZONE
+	jr	c, .HL_OK
+	push	af
+	inc	hl
+	xor	a
+	ld	bc, 32
+	cpir
+	pop	af
+	jr	.LOOP
+.HL_OK:
+	ld	de, namtbl_buffer + 18 * SCR_WIDTH
+	jp	PRINT_CENTERED_TEXT
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Prints "push space key" text, waits for trigger, the makes the text blink
+PUSH_SPACE_KEY_ROUTINE:
+; Prints "push space key" text
+	ld	hl, TXT_PUSH_SPACE_KEY
+	ld	de, namtbl_buffer + 16 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	halt
+	call	LDIRVM_NAMTBL
+
+; Pauses until trigger
+.TRIGGER_LOOP_1:
+	halt
+	call	READ_INPUT
+	and	1 << BIT_TRIGGER_A
+	jr	z, .TRIGGER_LOOP_1
+
+.BLINK:
+; Makes "push space key" text blink
+	ld	b, 10 ; times to blink
+.BLINK_LOOP:
+	push	bc ; preserves counter
+; Removes the "push space key" text
+	ld	hl, namtbl_buffer + 16 *SCR_WIDTH
+	call	CLEAR_LINE
+; Blit and pause
+	call	LDIRVM_NAMTBL
+	halt
+	halt
+	halt
+; Prints "push space key" text
+	ld	hl, TXT_PUSH_SPACE_KEY
+	ld	de, namtbl_buffer + 16 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+; Blit and pause
+	call	LDIRVM_NAMTBL
+	halt
+	halt
+	halt
+	pop	bc ; restores counter
+	djnz	.BLINK_LOOP
+; Removes the "push space key" text
+	ld	hl, namtbl_buffer + 16 *SCR_WIDTH
+	jp	CLEAR_LINE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Loads and initializes the current stage
 LOAD_AND_INIT_CURRENT_STAGE:
 ; Loads current stage into NAMTBL buffer
 	ld	hl, NAMTBL_PACKED_TABLE
-	ld	a, [game.current_stage]
+	ld	a, [game.stage]
 	add	a ; a *= 2
 	call	GET_HL_A_WORD
 	ld	de, namtbl_buffer
@@ -786,6 +830,9 @@ UPDATE_BOXES_AND_ROCKS:
 ; Is it solid?
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; yes
+	cp	1 << BIT_WORLD_FLOOR OR 1 << BIT_WORLD_STAIRS ; (top of stairs)
+	ret	z ; yes (top of stairs considered solid)
+
 ; no: Reads the character under the right part of the spriteable
 	inc	hl ; (+1,+0)
 	ld	a, [hl]
@@ -793,6 +840,8 @@ UPDATE_BOXES_AND_ROCKS:
 ; Is it solid?
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; yes
+	cp	1 << BIT_WORLD_FLOOR OR 1 << BIT_WORLD_STAIRS ; (top of stairs)
+	ret	z ; yes (top of stairs considered solid)
 	
 ; Starts moving the spriteable down
 	call	MOVE_SPRITEABLE_DOWN

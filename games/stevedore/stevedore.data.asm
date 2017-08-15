@@ -8,58 +8,63 @@
 ; -----------------------------------------------------------------------------
 ; Literals
 TXT_PUSH_SPACE_KEY:
-	db	"PUSH SPACE KEY"
-	.SIZE:		equ $ - TXT_PUSH_SPACE_KEY
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	db	$00
+	db	"PUSH SPACE KEY", $00
+
+; TXT_START:
+	; db	"   START", $00
+	; .CENTER:	equ TXT_CONTINUE.CENTER
+; TXT_CONTINUE:
+	; db	$5e, $5f, " CONTINUE"
+	; .SIZE:		equ $ - TXT_CONTINUE
+	; .CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	; db	$00
 	
 TXT_STAGE:
-	db	"STAGE 00"
-	.SIZE:		equ $ - TXT_STAGE
+	db	"STAGE"
+	.SIZE:		equ ($ + 3) - TXT_STAGE ; "... 00"
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 	db	$00
 	
 TXT_LIVES:
-	db	"0 LIVES LEFT"
+	db	"LIVES LEFT"
 	.SIZE: 		equ $ - TXT_LIVES
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	.CENTER:	equ (SCR_WIDTH - .SIZE - 2) /2 ; "0 ..."
 	db	$00
 	
 TXT_GAME_OVER:
-	db	"GAME OVER"
-	.SIZE: 		equ $ - TXT_GAME_OVER
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	db	$00
+	db	"GAME OVER", $00
+
+TXT_STAGE_SELECT:
+	db	"STAGE SELECT", $00
 	
-	db	"SORRY, STEVEDORE"
-	db	"BUT THE LIGHTHOUSE KEEPER"
-	db	"IS IN ANOTHER BUILDING"
-	db	"WAS KIDNAPPED BY PIRATES"
-	db	"SHIPWRECKED"
-	db	"FELL INTO A CAVE"
-	db	"WAS CAPTURED BY PANTOJOS"
+._0:	db	"WAREHOUSE (TUTORIAL)",		$00
+._1:	db	"LIGHTHOUSE",			$00
+._2:	db	"ABANDONED SHIP",		$00
+._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
+._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
+._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
 	
-	db	"WAREHOUSE (TUTORIAL)"
-	db	"LIGHTHOUSE"
-	db	"ABANDONED SHIP"
-	db	"SHIPWRECK ISLAND"	; (jungle)
-	db	"UNCANNY CAVE"		; (volcano)
-	db	"ANCIENT TEMPLE RUINS"	; (temple)
+	; db	"SORRY, STEVEDORE",		$00
+	; db	"BUT THE LIGHTHOUSE KEEPER",	$00
+	; db	"IS IN ANOTHER BUILDING",	$00
+	; db	"WAS KIDNAPPED BY PIRATES",	$00
+	; db	"SHIPWRECKED",			$00
+	; db	"FELL INTO A CAVE",		$00
+	; db	"WAS CAPTURED BY PANTOJOS",	$00
 	
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	dw	2500			; .hi_score
-	db	0			; game.current_stage (intro)
+	db	TUTORIAL_STAGES + 1	; .max_stage
+	db	$00, $00, $00		; .hi_score
+	db	0			; game.stage (for intro)
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
-	db	0			; .current_stage
-	db	3			; .continues
-	dw	0			; .score
+	db	$00, $00, $00		; .score
 	db	5			; .lives
 	.SIZE:	equ $ - GAME_0
 
@@ -91,20 +96,24 @@ PLAYER_0:
 ; Initial enemy data
 ENEMY_0:
 
+; Bat: the bat flies, the turns around and continues
 .BAT:
 	db	BAT_SPRITE_PATTERN
 	db	BAT_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_FLYER
-	
+
+; Spider: the spider falls onto the ground the the player is near
 .SPIDER:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_FALLER.WITH_TRIGGER
-	
+
+; Octopus: not implemented yet	
 .OCTOPUS:
 
+; Snake: the snake walks, the pauses, turning around, and continues
 .SNAKE:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
@@ -122,12 +131,14 @@ ENEMY_0:
 	dw	ENEMY_SKELETON.HANDLER
 	db	0 ; (unused)
 
+; Savage: the savage walks towards the player, pausing briefly
 .SAVAGE:
 	db	SAVAGE_SPRITE_PATTERN
 	db	SAVAGE_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_WALKER.FOLLOWER
 
+; Trap (pointing right): shoots when the player is in front of it
 .TRAP_RIGHT:
 	db	ARROW_RIGHT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
@@ -147,6 +158,7 @@ ENEMY_0:
 	dw	SET_NEW_STATE_HANDLER
 	db	-4 * ENEMY_STATE.SIZE; (restart)
 	
+; Trap (pointing left): shoots when the player is in front of it
 .TRAP_LEFT:
 	db	ARROW_LEFT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
@@ -190,10 +202,10 @@ INTRO_DATA:
 	incbin	"games/stevedore/maps/intro_screen.tmx.bin.zx7"
 	
 .BROKEN_BRIDGE_CHARS:
-	db	$c2, $00, $c0 ; 3 bytes
+	db	$d2, $00, $d0 ; 3 bytes
 	
 .FLOOR_CHARS:
-	db	$02, $10, $01, $85, $84, $85, $02, $10, $01 ; 9 bytes
+	db	$02, $01, $02, $64, $84, $85, $10, $01, $02 ; 9 bytes
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -210,7 +222,7 @@ NAMTBL_PACKED_TABLE:
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"
 
-; Tutorial (warehouse)
+; Warehouse (tutorial)
 .STAGE_01:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
 .STAGE_02:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
 .STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
@@ -218,40 +230,40 @@ NAMTBL_PACKED_TABLE:
 .STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 
 ; Lighthouse
-.TEST_SCREEN:
-.STAGE_06:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_07:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_06:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
+.STAGE_07:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
+.TEST_SCREEN:	
 .STAGE_08:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
-.STAGE_09:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_10:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_09:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
+.STAGE_10:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 
 ; Ship
-.STAGE_11:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_12:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_13:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_14:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_15:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_11:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
+.STAGE_12:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
+.STAGE_13:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
+.STAGE_14:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
+.STAGE_15:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 
 ; Jungle
-.STAGE_16:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_17:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_18:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_19:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_20:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_16:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
+.STAGE_17:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
+.STAGE_18:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
+.STAGE_19:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
+.STAGE_20:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 
 ; Volcano
-.STAGE_21:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_22:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_23:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_24:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_25:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_21:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
+.STAGE_22:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
+.STAGE_23:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
+.STAGE_24:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
+.STAGE_25:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 
 ; Temple
-.STAGE_26:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_27:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_28:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_29:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_30:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_26:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
+.STAGE_27:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
+.STAGE_28:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
+.STAGE_29:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
+.STAGE_30:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 
 ; Test screen
 ; .TEST_SCREEN:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
