@@ -16,6 +16,9 @@
 ; The flags the define the state of the stage
 	BIT_STAGE_KEY:		equ 0 ; Key picked up
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
+
+; Debug
+	DEBUG_STAGE:		equ 10
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -54,22 +57,21 @@ INTRO:
 	bit	6, [hl]
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 	
-IFEXIST NAMTBL_PACKED_TABLE.TEST_SCREEN
+IFEXIST DEBUG_STAGE
 ; Is ESC key pressed?
 	bit	2, [hl]
-	jr	z, .DONT_USE_TEST_SCREEN ; yes: do not go to test screen
-; Loads test screen
-	ld	hl, NAMTBL_PACKED_TABLE.TEST_SCREEN
-	ld	de, namtbl_buffer
-	call	UNPACK
-	call	INIT_STAGE
+	jr	z, .DONT_USE_DEBUG_STAGE ; yes: do not go to debug stage
+; Loads debug stage
+	ld	a, DEBUG_STAGE
+	ld	[game.stage], a
+	call	LOAD_AND_INIT_CURRENT_STAGE
 	call	ENASCR_NO_FADE
 ; Loads song #0
 	xor	a
 	call	REPLAYER.PLAY
 ; Directly to game loop
 	jp	GAME_LOOP
-.DONT_USE_TEST_SCREEN:
+.DONT_USE_DEBUG_STAGE:
 ENDIF
 
 ; Loads intro screen into NAMTBL buffer
@@ -332,7 +334,7 @@ ENDIF
 	call	CHECK_PLAYER_ENEMIES_COLLISIONS
 	call	CHECK_PLAYER_BULLETS_COLLISIONS
 	
-; Additional game logic: crushed (by a pushable)
+; Additional game logic: crushed (by a pushable, custom)
 	call	GET_PLAYER_TILE_FLAGS
 	bit	BIT_WORLD_SOLID, a
 	call	nz, SET_PLAYER_DYING
@@ -394,17 +396,101 @@ STAGE_OVER:
 	ld	hl, game.stage
 	inc	[hl]
 	
-; Is it a tutorial stage?
+; Is a tutorial stage?
 	ld	a, [hl] ; game.stage
 	cp	TUTORIAL_STAGES
-	jp	c, NEW_STAGE ; yes: next stage directly
-	jp	z, MAIN_MENU ; tutorial finished: main menu directly
+	jp	c, NEW_STAGE ; yes: go to next stage
+	; jp	z, MAIN_MENU ; tutorial finished: main menu directly
 	
-; Stage over screen
-	;	...
+; Is the end of a zone?
+	ld	d, 1 ; (initializes zone counter)
+	dec	a ; (eases calculation)
+.LOOP:
+	sub	STAGES_PER_ZONE
+	jr	z, ZONE_OVER ; yes: go to "zone over" screen
+	jp	c, NEW_STAGE ; no: go to next stage
+	inc	d ; (increases zone counter)
+	jr	.LOOP
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Zone over (after a group of stages) "congratulations" screen
+ZONE_OVER:
+	push	de ; (preserves zone counter)
 	
-; Go to the next stage
+; Prepares the "zone over" screen
+	call	CLS_NAMTBL
+	
+; "SORRY, STEVEDORE"
+	ld	hl, TXT_ZONE_OVER
+	ld	de, namtbl_buffer + 6 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+
+; "BUT THE LIGHTHOUSE KEEPER"
+	inc	hl ; (next text)
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+
+; Searchs for the correct text
+	pop	de ; (restores zone counter)
+	inc	hl ; (points to the first text)
+.SKIP_TEXT:
+	dec	d
+	jr	z, .TEXT_FOUND ; text found
+; Moves the pointer to the next text
+	xor	a ; (looks for $00)
+	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
+	cpir
+; Repeats the loop
+	jr	.SKIP_TEXT
+	
+; "IS IN ANOTHER BUILDING!" and similar texts
+.TEXT_FOUND:
+	ld	de, namtbl_buffer + 10 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+
+; Fade in
+	call	ENASCR_FADE_IN
+
+; ...
+	ld	hl, .PLAYER_0
+	ld	de, player
+	ld	bc, PLAYER_0.SIZE
+	ldir
+	call	PUT_PLAYER_SPRITE
+	
+.LOOP:
+	halt
+	call	LDIRVM_SPRATR
+
+	call	MOVE_PLAYER_RIGHT
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+	
+	; call	READ_INPUT
+	; and	1 << BIT_TRIGGER_A
+	; jr	z, .LOOP
+	
+	ld	a, [player.x]
+	cp	256-8
+	jr	nz, .LOOP
+	
+; Pause and go to next stage
+	; call	WAIT_TRIGGER_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
 	jp	NEW_STAGE
+
+; .SPRATR_0:
+; ; Player sprites
+	; db	111, 120, $00, PLAYER_SPRITE_COLOR_1
+	; db	111, 120, $04, PLAYER_SPRITE_COLOR_2
+; ; SPAT end marker
+	; db	SPAT_END
+.PLAYER_0:
+	db	128, 16			; .y, .x
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
