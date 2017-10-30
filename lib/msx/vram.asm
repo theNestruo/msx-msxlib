@@ -284,7 +284,7 @@ LDIRVM_NAMTBL_FADE_INOUT:
 
 
 ; =============================================================================
-;	NAMTBL buffer text routines
+;	NAMTBL buffer text and block routines
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
@@ -396,6 +396,26 @@ PRINT_BCD:
 	pop	af
 ; Restores original [hl] value	
 	rld
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+PRINT_BLOCK:
+; For each row
+	push	bc ; preserves counters
+	push	de ; preserves destination
+; For each byte in the row
+	ld	b, 0
+	ldir
+; Prepares for the next row
+	ex	de, hl ; preserves updated source (hl) in de
+	pop	hl ; restores destination in hl
+	ld	bc, SCR_WIDTH
+	add	hl, bc
+	ex	de, hl ; restores source and destination in hl and de
+	pop	bc ; restores counters
+; Checks next row
+	djnz	PRINT_BLOCK
 	ret
 ; -----------------------------------------------------------------------------
 

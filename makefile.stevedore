@@ -21,6 +21,7 @@ DATAS=\
 	$(GAME_PATH)\gfx\charset_dynamic.pcx.clr \
 	$(GAME_PATH)\gfx\sprites.pcx.spr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\test_screen.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_select.tmx.bin \
 	$(GAME_PATH)\maps\intro_screen.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\intro_stage.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_01.tmx.bin.$(PACK_EXTENSION) \
@@ -32,7 +33,12 @@ DATAS=\
 	$(GAME_PATH)\maps\stage_07.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_08.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_09.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\maps\stage_10.tmx.bin.$(PACK_EXTENSION)
+	$(GAME_PATH)\maps\stage_10.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sfx\warehouse.mus \
+	$(GAME_PATH)\sfx\warehouse.mus.asm \
+	$(GAME_PATH)\sfx\ship.mus \
+	$(GAME_PATH)\sfx\ship.mus.asm
+	
 
 DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\gfx\charset.pcx.chr \

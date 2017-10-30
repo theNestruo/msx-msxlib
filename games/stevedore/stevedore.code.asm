@@ -10,7 +10,7 @@
 	FRAMES_TO_PUSH:		equ 12
 
 ; Number of stages per zone
-	TUTORIAL_STAGES:	equ 5
+	TUTORIAL_STAGES:	equ 6
 	STAGES_PER_ZONE:	equ 5
 	
 ; The flags the define the state of the stage
@@ -18,7 +18,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 10
+	; DEBUG_STAGE:		equ 10
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -55,6 +55,7 @@ INTRO:
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
+	; xor	a ; DEBUG LINE
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 IFEXIST DEBUG_STAGE
@@ -84,10 +85,6 @@ ENDIF
 ; Fade in
 	call	ENASCR_FADE_IN
 	call	LDIRVM_SPRATR
-
-; Loads song #1
-	ld	a, 1
-	call	REPLAYER.PLAY
 
 ; Intro sequence #1: "Push space key"
 	call	WAIT_TRIGGER_FOUR_SECONDS ; (courtesy pause)
@@ -128,6 +125,10 @@ ENDIF
 	jr	z, .FALL_LOOP ; no
 
 ; Intro sequence #3: the darkness
+
+; Loads song #0 (warehouse)
+	ld	a, 1
+	call	REPLAYER.PLAY
 
 ; Sets the player crashed (sprite only)
 	ld	a, PLAYER_SPRITE_INTRO_PATTERN
@@ -182,7 +183,7 @@ ENDIF
 	call	LDIRVM_SPRATR
 ; Fade in-out with the playable intro screen and enter the game
 	call	LDIRVM_NAMTBL_FADE_INOUT.KEEP_SPRITES
-	jr	GAME_LOOP
+	jp	GAME_LOOP
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -196,18 +197,39 @@ MAIN_MENU:
 	call	CLS_NAMTBL
 	
 	;	...TBD...
-	ld	hl, TXT_STAGE_SELECT
-	ld	de, namtbl_buffer + 16 * SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
+	; ld	hl, TXT_STAGE_SELECT
+	; ld	de, namtbl_buffer + 16 * SCR_WIDTH
+	; call	PRINT_CENTERED_TEXT
 
 	call	PRINT_SELECTED_STAGE
 	
-	ld	hl, TXT_PUSH_SPACE_KEY
-	ld	de, namtbl_buffer + 21 * SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
+	ld	hl, STAGE_SELECT.FLOOR_CHARS
+	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 13
+	ld	bc, 6 ; 6 bytes
+	ldir
+	
+	; ld	hl, TXT_PUSH_SPACE_KEY
+	; ld	de, namtbl_buffer + 21 * SCR_WIDTH
+	; call	PRINT_CENTERED_TEXT
+	
+	call	CLS_SPRATR
+	
+; Initializes sprite attribute table (SPRATR)
+	ld	hl, SPRATR_0
+	ld	de, spratr_buffer
+	ld	bc, SPRATR_SIZE
+	ldir
+
+	
+	ld	hl, STAGE_SELECT.PLAYER_0
+	ld	de, player
+	ld	bc, PLAYER_0.SIZE
+	ldir
+	call	PUT_PLAYER_SPRITE
 	
 ; Fade in
 	call	ENASCR_FADE_IN
+	call	LDIRVM_SPRATR
 
 ; Main menu loop
 	call	WAIT_TRIGGER ; (temporary patch)
@@ -350,7 +372,7 @@ ENDIF
 	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_FINISH
 	jr	z, STAGE_OVER ; stage over
-	jr	PLAYER_OVER ; player is dead
+	jp	PLAYER_OVER ; player is dead
 	; cp	PLAYER_STATE_DEAD
 	; jr	z, PLAYER_OVER ; player is dead
 
@@ -393,7 +415,12 @@ STAGE_OVER:
 	call	DISSCR_FADE_OUT
 
 ; Next stage logic
-	ld	hl, game.stage
+	ld	hl, game.stage_bcd
+	ld	a, [hl]
+	add	1
+	daa
+	ld	[hl], a
+	dec	hl ; game.stage
 	inc	[hl]
 	
 ; Is a tutorial stage?
@@ -420,6 +447,7 @@ ZONE_OVER:
 	
 ; Prepares the "zone over" screen
 	call	CLS_NAMTBL
+	call	RESET_SPRITES
 	
 ; "SORRY, STEVEDORE"
 	ld	hl, TXT_ZONE_OVER
@@ -480,12 +508,7 @@ ZONE_OVER:
 	call	DISSCR_FADE_OUT
 	jp	NEW_STAGE
 
-; .SPRATR_0:
-; ; Player sprites
-	; db	111, 120, $00, PLAYER_SPRITE_COLOR_1
-	; db	111, 120, $04, PLAYER_SPRITE_COLOR_2
-; ; SPAT end marker
-	; db	SPAT_END
+; Initial player vars
 .PLAYER_0:
 	db	128, 16			; .y, .x
 	db	0			; .animation_delay
@@ -541,38 +564,77 @@ GAME_OVER:
 
 ; -----------------------------------------------------------------------------
 PRINT_SELECTED_STAGE:
-	ld	hl, namtbl_buffer + 18 * SCR_WIDTH + 4
-	call	CLEAR_LINE
+	ld	hl, STAGE_SELECT.NAMTBL
+	ld	de, namtbl_buffer + 11 * SCR_WIDTH + 14
 	
-	ld	hl, menu.selected_stage
-	xor	a
-	cp	[hl]
-	jr	z, .NO_LEFT
-	ld	a, $3c ; "<"
-	ld	[namtbl_buffer + 18 * SCR_WIDTH + 4], a
-.NO_LEFT:
 	ld	a, [globals.max_stage]
-	cp	[hl]
-	jr	z, .NO_RIGHT
-	ld	a, $3e ; ">"
-	ld	[namtbl_buffer + 18 * SCR_WIDTH + 27], a
-.NO_RIGHT:
+	sub	TUTORIAL_STAGES +1
+	jr	z, .PRINT
+	jr	c, .PRINT
 	
-	ld	hl, TXT_STAGE_SELECT._0
-	ld	a, [menu.selected_stage]
+	ld	b, 1
+
 .LOOP:
+	dec	de
+	dec	de
+	dec	de
 	sub	STAGES_PER_ZONE
-	jr	c, .HL_OK
-	push	af
-	inc	hl
-	xor	a
-	ld	bc, 32
-	cpir
-	pop	af
+	jr	z, .PRINT_MANY
+	jr	c, .PRINT_MANY
+	inc	b
 	jr	.LOOP
-.HL_OK:
-	ld	de, namtbl_buffer + 18 * SCR_WIDTH
-	jp	PRINT_CENTERED_TEXT
+	
+.PRINT_MANY:
+	push	bc
+	push	de
+	call	.PRINT
+	pop	de
+	ex	de, hl
+	ld	bc, 6
+	add	hl, bc
+	ex	de, hl
+	pop	bc
+	djnz	.PRINT_MANY
+	
+.PRINT:
+	ld	bc, STAGE_SELECT.HEIGHT << 8 + STAGE_SELECT.WIDTH
+	jp	PRINT_BLOCK
+
+
+
+
+	; ld	hl, namtbl_buffer + 18 * SCR_WIDTH + 4
+	; call	CLEAR_LINE
+	
+	; ld	hl, menu.selected_stage
+	; xor	a
+	; cp	[hl]
+	; jr	z, .NO_LEFT
+	; ld	a, $3c ; "<"
+	; ld	[namtbl_buffer + 18 * SCR_WIDTH + 4], a
+; .NO_LEFT:
+	; ld	a, [globals.max_stage]
+	; cp	[hl]
+	; jr	z, .NO_RIGHT
+	; ld	a, $3e ; ">"
+	; ld	[namtbl_buffer + 18 * SCR_WIDTH + 27], a
+; .NO_RIGHT:
+	
+	; ld	hl, TXT_STAGE_SELECT._0
+	; ld	a, [menu.selected_stage]
+; .LOOP:
+	; sub	STAGES_PER_ZONE
+	; jr	c, .HL_OK
+	; push	af
+	; inc	hl
+	; xor	a
+	; ld	bc, 32
+	; cpir
+	; pop	af
+	; jr	.LOOP
+; .HL_OK:
+	; ld	de, namtbl_buffer + 18 * SCR_WIDTH
+	; jp	PRINT_CENTERED_TEXT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1166,9 +1228,9 @@ ON_PLAYER_WALK_ON:
 ; -----------------------------------------------------------------------------
 ; Wide tile collision (player width)
 ON_PLAYER_WIDE_ON:
-; Cursor down?
-	ld	hl, input.edge
-	bit	BIT_STICK_DOWN, [hl]
+; Cursor up or down?
+	ld	a, [input.edge]
+	and	(1 << BIT_STICK_UP) OR (1 << BIT_STICK_DOWN)
 	ret	z ; no
 ; Key picked up?
 	ld	hl, stage.flags

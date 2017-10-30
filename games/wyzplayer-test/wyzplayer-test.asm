@@ -51,11 +51,13 @@ ROM_START:
 TABLA_SONG:
 	dw	.SONG_0
 .SONG_0:
-	; incbin	"games/wyzplayer-test/knightmare_start.mus"
-	incbin	"games/wyzplayer-test/external.mus"
+	incbin	"games/wyzplayer-test/knightmare_start.mus"
+	; incbin	"games/wyzplayer-test/external.mus"
+	; incbin	"games/wyzplayer-test/steve10.mus"
 
-	; include	"games/wyzplayer-test/knightmare_start.mus.asm"
-	include	"games/wyzplayer-test/external.mus.asm"
+	include	"games/wyzplayer-test/knightmare_start.mus.asm"
+	; include	"games/wyzplayer-test/external.mus.asm"
+	; include	"games/wyzplayer-test/steve10.mus.asm"
 
 ; Padding to a 8kB boundary
 	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38

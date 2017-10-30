@@ -92,7 +92,10 @@ CFG_CUSTOM_PALETTE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Replayer routines (WYZPlayer v0.47c-based implementation)
+; Replayer routines
+
+	; CFG_REPLAYER:		equ CFG_REPLAYER_WYZPLAYER
+	CFG_REPLAYER:		equ CFG_REPLAYER_PT3PLAYER
 
 ; Define to enable the ability of installing the replayer in the interrupt
 	CFG_REPLAYER_INSTALLABLE:

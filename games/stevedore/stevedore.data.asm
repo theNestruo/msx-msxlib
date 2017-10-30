@@ -197,6 +197,22 @@ BULLET_0:
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
+STAGE_SELECT:
+.NAMTBL:
+	incbin	"games/stevedore/maps/stage_select.tmx.bin"
+
+	.WIDTH:		equ 4
+	.HEIGHT:	equ 8	
+
+.FLOOR_CHARS:
+	db	$01, $02, $84, $85, $10, $01 ; 6 bytes
+	
+.PLAYER_0:
+	db	176, 128		; .y, .x
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
+	
 INTRO_DATA:
 
 .NAMTBL_PACKED:
@@ -348,21 +364,20 @@ SPRTBL_PACKED:
 ; -----------------------------------------------------------------------------
 ; WYZPlayer data
 TABLA_SONG:
-	dw	.SONG_0, .SONG_1, .SONG_2, .SONG_3, .SONG_4, .SONG_5
+	dw	.SONG_0, .SONG_1, .SONG_2, .SONG_3, .SONG_4
+.PT3:	
+	incbin	"games/stevedore/sfx/warehouse.pt3"
 .SONG_0:
-	incbin	"games/stevedore/sfx/UWOLFantasma.mus"
+	incbin	"games/stevedore/sfx/warehouse.mus"
 .SONG_1:
-	incbin	"games/stevedore/sfx/UWOLPiramide.mus"
+	incbin	"games/stevedore/sfx/ship.mus"
 .SONG_2:
-	incbin	"games/stevedore/sfx/UWOLGameOver.mus"
 .SONG_3:
-	incbin	"games/stevedore/sfx/UWOLEndingKO.mus"
 .SONG_4:
-	incbin	"games/stevedore/sfx/UWOLEndingOK.mus"
-.SONG_5:
-	incbin	"games/stevedore/sfx/DonusTrak.mus"
 
-	include	"games/stevedore/sfx/uwol.mus.asm"
+	; include	"games/stevedore/sfx/warehouse.mus.asm"
+	include	"games/stevedore/sfx/ship.mus.asm"
+
 ; -----------------------------------------------------------------------------
 		
 ; EOF
