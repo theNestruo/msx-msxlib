@@ -13,38 +13,6 @@ ROM_START:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Data
-
-; RAM check warning text
-IFDEF CFG_INIT_16KB_RAM
-.TXT:
-	db	"16KB RAM REQUIRED"
-	.TXT_SIZE:	equ $ - .TXT
-ENDIF ; CFG_INIT_16KB_RAM
-
-; Frame rate related values
-.FRAME_RATE_50HZ_0:
-	db	50	; frame rate
-	db	5	; frames per tenth
-	
-.FRAME_RATE_60HZ_0:
-	db	60	; frame rate
-	db	6	; frames per tenth
-	
-	.FRAME_RATE_SIZE:	equ $ - .FRAME_RATE_60HZ_0
-	
-IFEXIST SET_PALETTE
-IFEXIST CFG_CUSTOM_PALETTE
-ELSE
-.COOL_COLORS_PALETTE:
-; CoolColors (c) Fabio R. Schmidlin, 1997
-	dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
-	dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
-ENDIF ; CFG_CUSTOM_PALETTE
-ENDIF ; SET_PALETTE
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Cartridge entry point
 ; System initialization: stack pointer, slots, RAM, CPU, VDP, PSG, etc.
 .INIT:
@@ -156,6 +124,14 @@ ENDIF
 	ld	[hl], 0
 	ldir
 
+; PSG: silence
+	call	GICINI
+	
+; Initializes the replayer
+IFEXIST REPLAYER.RESET
+	call	REPLAYER.RESET
+ENDIF
+
 ; Frame rate related variables
 ; Chooses the proper source (50Hz or 60Hz)
 	ld	a, [MSXID1]
@@ -168,14 +144,86 @@ ENDIF
 .HL_OK:
 ; blits the correct entry
 	ld	de, frame_rate
-	; ld	bc, .FRAME_RATE_SIZE ; (unecessary)
+	ld	bc, .FRAME_RATE_SIZE_ ; (unecessary)
 	ldir
-
-; PSG: silence
-	call	GICINI
+IFEXIST REPLAYER.FRAME
+; Installs the replayer hook in the interruption
+	push	hl ; (preseves source)
+; Preserves the existing hook
+	ld	hl, HTIMI
+	ld	de, previous_htimi_hook
+	ld	bc, HOOK_SIZE
+	ldir
+; Install the replayer hook
+	di
+	pop	hl ; (restores source)
+	ld	de, HTIMI
+	ld	bc, HOOK_SIZE
+	ldir
+	ei
+ENDIF
 
 ; Skips to the game entry point
 	jp	MAIN_INIT
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Data
+
+; RAM check warning text
+IFDEF CFG_INIT_16KB_RAM
+.TXT:
+	db	"16KB RAM REQUIRED"
+	.TXT_SIZE:	equ $ - .TXT
+ENDIF ; CFG_INIT_16KB_RAM
+
+; Frame rate related values
+.FRAME_RATE_50HZ_0:
+	db	50	; frame rate
+	db	5	; frames per tenth
+	.FRAME_RATE_SIZE_:	equ $ - .FRAME_RATE_50HZ_0
+IFEXIST REPLAYER.FRAME
+	jp	.HTIMI_HOOK
+	ret		; (padding to match HOOK_SIZE)
+	ret
+ENDIF
+	.FRAME_RATE_SIZE:	equ $ - .FRAME_RATE_50HZ_0
+	
+.FRAME_RATE_60HZ_0:
+	db	60	; frame rate
+	db	6	; frames per tenth
+IFEXIST REPLAYER.FRAME
+	jp	.HTIMI_HOOK_FRAMESKIP
+	ret		; (padding to match HOOK_SIZE)
+	ret
+ENDIF
+	
+	
+IFEXIST SET_PALETTE
+IFEXIST CFG_CUSTOM_PALETTE
+ELSE
+.COOL_COLORS_PALETTE:
+; CoolColors (c) Fabio R. Schmidlin, 1997
+	dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
+	dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
+ENDIF ; CFG_CUSTOM_PALETTE
+ENDIF ; SET_PALETTE
+
+
+; Hook
+.HTIMI_HOOK_FRAMESKIP:
+	ld	hl, replayer_frameskip
+	inc	[hl]
+	ld	a, [hl]
+	sub	6
+	jr	nz, .HTIMI_HOOK
+	ld	[replayer_frameskip], a
+	jp	previous_htimi_hook
+
+; H.TIMI hook that invokes both the replayer and the previously existing hook
+.HTIMI_HOOK:	
+	call	REPLAYER.FRAME
+	jp	previous_htimi_hook
 ; -----------------------------------------------------------------------------
 
 ; EOF

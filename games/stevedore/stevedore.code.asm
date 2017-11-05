@@ -44,8 +44,8 @@ MAIN_INIT:
 	ldir
 	
 ; Initializes the replayer and installs it in the interruption
-	call	REPLAYER.RESET
-	call	REPLAYER.INSTALL
+	; call	REPLAYER.RESET
+	; call	INSTALL_REPLAYER
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
@@ -67,8 +67,8 @@ IFEXIST DEBUG_STAGE
 	ld	[game.stage], a
 	call	LOAD_AND_INIT_CURRENT_STAGE
 	call	ENASCR_NO_FADE
-; Loads song #0
-	xor	a
+; Loads song #1
+	ld	a, 1
 	call	REPLAYER.PLAY
 ; Directly to game loop
 	jp	GAME_LOOP
@@ -127,7 +127,7 @@ ENDIF
 ; Intro sequence #3: the darkness
 
 ; Loads song #0 (warehouse)
-	ld	a, 1
+	xor	a
 	call	REPLAYER.PLAY
 
 ; Sets the player crashed (sprite only)

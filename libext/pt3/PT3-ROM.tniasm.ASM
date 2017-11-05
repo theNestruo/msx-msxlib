@@ -2,6 +2,7 @@
 		; --- Can be assembled with asMSX ---
 		; --- ROM version: MSX-KUN        ---
 		; --- asMSX version: SapphiRe     ---
+		; --- tniasm version: theNestruo  ---
 
 ; Based on MSX version of PT3 by Dioniso
 ;

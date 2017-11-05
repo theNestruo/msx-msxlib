@@ -34,10 +34,10 @@ DATAS=\
 	$(GAME_PATH)\maps\stage_08.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_09.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_10.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\sfx\warehouse.mus \
-	$(GAME_PATH)\sfx\warehouse.mus.asm \
-	$(GAME_PATH)\sfx\ship.mus \
-	$(GAME_PATH)\sfx\ship.mus.asm
+	$(GAME_PATH)\sfx\warehouse.pt3 \
+	$(GAME_PATH)\sfx\warehouse.pt3.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sfx\ship.pt3 \
+	$(GAME_PATH)\sfx\ship.pt3.$(PACK_EXTENSION)
 	
 
 DATAS_INTERMEDIATE=\
@@ -112,6 +112,9 @@ SRCS_MSXLIB=\
 	lib\msx\cartridge.ram.asm \
 	lib\msx\input.asm \
 	lib\msx\input.ram.asm \
+	lib\msx\replayer_pt3.asm \
+	lib\msx\replayer_wyz.asm \
+	lib\msx\replayer.ram.asm \
 	lib\msx\vram.asm \
 	lib\msx\vram_msx2.asm \
 	lib\msx\vram_x.asm \
@@ -129,6 +132,8 @@ SRCS_MSXLIB=\
 
 SRCS_LIBEXT=\
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
+	libext\pt3\PT3-ROM.tniasm.ASM \
+	libext\pt3\PT3-RAM.tniasm.ASM \
 	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
 	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
 	libext\zx7\dzx7_standard.tniasm.asm

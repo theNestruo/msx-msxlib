@@ -94,14 +94,10 @@ CFG_CUSTOM_PALETTE:
 ; -----------------------------------------------------------------------------
 ; Replayer routines
 
-	; CFG_REPLAYER:		equ CFG_REPLAYER_WYZPLAYER
-	CFG_REPLAYER:		equ CFG_REPLAYER_PT3PLAYER
-
-; Define to enable the ability of installing the replayer in the interrupt
-	CFG_REPLAYER_INSTALLABLE:
-
-; Replayer routines (WYZPlayer v0.47c-based implementation)
-	include	"lib\msx\replayer.asm"
+; PT3-based implementation
+	include	"lib\msx\replayer_pt3.asm"
+; WYZPlayer v0.47c-based implementation
+	; include	"lib\msx\replayer_wyz.asm"
 ; -----------------------------------------------------------------------------
 
 
