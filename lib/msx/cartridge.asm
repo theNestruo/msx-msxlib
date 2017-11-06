@@ -151,7 +151,7 @@ IFEXIST REPLAYER.FRAME
 	push	hl ; (preseves source)
 ; Preserves the existing hook
 	ld	hl, HTIMI
-	ld	de, previous_htimi_hook
+	ld	de, replayer.old_htimi_hook
 	ld	bc, HOOK_SIZE
 	ldir
 ; Install the replayer hook
@@ -212,18 +212,18 @@ ENDIF ; SET_PALETTE
 
 ; Hook
 .HTIMI_HOOK_FRAMESKIP:
-	ld	hl, replayer_frameskip
+	ld	hl, replayer.frameskip
 	inc	[hl]
 	ld	a, [hl]
 	sub	6
 	jr	nz, .HTIMI_HOOK
-	ld	[replayer_frameskip], a
-	jp	previous_htimi_hook
+	ld	[hl], a
+	jp	replayer.old_htimi_hook
 
 ; H.TIMI hook that invokes both the replayer and the previously existing hook
 .HTIMI_HOOK:	
 	call	REPLAYER.FRAME
-	jp	previous_htimi_hook
+	jp	replayer.old_htimi_hook
 ; -----------------------------------------------------------------------------
 
 ; EOF

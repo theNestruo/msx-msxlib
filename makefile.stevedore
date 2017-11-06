@@ -34,10 +34,8 @@ DATAS=\
 	$(GAME_PATH)\maps\stage_08.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_09.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_10.tmx.bin.$(PACK_EXTENSION) \
-	$(GAME_PATH)\sfx\warehouse.pt3 \
-	$(GAME_PATH)\sfx\warehouse.pt3.$(PACK_EXTENSION) \
-	$(GAME_PATH)\sfx\ship.pt3 \
-	$(GAME_PATH)\sfx\ship.pt3.$(PACK_EXTENSION)
+	$(GAME_PATH)\sfx\warehouse.pt3.hl.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sfx\ship.pt3.hl.$(PACK_EXTENSION)
 	
 
 DATAS_INTERMEDIATE=\
@@ -56,7 +54,9 @@ DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\maps\stage_07.tmx.bin \
 	$(GAME_PATH)\maps\stage_08.tmx.bin \
 	$(GAME_PATH)\maps\stage_09.tmx.bin \
-	$(GAME_PATH)\maps\stage_10.tmx.bin
+	$(GAME_PATH)\maps\stage_10.tmx.bin \
+	$(GAME_PATH)\sfx\warehouse.pt3.hl \
+	$(GAME_PATH)\sfx\ship.pt3.hl \
 
 #
 # tools
@@ -227,3 +227,14 @@ $(ROM): $(ROM_INTERMEDIATE)
 
 %.tmx.bin: %.tmx
 	$(TMX2BIN) $< $@
+
+#
+# SFXs targets
+#
+
+%.pt3.hl.$(PACK_EXTENSION): %.pt3.hl
+	$(REMOVE) $@
+	$(PACK) $<
+
+warehouse.pt3.hl ship.pt3.hl: $(GAME_PATH)\sfx\headerless.asm warehouse.pt3 ship.pt3
+	$(ASM) $<

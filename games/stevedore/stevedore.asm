@@ -94,6 +94,12 @@ CFG_CUSTOM_PALETTE:
 ; -----------------------------------------------------------------------------
 ; Replayer routines
 
+; Define to enable packed songs when using the PT3-based implementation
+	CFG_PT3_PACKED:
+	
+; Define to use headerless PT3 files (without first 100 bytes)
+	CFG_PT3_HEADERLESS:
+
 ; PT3-based implementation
 	include	"lib\msx\replayer_pt3.asm"
 ; WYZPlayer v0.47c-based implementation

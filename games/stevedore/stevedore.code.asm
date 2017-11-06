@@ -42,10 +42,6 @@ MAIN_INIT:
 	ld	de, globals
 	ld	bc, GLOBALS_0.SIZE
 	ldir
-	
-; Initializes the replayer and installs it in the interruption
-	; call	REPLAYER.RESET
-	; call	INSTALL_REPLAYER
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
@@ -126,16 +122,16 @@ ENDIF
 
 ; Intro sequence #3: the darkness
 
-; Loads song #0 (warehouse)
-	xor	a
-	call	REPLAYER.PLAY
-
 ; Sets the player crashed (sprite only)
 	ld	a, PLAYER_SPRITE_INTRO_PATTERN
 	ld	[player_spratr.pattern], a
 	add	4
 	ld	[player_spratr.pattern +4], a
 	call	LDIRVM_SPRATR
+
+; Loads song #0 (warehouse), looped
+	xor	a
+	call	REPLAYER.PLAY
 
 ; Slow fade out
 	ld	hl, NAMTBL

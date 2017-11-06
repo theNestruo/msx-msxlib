@@ -366,17 +366,17 @@ SPRTBL_PACKED:
 TABLA_SONG:
 	dw	.SONG_0, .SONG_1
 .SONG_0:
-	incbin	"games/stevedore/sfx/warehouse.pt3"
+	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
 .SONG_1:
-	incbin	"games/stevedore/sfx/ship.pt3"
+	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_2:
-	incbin	"games/stevedore/sfx/warehouse.pt3"
+	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
 .SONG_3:
-	incbin	"games/stevedore/sfx/ship.pt3"
+	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_4:
-	incbin	"games/stevedore/sfx/warehouse.pt3"
+	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
 .SONG_5:
-	incbin	"games/stevedore/sfx/ship.pt3"
+	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

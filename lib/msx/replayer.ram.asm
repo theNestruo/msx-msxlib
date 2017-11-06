@@ -6,17 +6,19 @@
 ; -----------------------------------------------------------------------------
 IFDEF REPLAYER.FRAME
 
-; Backup of the H.TIMI hook previous to the installation of the replayer hook
-previous_htimi_hook:
-	rb	HOOK_SIZE
-	
+replayer:
+
 ; 60Hz replayer syncrhonization
-replayer_frameskip:
+.frameskip:
 	rb	1
+
+; Backup of the H.TIMI hook previous to the installation of the replayer hook
+.old_htimi_hook:
+	rb	HOOK_SIZE
 
 ENDIF
 
-IF CFG_REPLAYER_PT3PLAYER
+IFDEF CFG_REPLAYER_PT3
 
 ; PT3 variables
 	include	"libext/pt3/PT3-RAM.tniasm.ASM"
