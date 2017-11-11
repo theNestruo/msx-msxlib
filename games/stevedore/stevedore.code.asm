@@ -10,8 +10,11 @@
 	FRAMES_TO_PUSH:		equ 12
 
 ; Number of stages per zone
-	TUTORIAL_STAGES:	equ 6
 	STAGES_PER_ZONE:	equ 5
+	
+; Tutorial stages
+	FIRST_TUTORIAL_STAGE:	equ 25
+	LAST_TUTORIAL_STAGE:	equ 31
 	
 ; The flags the define the state of the stage
 	BIT_STAGE_KEY:		equ 0 ; Key picked up
@@ -51,7 +54,7 @@ INTRO:
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
-	; xor	a ; DEBUG LINE
+	xor	a ; DEBUG LINE
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 IFEXIST DEBUG_STAGE
@@ -63,9 +66,6 @@ IFEXIST DEBUG_STAGE
 	ld	[game.stage], a
 	call	LOAD_AND_INIT_CURRENT_STAGE
 	call	ENASCR_NO_FADE
-; Loads song #1
-	ld	a, 1
-	call	REPLAYER.PLAY
 ; Directly to game loop
 	jp	GAME_LOOP
 .DONT_USE_DEBUG_STAGE:
@@ -159,12 +159,15 @@ ENDIF
 
 ; Intro sequence #4: the awakening
 
-; Loads first tutorial stage screen into NAMTBL buffer
-	ld	hl, NAMTBL_PACKED_TABLE.INTRO_STAGE
-	ld	de, namtbl_buffer
-	call	UNPACK
-; Mimics in-game loop preamble and initialization	
-	call	INIT_STAGE
+; ; Loads first tutorial stage screen into NAMTBL buffer
+	; ld	hl, NAMTBL_PACKED_TABLE.INTRO_STAGE
+	; ld	de, namtbl_buffer
+	; call	UNPACK
+; ; Mimics in-game loop preamble and initialization	
+	; call	INIT_STAGE
+	ld	a, FIRST_TUTORIAL_STAGE
+	ld	[game.stage], a
+	call	LOAD_AND_INIT_CURRENT_STAGE
 	
 ; Pauses until trigger
 .TRIGGER_LOOP_2:
@@ -186,53 +189,58 @@ ENDIF
 ; Main menu
 MAIN_MENU:
 ; Main menu entry point and initialization
-	ld	a, [globals.max_stage]
-	ld	[menu.selected_stage], a
+	ld	a, [globals.zones]
+	ld	[menu.selected_zone], a
+	ld	hl, STAGE_SELECT.LUT
+	ld	de, menu
+	ld	bc, STAGE_SELECT.LUT_SIZE
+.LUT_LOOP:
+	dec	a
+	jr	z, .LUT_OK
+	add	hl, bc
+	jr	.LUT_LOOP
+.LUT_OK:
+	ldir
 	
 ; Main menu draw
 	call	CLS_NAMTBL
-	
-	;	...TBD...
-	; ld	hl, TXT_STAGE_SELECT
-	; ld	de, namtbl_buffer + 16 * SCR_WIDTH
-	; call	PRINT_CENTERED_TEXT
-
-	call	PRINT_SELECTED_STAGE
-	
-	ld	hl, STAGE_SELECT.FLOOR_CHARS
-	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 13
-	ld	bc, 6 ; 6 bytes
-	ldir
-	
-	; ld	hl, TXT_PUSH_SPACE_KEY
-	; ld	de, namtbl_buffer + 21 * SCR_WIDTH
-	; call	PRINT_CENTERED_TEXT
-	
 	call	CLS_SPRATR
+	call	PRINT_STAGE_SELECT_OPTIONS
 	
 ; Initializes sprite attribute table (SPRATR)
 	ld	hl, SPRATR_0
 	ld	de, spratr_buffer
 	ld	bc, SPRATR_SIZE
 	ldir
-
-	
-	ld	hl, STAGE_SELECT.PLAYER_0
+	ld	hl, PLAYER_0
 	ld	de, player
 	ld	bc, PLAYER_0.SIZE
 	ldir
-	call	PUT_PLAYER_SPRITE
+	call	UPDATE_STAGE_SELECT_PLAYER
 	
-; Fade in
+; Fade in and player appearing
 	call	ENASCR_FADE_IN
-	call	LDIRVM_SPRATR
-
+	call	PLAYER_APPEARING_ANIMATION
+	
 ; Main menu loop
-	call	WAIT_TRIGGER ; (temporary patch)
-; .LOOP:
-	; halt
-	;	...TBD...
-	; jr	.LOOP
+.LOOP:
+	halt
+	call	LDIRVM_SPRATR
+; Player animation
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+; Reads and checks input
+	call	READ_INPUT
+	ld	a, [input.edge]
+	bit	BIT_TRIGGER_A, a
+	jr	nz, .OK
+	or	a
+	call	nz, STAGE_SELECT_INPUT
+	jr	.LOOP
+
+.OK:
+; Player disappearing
+	call	PLAYER_DISAPPEARING_ANIMATION
 	
 ; Fade out
 	call	DISSCR_FADE_OUT
@@ -247,7 +255,7 @@ NEW_GAME:
 	ld	bc, GAME_0.SIZE
 	ldir
 ; (temporary patch)
-	ld	a, [menu.selected_stage]
+	ld	a, [menu.selected_zone]
 	ld	[game.stage], a
 	add	0
 	daa
@@ -259,8 +267,8 @@ NEW_GAME:
 NEW_STAGE:
 ; Skip this section in tutorial stages
 	ld	a, [game.stage]
-	cp	TUTORIAL_STAGES
-	jr	nc, .NORMAL
+	cp	FIRST_TUTORIAL_STAGE
+	jr	c, .NORMAL
 	
 ; Tutorial stage (quick init)
 
@@ -421,13 +429,13 @@ STAGE_OVER:
 	
 ; Is a tutorial stage?
 	ld	a, [hl] ; game.stage
-	cp	TUTORIAL_STAGES
-	jp	c, NEW_STAGE ; yes: go to next stage
-	; jp	z, MAIN_MENU ; tutorial finished: main menu directly
+	cp	LAST_TUTORIAL_STAGE
+	jp	z, MAIN_MENU ; tutorial finished: main menu directly
+	cp	FIRST_TUTORIAL_STAGE
+	jp	nc, NEW_STAGE ; yes: go to next stage
 	
 ; Is the end of a zone?
 	ld	d, 1 ; (initializes zone counter)
-	dec	a ; (eases calculation)
 .LOOP:
 	sub	STAGES_PER_ZONE
 	jr	z, ZONE_OVER ; yes: go to "zone over" screen
@@ -520,8 +528,8 @@ PLAYER_OVER:
 	
 ; Is it a tutorial stage?
 	ld	a, [game.stage]
-	cp	TUTORIAL_STAGES
-	jp	c, NEW_STAGE ; yes: re-enter current stage, no life lost
+	cp	FIRST_TUTORIAL_STAGE
+	jp	nc, NEW_STAGE ; yes: re-enter current stage, no life lost
 	
 ; Life loss logic
 	ld	hl, game.lives
@@ -559,78 +567,148 @@ GAME_OVER:
 ;
 
 ; -----------------------------------------------------------------------------
-PRINT_SELECTED_STAGE:
+PRINT_STAGE_SELECT_OPTIONS:
+; Prints the blocks depending on globals.max_stage
 	ld	hl, STAGE_SELECT.NAMTBL
-	ld	de, namtbl_buffer + 11 * SCR_WIDTH + 14
-	
-	ld	a, [globals.max_stage]
-	sub	TUTORIAL_STAGES +1
-	jr	z, .PRINT
-	jr	c, .PRINT
-	
-	ld	b, 1
-
-.LOOP:
-	dec	de
-	dec	de
-	dec	de
-	sub	STAGES_PER_ZONE
-	jr	z, .PRINT_MANY
-	jr	c, .PRINT_MANY
-	inc	b
-	jr	.LOOP
-	
-.PRINT_MANY:
-	push	bc
-	push	de
-	call	.PRINT
-	pop	de
-	ex	de, hl
+	ld	de, [menu.namtbl_buffer_origin]
+	ld	a, [globals.zones]
+	ld	b, a
+.PRINT_LOOP:
+	push	bc ; preserves counter
+	push	de ; preserves coordinates
+; Prints the block
+	ld	bc, STAGE_SELECT.HEIGHT << 8 + STAGE_SELECT.WIDTH
+	call	PRINT_BLOCK
+; Advances to the next block
+	pop	de ; restores coordinates
+	ex	de, hl ; coordinates += (6,0)
 	ld	bc, 6
 	add	hl, bc
 	ex	de, hl
-	pop	bc
-	djnz	.PRINT_MANY
+	pop	bc ; restores counter
+	djnz	.PRINT_LOOP
+; Prints the tutorial option
+	ld	hl, STAGE_SELECT.FLOOR_CHARS
+	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 13
+	ld	bc, 6 ; 6 bytes
+	ldir
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+STAGE_SELECT_INPUT:
+	ld	a, [input.edge]
+	bit	BIT_STICK_LEFT, a
+	jr	nz, .LEFT
+	bit	BIT_STICK_RIGHT, a
+	jr	nz, .RIGHT
+	bit	BIT_STICK_UP, a
+	jr	nz, .UP
+	bit	BIT_STICK_DOWN, a
+	jr	nz, .DOWN
+	ret
 	
-.PRINT:
-	ld	bc, STAGE_SELECT.HEIGHT << 8 + STAGE_SELECT.WIDTH
-	jp	PRINT_BLOCK
+.LEFT:
+	ld	hl, menu.selected_zone
+	dec	[hl]
+	jr	.DO_MOVEMENT
 
+.RIGHT:
+	ld	hl, menu.selected_zone
+	inc	[hl]
+	jr	.DO_MOVEMENT
 
+.UP:
+	ld	a, [menu.selected_zone]
+	cp	6
+	ret	nz
+	ld	a, 1
+	jr	.DO_MOVEMENT_TO_A
 
-
-	; ld	hl, namtbl_buffer + 18 * SCR_WIDTH + 4
-	; call	CLEAR_LINE
+.DOWN:
+	ld	a, [menu.selected_zone]
+	cp	6
+	ret	z
+	ld	a, 6
 	
-	; ld	hl, menu.selected_stage
-	; xor	a
-	; cp	[hl]
-	; jr	z, .NO_LEFT
-	; ld	a, $3c ; "<"
-	; ld	[namtbl_buffer + 18 * SCR_WIDTH + 4], a
-; .NO_LEFT:
-	; ld	a, [globals.max_stage]
-	; cp	[hl]
-	; jr	z, .NO_RIGHT
-	; ld	a, $3e ; ">"
-	; ld	[namtbl_buffer + 18 * SCR_WIDTH + 27], a
-; .NO_RIGHT:
+.DO_MOVEMENT_TO_A:
+	ld	[menu.selected_zone], a
+.DO_MOVEMENT:
+	call	PLAYER_DISAPPEARING_ANIMATION
+	call	UPDATE_STAGE_SELECT_PLAYER
+	jp	PLAYER_APPEARING_ANIMATION
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Updates the cursor (the player) in the stage select screen
+UPDATE_STAGE_SELECT_PLAYER:
+	ld	a, [menu.selected_zone]
+	dec	a
+	add	a
+	ld	hl, menu.player_0_table
+	call	ADD_HL_A
+	ld	de, player
+	ldi
+	ldi
+	call	PUT_PLAYER_SPRITE
+
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Prepares the SPRATR buffer for the player appearing/disappearing animations
+PREPARE_APPEARING_MASK:
+PREPARE_DISAPPEARING_MASK:
+	ld	a, [player.y]
+	add	CFG_SPRITES_Y_OFFSET
+	ld	hl, spratr_buffer
+	ld	b, CFG_PLAYER_SPRITES_INDEX
+.LOOP:
+	ld	[hl], a ; y
+	inc	hl
+	inc	hl ; x
+	inc	hl ; pattern
+	ld	[hl], SPAT_EC ; color
+	inc	hl
+	djnz	.LOOP
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Animation of player appearing
+PLAYER_APPEARING_ANIMATION:
+	ld	b, SPRITE_HEIGHT
+.LOOP:
+	push	bc ; (preserves counter)
+	halt
+	call	LDIRVM_SPRATR
+; Player appears
+	ld	a, -1
+	call	MOVE_PLAYER_V
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+; Loop condition
+	pop	bc ; (restores counter)
+	djnz	.LOOP
+	ret
+; -----------------------------------------------------------------------------
 	
-	; ld	hl, TXT_STAGE_SELECT._0
-	; ld	a, [menu.selected_stage]
-; .LOOP:
-	; sub	STAGES_PER_ZONE
-	; jr	c, .HL_OK
-	; push	af
-	; inc	hl
-	; xor	a
-	; ld	bc, 32
-	; cpir
-	; pop	af
-	; jr	.LOOP
-; .HL_OK:
-	; ld	de, namtbl_buffer + 18 * SCR_WIDTH
-	; jp	PRINT_CENTERED_TEXT
+; -----------------------------------------------------------------------------
+; Animation of player disappearing
+PLAYER_DISAPPEARING_ANIMATION:
+	ld	b, SPRITE_HEIGHT
+.LOOP:
+	push	bc ; (preserves counter)
+	halt
+	call	LDIRVM_SPRATR
+; Player disappears
+	ld	a, 1
+	call	MOVE_PLAYER_V
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+; Loop condition
+	pop	bc ; (restores counter)
+	djnz	.LOOP
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

@@ -37,12 +37,12 @@ TXT_GAME_OVER:
 TXT_STAGE_SELECT:
 	db	"STAGE SELECT", $00
 	
-._0:	db	"WAREHOUSE (TUTORIAL)",		$00
-._1:	db	"LIGHTHOUSE",			$00
-._2:	db	"ABANDONED SHIP",		$00
-._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
-._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
-._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
+; ._0:	db	"WAREHOUSE (TUTORIAL)",		$00
+; ._1:	db	"LIGHTHOUSE",			$00
+; ._2:	db	"ABANDONED SHIP",		$00
+; ._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
+; ._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
+; ._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
 	
 TXT_ZONE_OVER:
 	db	"SORRY, STEVEDORE",		$00
@@ -58,9 +58,8 @@ TXT_ZONE_OVER:
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	TUTORIAL_STAGES + 1	; .max_stage
+	db	3			; .zones
 	db	$00, $00, $00		; .hi_score
-	db	0			; game.stage (for intro)
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
@@ -78,15 +77,20 @@ STAGE_0:
 
 ; Initial (per stage) sprite attributes table
 SPRATR_0:
+; Reserved sprites before player sprites (see CFG_PLAYER_SPRITES_BEFORE)
+	db	SPAT_OB, 0, 0, 0
+	db	SPAT_OB, 0, 0, 0
+	db	SPAT_OB, 0, 0, 0
+	db	SPAT_OB, 0, 0, 0
 ; Player sprites
 	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_1
 	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_2
-; SPAT end marker
+; SPAT end marker (No "volatile" sprites)
 	db	SPAT_END
 	
 ; Initial (per stage) player vars
 PLAYER_0:
-	db	48, 128			; .y, .x
+	db	48, 128			; .y, .x ; (intro screen coords)
 	db	0			; .animation_delay
 	db	PLAYER_STATE_FLOOR	; .state
 	db	0			; .dy_index
@@ -196,23 +200,7 @@ BULLET_0:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Screens binary data (NAMTBL)
-STAGE_SELECT:
-.NAMTBL:
-	incbin	"games/stevedore/maps/stage_select.tmx.bin"
-
-	.WIDTH:		equ 4
-	.HEIGHT:	equ 8	
-
-.FLOOR_CHARS:
-	db	$01, $02, $84, $85, $10, $01 ; 6 bytes
-	
-.PLAYER_0:
-	db	176, 128		; .y, .x
-	db	0			; .animation_delay
-	db	PLAYER_STATE_FLOOR	; .state
-	db	0			; .dy_index
-	
+; Intro screen data
 INTRO_DATA:
 
 .NAMTBL_PACKED:
@@ -226,60 +214,119 @@ INTRO_DATA:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; "Stage select" screen data
+STAGE_SELECT:
+
+.NAMTBL:
+	incbin	"games/stevedore/maps/stage_select.tmx.bin"
+
+	.WIDTH:		equ 4
+	.HEIGHT:	equ 8	
+
+.FLOOR_CHARS:
+	db	$01, $02, $84, $85, $10, $01 ; 6 bytes
+
+.LUT:
+; 1 zone open
+	dw	namtbl_buffer + 11 * SCR_WIDTH + 14
+	db	128 +SPRITE_HEIGHT, 128
+	db	0, 0
+	db	0, 0
+	db	0, 0
+	db	0, 0
+	db	176 +SPRITE_HEIGHT, 128
+	.LUT_SIZE:	equ $ - .LUT
+; 2 zones open
+	dw	namtbl_buffer + 11 * SCR_WIDTH + 11
+	db	128 +SPRITE_HEIGHT, 104
+	db	128 +SPRITE_HEIGHT, 156
+	db	0, 0
+	db	0, 0
+	db	0, 0
+	db	176 +SPRITE_HEIGHT, 128
+; 3 zones open
+	dw	namtbl_buffer + 11 * SCR_WIDTH + 8
+	db	128 +SPRITE_HEIGHT, 80
+	db	128 +SPRITE_HEIGHT, 128
+	db	128 +SPRITE_HEIGHT, 176
+	db	0, 0
+	db	0, 0
+	db	176 +SPRITE_HEIGHT, 128
+; 4 zones open
+	dw	namtbl_buffer + 11 * SCR_WIDTH + 5
+	db	128 +SPRITE_HEIGHT, 56
+	db	128 +SPRITE_HEIGHT, 104
+	db	128 +SPRITE_HEIGHT, 156
+	db	128 +SPRITE_HEIGHT, 204
+	db	0, 0
+	db	176 +SPRITE_HEIGHT, 128
+; All zones open
+	dw	namtbl_buffer + 11 * SCR_WIDTH + 2
+	db	128 +SPRITE_HEIGHT, 32
+	db	128 +SPRITE_HEIGHT, 80
+	db	128 +SPRITE_HEIGHT, 128
+	db	128 +SPRITE_HEIGHT, 176
+	db	128 +SPRITE_HEIGHT, 224
+	db	176 +SPRITE_HEIGHT, 128
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
-	dw	.INTRO_STAGE
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
 	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
 	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
 	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
 	dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
-	dw	.STAGE_26, .STAGE_27, .STAGE_28, .STAGE_29, .STAGE_30
+; Intro
+	dw	.INTRO_STAGE
+; Warehouse (tutorial)
+	dw	.TUTORIAL_01, .TUTORIAL_02, .TUTORIAL_03, .TUTORIAL_04, .TUTORIAL_05
 
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"
 
 ; Warehouse (tutorial)
+.TUTORIAL_01:	incbin	"games/stevedore/maps/tutorial_01.tmx.bin.zx7"
+.TUTORIAL_02:	incbin	"games/stevedore/maps/tutorial_02.tmx.bin.zx7"
+.TUTORIAL_03:	incbin	"games/stevedore/maps/tutorial_03.tmx.bin.zx7"
+.TUTORIAL_04:	incbin	"games/stevedore/maps/tutorial_04.tmx.bin.zx7"
+.TUTORIAL_05:	incbin	"games/stevedore/maps/tutorial_05.tmx.bin.zx7"
+
+; Lighthouse
 .STAGE_01:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
 .STAGE_02:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
 .STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
 .STAGE_04:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
 .STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 
-; Lighthouse
+; Ship
 .STAGE_06:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
 .STAGE_07:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
 .STAGE_08:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
 .STAGE_09:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
 .STAGE_10:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 
-; Ship
+; Jungle
 .STAGE_11:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
 .STAGE_12:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
 .STAGE_13:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
 .STAGE_14:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 .STAGE_15:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
 
-; Jungle
+; Volcano
 .STAGE_16:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
 .STAGE_17:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
 .STAGE_18:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
 .STAGE_19:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 .STAGE_20:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
 
-; Volcano
+; Temple
 .STAGE_21:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
 .STAGE_22:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
 .STAGE_23:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
 .STAGE_24:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
 .STAGE_25:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
-
-; Temple
-.STAGE_26:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
-.STAGE_27:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
-.STAGE_28:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
-.STAGE_29:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
-.STAGE_30:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -363,7 +410,7 @@ SPRTBL_PACKED:
 
 ; -----------------------------------------------------------------------------
 ; PT3Player data
-TABLA_SONG:
+SONG_PACKED_TABLE:
 	dw	.SONG_0, .SONG_1
 .SONG_0:
 	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
@@ -379,17 +426,4 @@ TABLA_SONG:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; WYZPlayer data
-; TABLA_SONG:
-	; dw	.SONG_0, .SONG_1
-; .SONG_0:
-	; include	"games/stevedore/sfx/warehouse.mus"
-; .SONG_1:
-	; include	"games/stevedore/sfx/ship.mus"
-
-	; include	"games/stevedore/sfx/warehouse.mus.asm"
-	; include	"games/stevedore/sfx/ship.mus.asm"
-; -----------------------------------------------------------------------------
-		
 ; EOF

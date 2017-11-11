@@ -11,7 +11,7 @@
 ; Global vars (i.e.: initialized only once)
 globals:
 
-.max_stage:
+.zones:
 	rb	1
 .hi_score:
 	rb	3 ; (6 BCD digits)
@@ -44,8 +44,13 @@ stage.framecounter:
 ; Main menu vars
 menu:
 
-.selected_stage:
+.namtbl_buffer_origin:
+	rw	1
+.player_0_table:
+	rb	2 * 6
+.selected_zone:
 	rb	1
+
 ; -----------------------------------------------------------------------------
 
 ; EOF

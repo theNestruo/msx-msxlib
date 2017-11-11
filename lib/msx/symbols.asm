@@ -190,6 +190,8 @@
 ; VDP symbolic constants
 	SCR_WIDTH:	equ 32
 	SCR_HEIGHT:	equ 24
+	SPRITE_WIDTH:	equ 16
+	SPRITE_HEIGHT:	equ 16
 	NAMTBL_SIZE:	equ 32 * 24
 	CHRTBL_SIZE:	equ 256 * 8
 	SPRTBL_SIZE:	equ 32 * 64

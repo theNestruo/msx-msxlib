@@ -23,11 +23,13 @@ IFDEF CFG_PT3_PACKED
 	pop	af ; (restores song index)
 ENDIF
 	push	af ; (preserves song index)
-; Locates the song
+; Locates the song (1/2)
 	and	$fe ; (song index only = 0, 2, 4)
-	ld	hl, TABLA_SONG
-	call	GET_HL_A_WORD
 IFDEF CFG_PT3_PACKED
+; Locates the song (2/2)
+	ld	hl, SONG_PACKED_TABLE
+	call	GET_HL_A_WORD
+; Unpacks the song
 	ld	de, unpack_buffer
 	call	UNPACK
 IFDEF CFG_PT3_HEADERLESS
@@ -36,6 +38,9 @@ ELSE
 	ld	hl, unpack_buffer
 ENDIF ; CFG_PT3_HEADERLESS
 ELSE
+; Locates the song (2/2)
+	ld	hl, SONG_PACKED_TABLE
+	call	GET_HL_A_WORD
 IFDEF CFG_PT3_HEADERLESS
 	ld	bc, -100
 	add	hl, bc

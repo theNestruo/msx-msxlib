@@ -24,6 +24,11 @@ DATAS=\
 	$(GAME_PATH)\maps\stage_select.tmx.bin \
 	$(GAME_PATH)\maps\intro_screen.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\intro_stage.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\tutorial_01.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\tutorial_02.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\tutorial_03.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\tutorial_04.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\tutorial_05.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_01.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_02.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_03.tmx.bin.$(PACK_EXTENSION) \
@@ -44,7 +49,13 @@ DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\gfx\sprites.pcx.spr \
 	$(GAME_PATH)\maps\test_screen.tmx.bin \
 	$(GAME_PATH)\maps\intro.tmx.bin \
+	$(GAME_PATH)\maps\intro_screen.tmx.bin \
 	$(GAME_PATH)\maps\intro_stage.tmx.bin \
+	$(GAME_PATH)\maps\tutorial_01.tmx.bin \
+	$(GAME_PATH)\maps\tutorial_02.tmx.bin \
+	$(GAME_PATH)\maps\tutorial_03.tmx.bin \
+	$(GAME_PATH)\maps\tutorial_04.tmx.bin \
+	$(GAME_PATH)\maps\tutorial_05.tmx.bin \
 	$(GAME_PATH)\maps\stage_01.tmx.bin \
 	$(GAME_PATH)\maps\stage_02.tmx.bin \
 	$(GAME_PATH)\maps\stage_03.tmx.bin \

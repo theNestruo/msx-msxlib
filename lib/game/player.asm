@@ -23,7 +23,7 @@
 
 ; -----------------------------------------------------------------------------
 ; (direct pointers inside SPRATR buffer)
-	player_spratr:		equ spratr_buffer
+	player_spratr:		equ spratr_buffer +CFG_PLAYER_SPRITES_INDEX *4
 		.pattern:	equ player_spratr +2
 ; -----------------------------------------------------------------------------
 

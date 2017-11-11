@@ -50,7 +50,7 @@
 
 ; Number of sprites reserved at the beginning of the SPRATR buffer
 ; (i.e.: first sprite number for the "volatile" sprites)
-	CFG_SPRITES_RESERVED:	equ 2
+	CFG_SPRITES_RESERVED:	equ 6
 
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
@@ -145,6 +145,10 @@ TILE_FLAGS_TABLE:
 ; Logical sprite sizes (bounding box size) (pixels)
 	CFG_PLAYER_WIDTH:		equ 8
 	CFG_PLAYER_HEIGHT:		equ 16
+
+; Number of sprites reserved before the player sprites
+; (i.e.: first sprite number for the player sprites)
+	CFG_PLAYER_SPRITES_INDEX:	equ 4
 
 ; Number of player sprites (i.e.: number of colors)
 	CFG_PLAYER_SPRITES:		equ 2
