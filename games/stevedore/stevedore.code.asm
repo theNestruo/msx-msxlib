@@ -9,8 +9,8 @@
 ; Number of frames required to actually push an object
 	FRAMES_TO_PUSH:		equ 12
 
-; Number of stages per zone
-	STAGES_PER_ZONE:	equ 5
+; Number of stages per chapter
+	STAGES_PER_CHAPTER:	equ 5
 	
 ; Tutorial stages
 	FIRST_TUTORIAL_STAGE:	equ 25
@@ -186,28 +186,53 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Main menu
-MAIN_MENU:
 ; Main menu entry point and initialization
-	ld	a, [globals.zones]
-	ld	[menu.selected_zone], a
-	ld	hl, STAGE_SELECT.LUT
-	ld	de, menu
-	ld	bc, STAGE_SELECT.LUT_SIZE
-.LUT_LOOP:
+MAIN_MENU:
+; Initializes the selection with the latests chapter
+	ld	a, [globals.chapters]
+	ld	[menu.selected_chapter], a
+; Initializes the menu values from the look-up-table
+	ld	hl, STAGE_SELECT.MENU_0_TABLE
+	ld	bc, STAGE_SELECT.MENU_0_SIZE
+.TABLE_LOOP:
+; Is the right table entry?
 	dec	a
-	jr	z, .LUT_OK
+	jr	z, .HL_OK ; yes
+; no: skips to the next table entry
 	add	hl, bc
-	jr	.LUT_LOOP
-.LUT_OK:
+	jr	.TABLE_LOOP
+.HL_OK:
+	ld	de, menu
 	ldir
 	
-; Main menu draw
+; Draws the main menu
 	call	CLS_NAMTBL
 	call	CLS_SPRATR
-	call	PRINT_STAGE_SELECT_OPTIONS
-	
-; Initializes sprite attribute table (SPRATR)
+; Prints the blocks depending on globals.chapters
+	ld	hl, STAGE_SELECT.NAMTBL
+	ld	de, [menu.namtbl_buffer_origin]
+	ld	a, [globals.chapters]
+	ld	b, a
+.PRINT_BLOCK_LOOP:
+	push	bc ; preserves counter
+	push	de ; preserves coordinates
+; Prints the block
+	ld	bc, STAGE_SELECT.HEIGHT << 8 + STAGE_SELECT.WIDTH
+	call	PRINT_BLOCK
+; Advances to the next block
+	pop	de ; restores coordinates
+	ex	de, hl ; coordinates += (6,0)
+	ld	bc, 6
+	add	hl, bc
+	ex	de, hl
+	pop	bc ; restores counter
+	djnz	.PRINT_BLOCK_LOOP
+; Prints the tutorial option
+	ld	hl, STAGE_SELECT.FLOOR_CHARS
+	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 13
+	ld	bc, 6 ; 6 bytes
+	ldir
+; Initializes the sprite attribute table (SPRATR) and the player
 	ld	hl, SPRATR_0
 	ld	de, spratr_buffer
 	ld	bc, SPRATR_SIZE
@@ -216,33 +241,39 @@ MAIN_MENU:
 	ld	de, player
 	ld	bc, PLAYER_0.SIZE
 	ldir
-	call	UPDATE_STAGE_SELECT_PLAYER
-	
+	call	UPDATE_MENU_PLAYER
+; Other initialization
+	xor	a
+	ld	[stage.framecounter], a
+	ld	hl, CHARSET_DYNAMIC.CHR + CHAR_FIRST_SURFACES * 8
+	call	SET_DYNAMIC_CHARSET
 ; Fade in and player appearing
 	call	ENASCR_FADE_IN
 	call	PLAYER_APPEARING_ANIMATION
-	
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Main menu loop
-.LOOP:
+MAIN_MENU_LOOP:
+; Synchronization (halt), read input devices, etc.
 	halt
 	call	LDIRVM_SPRATR
+	call	READ_INPUT
+	call	UPDATE_DYNAMIC_CHARSET
 ; Player animation
 	call	UPDATE_PLAYER_ANIMATION
 	call	PUT_PLAYER_SPRITE
-; Reads and checks input
-	call	READ_INPUT
+; If triggered, accepts selection
 	ld	a, [input.edge]
 	bit	BIT_TRIGGER_A, a
 	jr	nz, .OK
-	or	a
-	call	nz, STAGE_SELECT_INPUT
-	jr	.LOOP
+; Else, updates selection
+	call	MAIN_MENU_INPUT
+	jr	MAIN_MENU_LOOP
 
 .OK:
-; Player disappearing
+; Player disappearing and fade out
 	call	PLAYER_DISAPPEARING_ANIMATION
-	
-; Fade out
 	call	DISSCR_FADE_OUT
 ; ------VVVV----falls through--------------------------------------------------
 	
@@ -254,12 +285,16 @@ NEW_GAME:
 	ld	de, game
 	ld	bc, GAME_0.SIZE
 	ldir
-; (temporary patch)
-	ld	a, [menu.selected_zone]
-	ld	[game.stage], a
-	add	0
-	daa
-	ld	[game.stage_bcd], a ; FIXME
+; Initializes stage and stage_bcd
+	ld	a, [menu.selected_chapter] ; a = 0..5
+	add	a ; a = 0,2,..10
+	ld	hl, STAGE_SELECT.GAME_0_TABLE
+	call	ADD_HL_A
+	ldi	; .stage
+	ldi	; .stage_bcd
+; Loads chapter song, looped
+	ld	a, [menu.selected_chapter] ; a = 0..5
+	call	REPLAYER.PLAY
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -434,27 +469,29 @@ STAGE_OVER:
 	cp	FIRST_TUTORIAL_STAGE
 	jp	nc, NEW_STAGE ; yes: go to next stage
 	
-; Is the end of a zone?
-	ld	d, 1 ; (initializes zone counter)
+; Is the end of a chapter?
+	ld	d, 1 ; (initializes chapter counter)
 .LOOP:
-	sub	STAGES_PER_ZONE
-	jr	z, ZONE_OVER ; yes: go to "zone over" screen
+	sub	STAGES_PER_CHAPTER
+	jr	z, CHAPTER_OVER ; yes: go to "chapter over" screen
 	jp	c, NEW_STAGE ; no: go to next stage
-	inc	d ; (increases zone counter)
+	inc	d ; (increases chapter counter)
 	jr	.LOOP
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Zone over (after a group of stages) "congratulations" screen
-ZONE_OVER:
-	push	de ; (preserves zone counter)
+; Chapter over (after a group of stages) "congratulations" screen
+CHAPTER_OVER:
+	push	de ; (preserves chapter counter)
 	
-; Prepares the "zone over" screen
+	call	REPLAYER.STOP
+	
+; Prepares the "chapter over" screen
 	call	CLS_NAMTBL
 	call	RESET_SPRITES
 	
 ; "SORRY, STEVEDORE"
-	ld	hl, TXT_ZONE_OVER
+	ld	hl, TXT_CHAPTER_OVER
 	ld	de, namtbl_buffer + 6 * SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
 
@@ -464,7 +501,7 @@ ZONE_OVER:
 	call	PRINT_CENTERED_TEXT
 
 ; Searchs for the correct text
-	pop	de ; (restores zone counter)
+	pop	de ; (restores chapter counter)
 	inc	hl ; (points to the first text)
 .SKIP_TEXT:
 	dec	d
@@ -567,91 +604,74 @@ GAME_OVER:
 ;
 
 ; -----------------------------------------------------------------------------
-PRINT_STAGE_SELECT_OPTIONS:
-; Prints the blocks depending on globals.max_stage
-	ld	hl, STAGE_SELECT.NAMTBL
-	ld	de, [menu.namtbl_buffer_origin]
-	ld	a, [globals.zones]
-	ld	b, a
-.PRINT_LOOP:
-	push	bc ; preserves counter
-	push	de ; preserves coordinates
-; Prints the block
-	ld	bc, STAGE_SELECT.HEIGHT << 8 + STAGE_SELECT.WIDTH
-	call	PRINT_BLOCK
-; Advances to the next block
-	pop	de ; restores coordinates
-	ex	de, hl ; coordinates += (6,0)
-	ld	bc, 6
-	add	hl, bc
-	ex	de, hl
-	pop	bc ; restores counter
-	djnz	.PRINT_LOOP
-; Prints the tutorial option
-	ld	hl, STAGE_SELECT.FLOOR_CHARS
-	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 13
-	ld	bc, 6 ; 6 bytes
-	ldir
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-STAGE_SELECT_INPUT:
+; Handles selection change in the main menu
+MAIN_MENU_INPUT:
+; Is the cursor at the tutorial?
+	ld	a, [menu.selected_chapter]
+	or	a ; (for the jr z)
 	ld	a, [input.edge]
+	jr	z, .CHECK_UP ; yes: check up only
+; Checks stick left or right
 	bit	BIT_STICK_LEFT, a
 	jr	nz, .LEFT
 	bit	BIT_STICK_RIGHT, a
 	jr	nz, .RIGHT
-	bit	BIT_STICK_UP, a
-	jr	nz, .UP
+; Checks stick down
 	bit	BIT_STICK_DOWN, a
-	jr	nz, .DOWN
-	ret
-	
-.LEFT:
-	ld	hl, menu.selected_zone
-	dec	[hl]
-	jr	.DO_MOVEMENT
+	ret	z ; no: no input
+; yes: sets the cursor at the tutorial
+	xor	a
+	jr	.MOVE_TO_A
 
-.RIGHT:
-	ld	hl, menu.selected_zone
-	inc	[hl]
-	jr	.DO_MOVEMENT
-
-.UP:
-	ld	a, [menu.selected_zone]
-	cp	6
-	ret	nz
+; Checks stick up only
+.CHECK_UP:
+	bit	BIT_STICK_UP, a
+	ret	z ; no cursor
+; yes: sets the cursor at the leftmost position
 	ld	a, 1
-	jr	.DO_MOVEMENT_TO_A
-
-.DOWN:
-	ld	a, [menu.selected_zone]
-	cp	6
-	ret	z
-	ld	a, 6
-	
-.DO_MOVEMENT_TO_A:
-	ld	[menu.selected_zone], a
-.DO_MOVEMENT:
+; Sets the cursor at the position a with out/in animation
+.MOVE_TO_A:
+	ld	[menu.selected_chapter], a
+.MOVE:
 	call	PLAYER_DISAPPEARING_ANIMATION
-	call	UPDATE_STAGE_SELECT_PLAYER
+	call	UPDATE_MENU_PLAYER
 	jp	PLAYER_APPEARING_ANIMATION
+
+; Moves the selection to the left
+.LEFT:
+; Checks leftmost position
+	ld	a, [menu.selected_chapter]
+	dec	a
+	jr	nz, .MOVE_TO_A ; no: move cursor
+; yes: do nothing
+	ret
+
+; Moves the selection to the right
+.RIGHT:
+; Checks rightmost position
+	ld	a, [menu.selected_chapter]
+	ld	hl, globals.chapters
+	cp	[hl]
+	ret	z ; yes: do nothing
+; no: move cursor
+	inc	a
+	jr	.MOVE_TO_A
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Updates the cursor (the player) in the stage select screen
-UPDATE_STAGE_SELECT_PLAYER:
-	ld	a, [menu.selected_zone]
-	dec	a
-	add	a
+UPDATE_MENU_PLAYER:
+; Uses the table to convert index into coordinates
 	ld	hl, menu.player_0_table
+	ld	a, [menu.selected_chapter] ; a = 0..5
+	add	a ; a = 0,2,..10
 	call	ADD_HL_A
+; Sets the player coordinates
 	ld	de, player
 	ldi
 	ldi
+; Updates the player sprite and prepares the mask for appearing animation
 	call	PUT_PLAYER_SPRITE
-
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -681,6 +701,7 @@ PLAYER_APPEARING_ANIMATION:
 	push	bc ; (preserves counter)
 	halt
 	call	LDIRVM_SPRATR
+	call	UPDATE_DYNAMIC_CHARSET
 ; Player appears
 	ld	a, -1
 	call	MOVE_PLAYER_V
@@ -700,6 +721,7 @@ PLAYER_DISAPPEARING_ANIMATION:
 	push	bc ; (preserves counter)
 	halt
 	call	LDIRVM_SPRATR
+	call	UPDATE_DYNAMIC_CHARSET
 ; Player disappears
 	ld	a, 1
 	call	MOVE_PLAYER_V

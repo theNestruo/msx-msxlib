@@ -11,8 +11,8 @@
 ; Global vars (i.e.: initialized only once)
 globals:
 
-.zones:
-	rb	1
+.chapters:
+	rb	1 ; (unlocked chapters)
 .hi_score:
 	rb	3 ; (6 BCD digits)
 
@@ -44,13 +44,20 @@ stage.framecounter:
 ; Main menu vars
 menu:
 
+; NAMTBL buffer pointer to start printing stage select options
 .namtbl_buffer_origin:
 	rw	1
+; Coordinates of the sprite depending on the selected stage
 .player_0_table:
-	rb	2 * 6
-.selected_zone:
+	rb	2 ; Lighthouse
+	rb	2 ; Ship
+	rb	2 ; Jungle
+	rb	2 ; Volcano
+	rb	2 ; Temple
+	rb	2 ; Warehouse (tutorial)
+; The actual selection
+.selected_chapter:
 	rb	1
-
 ; -----------------------------------------------------------------------------
 
 ; EOF

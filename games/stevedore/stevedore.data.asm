@@ -44,7 +44,7 @@ TXT_STAGE_SELECT:
 ; ._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
 ; ._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
 	
-TXT_ZONE_OVER:
+TXT_CHAPTER_OVER:
 	db	"SORRY, STEVEDORE",		$00
 	db	"BUT THE LIGHTHOUSE KEEPER",	$00
 	db	"IS IN ANOTHER BUILDING!",	$00
@@ -58,7 +58,7 @@ TXT_ZONE_OVER:
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	3			; .zones
+	db	5 ; 1			; .chapters
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -219,55 +219,65 @@ STAGE_SELECT:
 
 .NAMTBL:
 	incbin	"games/stevedore/maps/stage_select.tmx.bin"
-
 	.WIDTH:		equ 4
 	.HEIGHT:	equ 8	
 
 .FLOOR_CHARS:
 	db	$01, $02, $84, $85, $10, $01 ; 6 bytes
 
-.LUT:
-; 1 zone open
+.MENU_0_TABLE:
+; 1st chapter open
+; .namtbl_buffer_origin
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 14
-	db	128 +SPRITE_HEIGHT, 128
+; .player_0_table
+	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
+	db	128 +SPRITE_HEIGHT, 128 ; Lighthouse
 	db	0, 0
 	db	0, 0
 	db	0, 0
 	db	0, 0
-	db	176 +SPRITE_HEIGHT, 128
-	.LUT_SIZE:	equ $ - .LUT
-; 2 zones open
+	.MENU_0_SIZE:	equ $ - .MENU_0_TABLE
+; 2nd chapter open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 11
-	db	128 +SPRITE_HEIGHT, 104
-	db	128 +SPRITE_HEIGHT, 156
+	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
+	db	128 +SPRITE_HEIGHT, 104 ; Lighthouse
+	db	128 +SPRITE_HEIGHT, 152 ; Ship
 	db	0, 0
 	db	0, 0
 	db	0, 0
-	db	176 +SPRITE_HEIGHT, 128
-; 3 zones open
+; 3rd chapter open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 8
-	db	128 +SPRITE_HEIGHT, 80
-	db	128 +SPRITE_HEIGHT, 128
-	db	128 +SPRITE_HEIGHT, 176
+	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
+	db	128 +SPRITE_HEIGHT,  80 ; Lighthouse
+	db	128 +SPRITE_HEIGHT, 128 ; Ship
+	db	128 +SPRITE_HEIGHT, 176 ; Jungle
 	db	0, 0
 	db	0, 0
-	db	176 +SPRITE_HEIGHT, 128
-; 4 zones open
+; 4th chapter open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 5
-	db	128 +SPRITE_HEIGHT, 56
-	db	128 +SPRITE_HEIGHT, 104
-	db	128 +SPRITE_HEIGHT, 156
-	db	128 +SPRITE_HEIGHT, 204
+	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
+	db	128 +SPRITE_HEIGHT,  56 ; Lighthouse
+	db	128 +SPRITE_HEIGHT, 104 ; Ship
+	db	128 +SPRITE_HEIGHT, 152 ; Jungle
+	db	128 +SPRITE_HEIGHT, 200 ; Volcano
 	db	0, 0
-	db	176 +SPRITE_HEIGHT, 128
-; All zones open
+; All chapters open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 2
-	db	128 +SPRITE_HEIGHT, 32
-	db	128 +SPRITE_HEIGHT, 80
-	db	128 +SPRITE_HEIGHT, 128
-	db	128 +SPRITE_HEIGHT, 176
-	db	128 +SPRITE_HEIGHT, 224
-	db	176 +SPRITE_HEIGHT, 128
+	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
+	db	128 +SPRITE_HEIGHT,  32 ; Lighthouse
+	db	128 +SPRITE_HEIGHT,  80 ; Ship
+	db	128 +SPRITE_HEIGHT, 128 ; Jungle
+	db	128 +SPRITE_HEIGHT, 176 ; Volcano
+	db	128 +SPRITE_HEIGHT, 224 ; Temple
+
+.GAME_0_TABLE:
+	;	.stage,	.stage_bcd
+	db	FIRST_TUTORIAL_STAGE, $00 ; Warehouse (tutorial)
+	db	 1, $01 ; Lighthouse
+	db	 6, $06 ; Ship
+	db	11, $11 ; Jungle
+	db	16, $16 ; Volcano
+	db	21, $21 ; Temple
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -308,25 +318,25 @@ NAMTBL_PACKED_TABLE:
 .STAGE_10:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 
 ; Jungle
-.STAGE_11:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
-.STAGE_12:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
-.STAGE_13:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
-.STAGE_14:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
-.STAGE_15:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
+.STAGE_11:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_12:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_13:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_14:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_15:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
 ; Volcano
-.STAGE_16:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
-.STAGE_17:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
-.STAGE_18:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
-.STAGE_19:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
-.STAGE_20:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
+.STAGE_16:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_17:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_18:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_19:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_20:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 
 ; Temple
-.STAGE_21:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
-.STAGE_22:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
-.STAGE_23:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
-.STAGE_24:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
-.STAGE_25:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
+.STAGE_21:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_22:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_23:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_24:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_25:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -411,17 +421,17 @@ SPRTBL_PACKED:
 ; -----------------------------------------------------------------------------
 ; PT3Player data
 SONG_PACKED_TABLE:
-	dw	.SONG_0, .SONG_1
+	dw	.SONG_0, .SONG_1, .SONG_2, .SONG_3, .SONG_4, .SONG_5
 .SONG_0:
 	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
 .SONG_1:
-	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
-.SONG_2:
 	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
+.SONG_2:
+	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_3:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_4:
-	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
+	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_5:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 ; -----------------------------------------------------------------------------
