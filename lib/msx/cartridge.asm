@@ -210,6 +210,7 @@ ENDIF ; CFG_CUSTOM_PALETTE
 ENDIF ; SET_PALETTE
 
 
+IFEXIST REPLAYER.FRAME
 ; Hook
 .HTIMI_HOOK_FRAMESKIP:
 	ld	hl, replayer.frameskip
@@ -224,6 +225,7 @@ ENDIF ; SET_PALETTE
 .HTIMI_HOOK:	
 	call	REPLAYER.FRAME
 	jp	replayer.old_htimi_hook
+ENDIF ; REPLAYER.FRAME
 ; -----------------------------------------------------------------------------
 
 ; EOF
