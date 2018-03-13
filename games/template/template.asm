@@ -90,13 +90,18 @@ CFG_CUSTOM_PALETTE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Replayer routines (WYZPlayer v0.47c-based implementation)
+; Replayer routines
 
-; Define to enable the ability of installing the replayer in the interrupt
-	; CFG_REPLAYER_INSTALLABLE:
+; Define to enable packed songs when using the PT3-based implementation
+	; CFG_PT3_PACKED:
+	
+; Define to use headerless PT3 files (without first 100 bytes)
+	; CFG_PT3_HEADERLESS:
 
-; Replayer routines (WYZPlayer v0.47c-based implementation)
-	; include	"lib\msx\replayer.asm"
+; PT3-based implementation
+	; include	"lib\msx\replayer_pt3.asm"
+; WYZPlayer v0.47c-based implementation
+	; include	"lib\msx\replayer_wyz.asm"
 ; -----------------------------------------------------------------------------
 
 
@@ -121,7 +126,8 @@ TILE_FLAGS_TABLE:
 	db	$9f, $00 ; [$80..$9f] : 0 (more background)
 	db	$bf, $03 ; [$a0..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
 	db	$c7, $02 ; [$c0..$c7] : BIT_WORLD_FLOOR
-	db	$cf, $04 ; [$c8..$cf] : BIT_WORLD_STAIRS
+	db	$cb, $04 ; [$c8..$cb] : BIT_WORLD_STAIRS
+	db	$cf, $06 ; [$cc..$cf] : BIT_WORLD_STAIRS | BIT_WORLD_FLOOR
 	db	$d7, $08 ; [$d0..$d7] : BIT_WORLD_DEATH
 	db	$df, $10 ; [$d8..$df] : BIT_WORLD_WALK_ON (e.g. items)
 	db	$ff, $20 ; [$e0..$ff] : BIT_WORLD_WIDE_ON (e.g. doors)
@@ -137,6 +143,10 @@ TILE_FLAGS_TABLE:
 ; Logical sprite sizes (bounding box size) (pixels)
 	CFG_PLAYER_WIDTH:		equ 8
 	CFG_PLAYER_HEIGHT:		equ 16
+
+; Number of sprites reserved before the player sprites
+; (i.e.: first sprite number for the player sprites)
+	CFG_PLAYER_SPRITES_INDEX:	equ 0
 
 ; Number of player sprites (i.e.: number of colors)
 	CFG_PLAYER_SPRITES:		equ 2
@@ -366,7 +376,7 @@ NEW_STAGE:
 ; "STAGE 0"
 	ld	hl, TXT_STAGE
 	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_STAGE.CENTER
-	call	PRINT_TXT
+	call	PRINT_TEXT
 ; "stage N"
 	dec	de
 	ld	a, [game.current_stage]
@@ -377,7 +387,7 @@ NEW_STAGE:
 	ld	hl, TXT_LIVES
 	ld	de, namtbl_buffer + 10 * SCR_WIDTH + TXT_LIVES.CENTER
 	push	de
-	call	PRINT_TXT
+	call	PRINT_TEXT
 ; "lives N"
 	pop	de
 	ld	a, [game.lives]
@@ -386,7 +396,7 @@ NEW_STAGE:
 
 ; Fade in
 	call	ENASCR_FADE_IN
-	call	TRIGGER_PAUSE_ONE_SECOND
+	call	WAIT_TRIGGER_ONE_SECOND
 	call	DISSCR_FADE_OUT
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -541,11 +551,11 @@ GAME_OVER:
 ; "GAME OVER"
 	ld	hl, TXT_GAME_OVER
 	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_GAME_OVER.CENTER
-	call	PRINT_TXT
+	call	PRINT_TEXT
 	
 ; Fade in
 	call	LDIRVM_NAMTBL_FADE_INOUT
-	call	TRIGGER_PAUSE_FOUR_SECONDS
+	call	WAIT_TRIGGER_FOUR_SECONDS
 	call	DISSCR_FADE_OUT
 	
 	jp	MAIN_MENU
