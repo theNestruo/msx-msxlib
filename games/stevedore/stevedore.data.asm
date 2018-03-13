@@ -318,11 +318,11 @@ NAMTBL_PACKED_TABLE:
 .STAGE_10:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 
 ; Jungle
-.STAGE_11:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_12:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_13:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_14:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_15:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_11:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
+.STAGE_12:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
+.STAGE_13:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
+.STAGE_14:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
+.STAGE_15:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
 
 ; Volcano
 .STAGE_16:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
@@ -429,9 +429,9 @@ SONG_PACKED_TABLE:
 .SONG_2:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_3:
-	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
+	incbin	"games/stevedore/sfx/jungle.pt3.hl.zx7"
 .SONG_4:
-	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
+	incbin	"games/stevedore/sfx/cave.pt3.hl.zx7"
 .SONG_5:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 ; -----------------------------------------------------------------------------
