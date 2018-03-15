@@ -39,8 +39,11 @@ DATAS=\
 	$(GAME_PATH)\maps\stage_08.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_09.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_10.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_14.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\sfx\warehouse.pt3.hl.$(PACK_EXTENSION) \
-	$(GAME_PATH)\sfx\ship.pt3.hl.$(PACK_EXTENSION)
+	$(GAME_PATH)\sfx\ship.pt3.hl.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sfx\jungle.pt3.hl.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sfx\cave.pt3.hl.$(PACK_EXTENSION)
 	
 
 DATAS_INTERMEDIATE=\
@@ -66,8 +69,11 @@ DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\maps\stage_08.tmx.bin \
 	$(GAME_PATH)\maps\stage_09.tmx.bin \
 	$(GAME_PATH)\maps\stage_10.tmx.bin \
+	$(GAME_PATH)\maps\stage_14.tmx.bin \
 	$(GAME_PATH)\sfx\warehouse.pt3.hl \
 	$(GAME_PATH)\sfx\ship.pt3.hl \
+	$(GAME_PATH)\sfx\jungle.pt3.hl \
+	$(GAME_PATH)\sfx\cave.pt3.hl
 
 #
 # tools
