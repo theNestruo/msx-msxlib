@@ -213,17 +213,22 @@ ENDIF ; SET_PALETTE
 IFEXIST REPLAYER.FRAME
 ; Hook
 .HTIMI_HOOK_FRAMESKIP:
+	push	af ; Preserves VDP status register S#0 (a)
 	ld	hl, replayer.frameskip
 	inc	[hl]
 	ld	a, [hl]
 	sub	6
-	jr	nz, .HTIMI_HOOK
+	jr	nz, .HTIMI_HOOK_FRAME
 	ld	[hl], a
-	jp	replayer.old_htimi_hook
+	jr	.HTIMI_HOOK_END
 
 ; H.TIMI hook that invokes both the replayer and the previously existing hook
-.HTIMI_HOOK:	
+.HTIMI_HOOK:
+	push	af ; Preserves VDP status register S#0 (a)
+.HTIMI_HOOK_FRAME:
 	call	REPLAYER.FRAME
+.HTIMI_HOOK_END:
+	pop	af ; Restores VDP status register S#0 (a)
 	jp	replayer.old_htimi_hook
 ENDIF ; REPLAYER.FRAME
 ; -----------------------------------------------------------------------------

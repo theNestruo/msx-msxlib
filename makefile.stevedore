@@ -19,6 +19,8 @@ DATAS=\
 	$(GAME_PATH)\gfx\charset.pcx.clr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\gfx\charset_dynamic.pcx.chr \
 	$(GAME_PATH)\gfx\charset_dynamic.pcx.clr \
+	$(GAME_PATH)\gfx\charset_title.pcx.chr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\gfx\charset_title.pcx.clr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\gfx\sprites.pcx.spr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\test_screen.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_select.tmx.bin \
@@ -49,6 +51,8 @@ DATAS=\
 DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\gfx\charset.pcx.chr \
 	$(GAME_PATH)\gfx\charset.pcx.clr \
+	$(GAME_PATH)\gfx\charset_dynamic.pcx.chr \
+	$(GAME_PATH)\gfx\charset_dynamic.pcx.clr \
 	$(GAME_PATH)\gfx\sprites.pcx.spr \
 	$(GAME_PATH)\maps\test_screen.tmx.bin \
 	$(GAME_PATH)\maps\intro.tmx.bin \

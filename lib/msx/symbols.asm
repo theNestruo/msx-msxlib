@@ -158,6 +158,7 @@
 	RG5SAV:	equ $f3e4 ; Content of VDP(5) register (R#5)
 	RG6SAV:	equ $f3e5 ; Content of VDP(6) register (R#6)
 	RG7SAV:	equ $f3e6 ; Content of VDP(7) register (R#7)
+	STATFL: equ $f3e7 ; Content of VDP status register (S#0)
 	TRGFLG:	equ $f3e8 ; State of the four joystick trigger inputs and the space key
 	FORCLR:	equ $f3e9 ; Foreground colour
 	BAKCLR:	equ $f3ea ; Background colour

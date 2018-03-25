@@ -21,18 +21,14 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 10
+	DEBUG_STAGE:		equ 16
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Game entry point
 MAIN_INIT:
-; Charset (1/2: CHRTBL)
-	ld	hl, CHARSET_PACKED.CHR
-	call	UNPACK_LDIRVM_CHRTBL
-; Charset (2/2: CLRTBL)
-	ld	hl, CHARSET_PACKED.CLR
-	call	UNPACK_LDIRVM_CLRTBL
+; Charset
+	call	SET_DEFAULT_CHARSET
 	
 ; Sprite pattern table (SPRTBL)
 	ld	hl, SPRTBL_PACKED
@@ -54,7 +50,7 @@ INTRO:
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
-	xor	a ; DEBUG LINE
+	; xor	a ; DEBUG LINE
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 IFEXIST DEBUG_STAGE
@@ -205,9 +201,36 @@ MAIN_MENU:
 	ld	de, menu
 	ldir
 	
+; Title charset (1/2: CHRTBL)
+	call	SET_TITLE_CHARSET
+	
 ; Draws the main menu
 	call	CLS_NAMTBL
 	call	CLS_SPRATR
+	
+; Prints the title
+	ld	hl, namtbl_buffer + 2 *SCR_WIDTH + TITLE_CENTER
+	ld	a, TITLE_CHAR_FIRST
+.TITLE_ROW_LOOP:
+	ld	b, TITLE_WIDTH
+; Prints a row
+.TITLE_CHAR_LOOP:
+	ld	[hl], a
+	inc	hl
+	inc	a
+	djnz	.TITLE_CHAR_LOOP
+; Moves target pointer
+	ld	bc, SCR_WIDTH - TITLE_WIDTH
+	add	hl, bc
+; Checks if the last character has been reached
+	cp	TITLE_CHAR_FIRST + TITLE_HEIGHT * TITLE_WIDTH
+	jr	c, .TITLE_ROW_LOOP ; no
+	
+; Prints copyright notice
+	ld	hl, TXT_COPYRIGHT
+	ld	de, namtbl_buffer + 6 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	
 ; Prints the blocks depending on globals.chapters
 	ld	hl, STAGE_SELECT.NAMTBL
 	ld	de, [menu.namtbl_buffer_origin]
@@ -275,6 +298,9 @@ MAIN_MENU_LOOP:
 ; Player disappearing and fade out
 	call	PLAYER_DISAPPEARING_ANIMATION
 	call	DISSCR_FADE_OUT
+
+; Restores main charset
+	call	RESET_TITLE_CHARSET
 ; ------VVVV----falls through--------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
@@ -354,37 +380,37 @@ GAME_LOOP:
 ; Prepares next frame (1/2)
 	call	PUT_PLAYER_SPRITE
 
-IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 12
-	call	SET_BDRCLR ; green: free frame time
-ENDIF
+; IFDEF CFG_DEBUG_BDRCLR
+	; ld	b, 1
+	; call	SET_BDRCLR ; black: free frame time
+; ENDIF
 	
 ; Synchronization (halt)
 	halt
 	
-IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 5
-	call	SET_BDRCLR ; blue: VDP busy
-ENDIF
+; IFDEF CFG_DEBUG_BDRCLR
+	; ld	b, 4
+	; call	SET_BDRCLR ; blue: VDP busy
+; ENDIF
 
 ; Blit buffers to VRAM
 	call	EXECUTE_VPOKES
 	call	LDIRVM_SPRATR
-	
-IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 1 ; black: game logic
-	call	SET_BDRCLR
-ENDIF
 
 ; Prepares next frame (2/2)
 	call	RESET_SPRITES
-
+	call	UPDATE_DYNAMIC_CHARSET	; (custom)
+	
+; IFDEF CFG_DEBUG_BDRCLR
+	; ld	b, 6 ; red: game logic
+	; call	SET_BDRCLR
+; ENDIF
+	
 ; Read input devices
 	call	READ_INPUT
 
 ; Game logic (1/2: updates)
 	call	UPDATE_SPRITEABLES
-	call	UPDATE_DYNAMIC_CHARSET	; (custom)
 	call	UPDATE_BOXES_AND_ROCKS	; (custom)
 	call	UPDATE_PLAYER
 	call	UPDATE_FRAMES_PUSHING	; (custom)
@@ -416,7 +442,7 @@ ENDIF
 	; jr	z, PLAYER_OVER ; player is dead
 
 IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 6
+	ld	b, 8
 	call	SET_BDRCLR ; red: this is bad
 ENDIF
 
@@ -602,6 +628,33 @@ GAME_OVER:
 ;	Custom game routines
 ; =============================================================================
 ;
+
+; -----------------------------------------------------------------------------
+; Sets the default charset in all banks
+SET_DEFAULT_CHARSET:
+RESET_TITLE_CHARSET:
+; Charset (1/2: CHRTBL)
+	ld	hl, CHARSET_PACKED.CHR
+	call	UNPACK_LDIRVM_CHRTBL
+; Charset (2/2: CLRTBL)
+	ld	hl, CHARSET_PACKED.CLR
+	jp	UNPACK_LDIRVM_CLRTBL
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Overwrites the charset with the title charset at bank #0
+SET_TITLE_CHARSET:
+; Title charset (1/2: CHRTBL)
+	ld	hl, CHARSET_TITLE_PACKED.CHR
+	ld	de, CHRTBL + TITLE_CHAR_FIRST *8
+	call	.UNPACK_LDIRVM
+; Title charset (2/2: CLRTBL)
+	ld	hl, CHARSET_TITLE_PACKED.CLR
+	ld	de, CLRTBL + TITLE_CHAR_FIRST *8
+.UNPACK_LDIRVM:
+	ld	bc, CHARSET_TITLE_PACKED.SIZE
+	jp	UNPACK_LDIRVM
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Handles selection change in the main menu

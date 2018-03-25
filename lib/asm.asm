@@ -17,6 +17,19 @@ ADD_HL_A:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Emulates the instruction "add de, a" (or "de += a" in C syntax)
+; param de: operand
+; param a: usigned operand
+ADD_DE_A:
+	add	d
+	ld	d, a
+	adc	e
+	sub	d
+	ld	e, a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Reads a byte from a byte array (i.e.: "a = hl[a]" in C syntax)
 ; param hl: byte array address
 ; param a: usigned 0-based index

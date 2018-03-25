@@ -7,7 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Define to visually debug frame timing
-	; CFG_DEBUG_BDRCLR:
+	CFG_DEBUG_BDRCLR:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -51,6 +51,13 @@
 ; Number of sprites reserved at the beginning of the SPRATR buffer
 ; (i.e.: first sprite number for the "volatile" sprites)
 	CFG_SPRITES_RESERVED:	equ 6
+	
+; Define if the LDIRVM the SPRATR buffer should use flickering
+	CFG_SPRITES_FLICKER:
+	
+; Number of sprites that won't enter the flickering loop
+; (i.e.: number of sprites that will use the most priority planes)
+	CFG_SPRITES_NO_FLICKER:	equ 5
 
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
@@ -123,8 +130,8 @@ CFG_CUSTOM_PALETTE:
 
 ; Table of tile flags in pairs (up to index, tile flags)
 TILE_FLAGS_TABLE:
-	db	$5f, $00 ; [$00..$5f] : 0
-	db	$bf, $03 ; [$60..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	db	$1f, $00 ; [$00..$1f] : 0
+	db	$bf, $03 ; [$20..$bf] : BIT_WORLD_FLOOR | BIT_WORLD_SOLID
 	db	$c7, $06 ; [$c0..$c7] : BIT_WORLD_FLOOR | BIT_WORLD_STAIRS
 	db	$cf, $04 ; [$c8..$cf] : BIT_WORLD_STAIRS
 	db	$d7, $02 ; [$d0..$d7] : BIT_WORLD_FLOOR

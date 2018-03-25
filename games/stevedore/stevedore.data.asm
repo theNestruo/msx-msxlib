@@ -9,6 +9,9 @@
 ; Literals
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
+	
+TXT_COPYRIGHT:
+	db	"@ THENESTRUO & WONDER 2018", $00
 
 ; TXT_START:
 	; db	"   START", $00
@@ -58,7 +61,7 @@ TXT_CHAPTER_OVER:
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	5 ; 1			; .chapters
+	db	1			; .chapters
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -273,11 +276,11 @@ STAGE_SELECT:
 .GAME_0_TABLE:
 	;	.stage,	.stage_bcd
 	db	FIRST_TUTORIAL_STAGE, $00 ; Warehouse (tutorial)
-	db	 1, $01 ; Lighthouse
-	db	 6, $06 ; Ship
-	db	11, $11 ; Jungle
-	db	16, $16 ; Volcano
-	db	21, $21 ; Temple
+	db	 0, $01 ; Lighthouse
+	db	 5, $06 ; Ship
+	db	10, $11 ; Jungle
+	db	15, $16 ; Volcano
+	db	20, $21 ; Temple
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -359,6 +362,18 @@ CHARSET_PACKED:
 	CHAR_WATER_SURFACE:	equ $f0
 	CHAR_LAVA_SURFACE:	equ $f4
 	CHAR_FIRST_DOOR:	equ $f8
+
+CHARSET_TITLE_PACKED:
+.CHR:
+	incbin	"games/stevedore/gfx/charset_title.pcx.chr.zx7"
+.CLR:
+	incbin	"games/stevedore/gfx/charset_title.pcx.clr.zx7"
+	.SIZE:			equ TITLE_HEIGHT *TITLE_WIDTH *8
+	
+	TITLE_CHAR_FIRST:	equ 96
+	TITLE_WIDTH:		equ 16
+	TITLE_HEIGHT:		equ 3
+	TITLE_CENTER:		equ (SCR_WIDTH - TITLE_WIDTH) /2
 	
 CHARSET_DYNAMIC:
 .CHR:
