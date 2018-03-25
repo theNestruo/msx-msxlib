@@ -397,8 +397,8 @@ SPRTBL_PACKED:
 	incbin	"games/stevedore/gfx/sprites.pcx.spr.zx7"
 
 ; Sprite-related symbolic constants (SPRATR)
-	PLAYER_SPRITE_COLOR_1:		equ 9
-	PLAYER_SPRITE_COLOR_2:		equ 15
+	PLAYER_SPRITE_COLOR_1:		equ 15
+	PLAYER_SPRITE_COLOR_2:		equ 9
 	
 	BAT_SPRITE_PATTERN:		equ $50
 	BAT_SPRITE_COLOR:		equ 4

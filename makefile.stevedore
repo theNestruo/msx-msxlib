@@ -236,7 +236,7 @@ $(ROM): $(ROM_INTERMEDIATE)
 	$(PACK) $<
 
 %.pcx.spr: %.pcx
-	$(PCX2SPR) $<
+	$(PCX2SPR) -hl $<
 
 #
 # BINs targets

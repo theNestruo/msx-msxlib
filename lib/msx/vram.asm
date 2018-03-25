@@ -165,8 +165,6 @@ IF CFG_SPRITES_NO_FLICKER != 0
 	jr	c, .NO_FLICKER ; yes: non-flickering LDIRVM
 ENDIF
 
-.FLICKER:
-
 ; Counts how many actual sprites are in the buffer
 	ld	hl, spratr_buffer + CFG_SPRITES_NO_FLICKER *4
 	ld	a, SPAT_END
@@ -205,35 +203,36 @@ ELSE
 	sla	c
 ENDIF
 
-; Computes the new flickering offset
 ; Reads the 5th sprite plane
 	ld	a, [STATFL]
 	and	$0f
+; Computes the new flickering offset
 	sub	CFG_SPRITES_NO_FLICKER
 	sla	a ; a (offset, bytes) = a *4
 	sla	a
 	ld	hl, spratr_buffer.flicker_offset
 	add	[hl]
-; Was the 5th sprite beyond the actual flickering size?
+; Is the offset beyond the actual flickering size?
 	cp	c ; (size, bytes)
 	jr	c, .OFFSET_OK ; no
-; yes: removes offset
-	sub	c
-	jr	z, .ZERO_OFFSET
+; yes: tries to loop around
+	sub	c ; (size, bytes)
+	jr	z, .OFFSET_ZERO ; (the offset got reset)
+; Is the offset still beyond the actual flickering size?
 	cp	c ; (size, bytes)
 	jr	c, .OFFSET_OK ; no
-	
-	ld	b, b
-	jr	$ +2
-	
-.ZERO_OFFSET:
+; yes: The flickering size has changed between frames; resets the offset
 	xor	a
+.OFFSET_ZERO:
+; Preserves the offset for the next frame
 	ld	[hl], a
 	jr	.POP_AND_NO_FLICKER ; non-flickering LDIRVM
+	
 .OFFSET_OK:
+; Preserves the offset for the next frame
 	ld	[hl], a
 
-; no: Copies the sprites before the offset at the actual end of the spratr buffer
+; Copies the sprites before the offset at the actual end of the spratr buffer
 	ld	hl, spratr_buffer + CFG_SPRITES_NO_FLICKER *4
 	pop	de ; de = actual spratr buffer end
 	ld	b, 0 ; bc = offset
@@ -251,7 +250,7 @@ IF CFG_SPRITES_NO_FLICKER != 0
 	ld	bc, CFG_SPRITES_NO_FLICKER *4
 	call	LDIRVM
 ENDIF
-; LDIRVM the sprites from the offset
+; LDIRVM the sprites, starting from the offset
 	ld	hl, spratr_buffer + CFG_SPRITES_NO_FLICKER *4
 	pop	bc ; (restores offset)
 	add	hl, bc
