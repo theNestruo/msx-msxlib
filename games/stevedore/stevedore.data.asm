@@ -13,15 +13,6 @@ TXT_PUSH_SPACE_KEY:
 TXT_COPYRIGHT:
 	db	"@ THENESTRUO & WONDER 2018", $00
 
-; TXT_START:
-	; db	"   START", $00
-	; .CENTER:	equ TXT_CONTINUE.CENTER
-; TXT_CONTINUE:
-	; db	$5e, $5f, " CONTINUE"
-	; .SIZE:		equ $ - TXT_CONTINUE
-	; .CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	; db	$00
-	
 TXT_STAGE:
 	db	"STAGE"
 	.SIZE:		equ ($ + 3) - TXT_STAGE ; "... 00"
@@ -68,7 +59,7 @@ GLOBALS_0:
 ; Initial value of the game-scope vars
 GAME_0:
 	db	$00, $00, $00		; .score
-	db	5			; .lives
+	db	3			; .lives
 	.SIZE:	equ $ - GAME_0
 
 ; Initial value of the stage-scoped vars
@@ -312,6 +303,11 @@ NAMTBL_PACKED_TABLE:
 .STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
 .STAGE_04:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
 .STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
+; .STAGE_01:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
+; .STAGE_02:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
+; .STAGE_03:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
+; .STAGE_04:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
+; .STAGE_05:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
 
 ; Ship
 .STAGE_06:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
@@ -440,7 +436,7 @@ SONG_PACKED_TABLE:
 .SONG_0:
 	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
 .SONG_1:
-	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
+	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7" ; TODO
 .SONG_2:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_3:
@@ -448,7 +444,7 @@ SONG_PACKED_TABLE:
 .SONG_4:
 	incbin	"games/stevedore/sfx/cave.pt3.hl.zx7"
 .SONG_5:
-	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
+	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7" ; TODO
 ; -----------------------------------------------------------------------------
 
 ; EOF

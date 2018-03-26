@@ -125,8 +125,8 @@ CFG_CUSTOM_PALETTE:
 
 ; Tile indexes (values) to be returned by GET_TILE_VALUE
 ; when the coordinates are over and under visible screen
-	CFG_TILES_VALUE_OVER:	equ $ff ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	CFG_TILES_VALUE_UNDER:	equ $1f ; BIT_WORLD_DEATH
+	CFG_TILES_VALUE_OVER:	equ $03 ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	CFG_TILES_VALUE_UNDER:	equ $08 ; BIT_WORLD_DEATH
 
 ; Table of tile flags in pairs (up to index, tile flags)
 TILE_FLAGS_TABLE:

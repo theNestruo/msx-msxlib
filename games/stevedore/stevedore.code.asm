@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 16
+	; DEBUG_STAGE:		equ 16
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -155,12 +155,7 @@ ENDIF
 
 ; Intro sequence #4: the awakening
 
-; ; Loads first tutorial stage screen into NAMTBL buffer
-	; ld	hl, NAMTBL_PACKED_TABLE.INTRO_STAGE
-	; ld	de, namtbl_buffer
-	; call	UNPACK
-; ; Mimics in-game loop preamble and initialization	
-	; call	INIT_STAGE
+; Loads first tutorial stage screen
 	ld	a, FIRST_TUTORIAL_STAGE
 	ld	[game.stage], a
 	call	LOAD_AND_INIT_CURRENT_STAGE
@@ -184,24 +179,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Main menu entry point and initialization
 MAIN_MENU:
-; Initializes the selection with the latests chapter
-	ld	a, [globals.chapters]
-	ld	[menu.selected_chapter], a
-; Initializes the menu values from the look-up-table
-	ld	hl, STAGE_SELECT.MENU_0_TABLE
-	ld	bc, STAGE_SELECT.MENU_0_SIZE
-.TABLE_LOOP:
-; Is the right table entry?
-	dec	a
-	jr	z, .HL_OK ; yes
-; no: skips to the next table entry
-	add	hl, bc
-	jr	.TABLE_LOOP
-.HL_OK:
-	ld	de, menu
-	ldir
-	
-; Title charset (1/2: CHRTBL)
+; Title charset
 	call	SET_TITLE_CHARSET
 	
 ; Draws the main menu
@@ -230,6 +208,23 @@ MAIN_MENU:
 	ld	hl, TXT_COPYRIGHT
 	ld	de, namtbl_buffer + 6 *SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
+	
+; Initializes the selection with the latests chapter
+	ld	a, [globals.chapters]
+	ld	[menu.selected_chapter], a
+; Initializes the menu values from the look-up-table
+	ld	hl, STAGE_SELECT.MENU_0_TABLE
+	ld	bc, STAGE_SELECT.MENU_0_SIZE
+.TABLE_LOOP:
+; Is the right table entry?
+	dec	a
+	jr	z, .HL_OK ; yes
+; no: skips to the next table entry
+	add	hl, bc
+	jr	.TABLE_LOOP
+.HL_OK:
+	ld	de, menu
+	ldir
 	
 ; Prints the blocks depending on globals.chapters
 	ld	hl, STAGE_SELECT.NAMTBL
@@ -299,7 +294,7 @@ MAIN_MENU_LOOP:
 	call	PLAYER_DISAPPEARING_ANIMATION
 	call	DISSCR_FADE_OUT
 
-; Restores main charset
+; Restores default charset
 	call	RESET_TITLE_CHARSET
 ; ------VVVV----falls through--------------------------------------------------
 	
@@ -474,116 +469,6 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; In-game loop finish due stage over
-STAGE_OVER:
-; Fade out
-	call	DISSCR_FADE_OUT
-
-; Next stage logic
-	ld	hl, game.stage_bcd
-	ld	a, [hl]
-	add	1
-	daa
-	ld	[hl], a
-	dec	hl ; game.stage
-	inc	[hl]
-	
-; Is a tutorial stage?
-	ld	a, [hl] ; game.stage
-	cp	LAST_TUTORIAL_STAGE
-	jp	z, MAIN_MENU ; tutorial finished: main menu directly
-	cp	FIRST_TUTORIAL_STAGE
-	jp	nc, NEW_STAGE ; yes: go to next stage
-	
-; Is the end of a chapter?
-	ld	d, 1 ; (initializes chapter counter)
-.LOOP:
-	sub	STAGES_PER_CHAPTER
-	jr	z, CHAPTER_OVER ; yes: go to "chapter over" screen
-	jp	c, NEW_STAGE ; no: go to next stage
-	inc	d ; (increases chapter counter)
-	jr	.LOOP
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Chapter over (after a group of stages) "congratulations" screen
-CHAPTER_OVER:
-	push	de ; (preserves chapter counter)
-	
-	call	REPLAYER.STOP
-	
-; Prepares the "chapter over" screen
-	call	CLS_NAMTBL
-	call	RESET_SPRITES
-	
-; "SORRY, STEVEDORE"
-	ld	hl, TXT_CHAPTER_OVER
-	ld	de, namtbl_buffer + 6 * SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-
-; "BUT THE LIGHTHOUSE KEEPER"
-	inc	hl ; (next text)
-	ld	de, namtbl_buffer + 8 * SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-
-; Searchs for the correct text
-	pop	de ; (restores chapter counter)
-	inc	hl ; (points to the first text)
-.SKIP_TEXT:
-	dec	d
-	jr	z, .TEXT_FOUND ; text found
-; Moves the pointer to the next text
-	xor	a ; (looks for $00)
-	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
-	cpir
-; Repeats the loop
-	jr	.SKIP_TEXT
-	
-; "IS IN ANOTHER BUILDING!" and similar texts
-.TEXT_FOUND:
-	ld	de, namtbl_buffer + 10 * SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-
-; Fade in
-	call	ENASCR_FADE_IN
-
-; ...
-	ld	hl, .PLAYER_0
-	ld	de, player
-	ld	bc, PLAYER_0.SIZE
-	ldir
-	call	PUT_PLAYER_SPRITE
-	
-.LOOP:
-	halt
-	call	LDIRVM_SPRATR
-
-	call	MOVE_PLAYER_RIGHT
-	call	UPDATE_PLAYER_ANIMATION
-	call	PUT_PLAYER_SPRITE
-	
-	; call	READ_INPUT
-	; and	1 << BIT_TRIGGER_A
-	; jr	z, .LOOP
-	
-	ld	a, [player.x]
-	cp	256-8
-	jr	nz, .LOOP
-	
-; Pause and go to next stage
-	; call	WAIT_TRIGGER_FOUR_SECONDS
-	call	DISSCR_FADE_OUT
-	jp	NEW_STAGE
-
-; Initial player vars
-.PLAYER_0:
-	db	128, 16			; .y, .x
-	db	0			; .animation_delay
-	db	PLAYER_STATE_FLOOR	; .state
-	db	0			; .dy_index
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; In-game loop finish due death of the player
 PLAYER_OVER:
 ; Fade out
@@ -608,6 +493,10 @@ PLAYER_OVER:
 ; -----------------------------------------------------------------------------
 ; Game over
 GAME_OVER:
+	
+; Stops the replayer
+	call	REPLAYER.STOP
+	
 ; Prepares game over screen
 	call	CLS_NAMTBL
 ; "GAME OVER"
@@ -622,6 +511,166 @@ GAME_OVER:
 	
 	jp	MAIN_MENU
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; In-game loop finish due stage over
+STAGE_OVER:
+; Fade out
+	call	DISSCR_FADE_OUT
+
+; Next stage logic
+	ld	hl, game.stage_bcd
+	ld	a, [hl]
+	add	1
+	daa
+	ld	[hl], a
+	dec	hl ; game.stage
+	inc	[hl]
+	
+; Is a tutorial stage?
+	ld	a, [hl] ; game.stage
+	cp	LAST_TUTORIAL_STAGE
+	jp	z, TUTORIAL_OVER ; tutorial finished
+	cp	FIRST_TUTORIAL_STAGE
+	jp	nc, NEW_STAGE ; yes: go to next stage
+	
+; Is the end of a chapter?
+	ld	d, 1 ; (initializes chapter counter)
+.LOOP:
+	sub	STAGES_PER_CHAPTER
+	jr	z, CHAPTER_OVER ; yes: go to "chapter over" screen
+	jp	c, NEW_STAGE ; no: go to next stage
+	inc	d ; (increases chapter counter)
+	jr	.LOOP
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Special chapter over for the tutorial stages
+TUTORIAL_OVER:
+; Initializes the screen
+	ld	d, 0 ; (tutorial chapter)
+	call	CHAPTER_OVER.INIT
+	
+; Animation loop
+.LOOP:
+	halt
+	call	LDIRVM_SPRATR
+; Moves the player right
+	call	MOVE_PLAYER_RIGHT
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+; Has the player reached the right side of the screen?
+	ld	a, [player.x]
+	cp	256-8
+	jr	nz, .LOOP ; no
+	
+; yes: Go to main menu
+	call	DISSCR_FADE_OUT
+	jp	MAIN_MENU
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Chapter over (after a group of stages) "congratulations" screen
+; param d: finished chapter index (1..5)
+CHAPTER_OVER:
+; Is the last chapter?
+	ld	a, d
+	cp	5
+	jr	z, ENDING ; yes: goto ending
+; no: Unlocks the next chapter in the main menu
+	push	de ; (preserves chapter counter)
+	inc	a ; 2..5
+	ld	[globals.chapters], a
+.CHAPTERS_OK:
+; Initializes the screen
+	call	.INIT
+	
+; Animation loop
+.LEFT_LOOP:
+	halt
+	call	LDIRVM_SPRATR
+; Moves the player right
+	call	MOVE_PLAYER_RIGHT
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+; Has the player reached the right side of the screen?
+	ld	a, [player.x]
+	cp	256-8
+	jr	nz, .LEFT_LOOP ; no
+	
+; yes: Go to next stage
+	call	DISSCR_FADE_OUT
+; Loads chapter song, looped
+	pop	af ; (restores chapter counter in a)
+	inc	a
+	call	REPLAYER.PLAY
+; Go to next stage
+	jp	NEW_STAGE
+	
+; Chapter over screen initilization
+; param d: chapter index (1..5, 0 meaning "tutorial")
+.INIT:
+	push	de ; (preserves chapter counter)
+	
+; Stops the replayer
+	call	REPLAYER.STOP
+	
+; Prepares the "chapter over" screen
+	call	CLS_NAMTBL
+	call	RESET_SPRITES
+	
+; "SORRY, STEVEDORE"
+	ld	hl, TXT_CHAPTER_OVER
+	ld	de, namtbl_buffer + 6 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+
+; "BUT THE LIGHTHOUSE KEEPER"
+	inc	hl ; (next text)
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+
+; Searchs for the correct text
+	pop	de ; (restores chapter counter)
+	inc	d ; (the tutorial is the 0-based text)
+	inc	hl ; (points to the first text)
+.SKIP_TEXT:
+	dec	d
+	jr	z, .TEXT_FOUND ; text found
+; Moves the pointer to the next text
+	xor	a ; (looks for $00)
+	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
+	cpir
+; Repeats the loop
+	jr	.SKIP_TEXT
+	
+; "IS IN ANOTHER BUILDING!" and similar texts
+.TEXT_FOUND:
+	ld	de, namtbl_buffer + 10 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+
+; Fade in
+	call	ENASCR_FADE_IN
+
+; Initialize sprites
+	ld	hl, .PLAYER_0
+	ld	de, player
+	ld	bc, PLAYER_0.SIZE
+	ldir
+	jp	PUT_PLAYER_SPRITE
+	
+; Initial player vars
+.PLAYER_0:
+	db	128, 8			; .y, .x
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+ENDING:
+	jr	$
+; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
@@ -829,7 +878,8 @@ PUSH_SPACE_KEY_ROUTINE:
 	djnz	.BLINK_LOOP
 ; Removes the "push space key" text
 	ld	hl, namtbl_buffer + 16 *SCR_WIDTH
-	jp	CLEAR_LINE
+	xor	a ; (because " " is actually a solid tile)
+	jp	CLEAR_LINE.USING_A
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

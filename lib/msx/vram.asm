@@ -471,13 +471,22 @@ LOCATE_CENTER:
 ; Clears a line in the NAMTBL buffer
 ; with the blank space character ($20, " " ASCII)
 ; param hl: NAMTBL buffer pointer (beginning of the line)
-; touches: bc, de, hl
+; touches: a, bc, de, hl
 CLEAR_LINE:
+	ld	a, $20 ; " " ASCII
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Fills a line in the NAMTBL buffer with the specified character
+; param hl: NAMTBL buffer pointer (beginning of the line)
+; param a: the character to fill the line
+; touches: bc, de, hl
+.USING_A:
 	ld	d, h ; de = hl + 1
 	ld	e, l
 	inc	de
 	ld	bc, SCR_WIDTH -1
-	ld	[hl], $20 ; " " ASCII
+	ld	[hl], a
 	ldir
 	ret
 ; -----------------------------------------------------------------------------
