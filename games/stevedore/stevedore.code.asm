@@ -21,7 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 16
+	; DEBUG_STAGE:		equ 4
+	
+; Demo mode
+	DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -205,9 +208,9 @@ MAIN_MENU:
 	jr	c, .TITLE_ROW_LOOP ; no
 	
 ; Prints copyright notice
-	ld	hl, TXT_COPYRIGHT
-	ld	de, namtbl_buffer + 6 *SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
+	; ld	hl, TXT_COPYRIGHT
+	; ld	de, namtbl_buffer + 6 *SCR_WIDTH
+	; call	PRINT_CENTERED_TEXT
 	
 ; Initializes the selection with the latests chapter
 	ld	a, [globals.chapters]
@@ -561,7 +564,7 @@ TUTORIAL_OVER:
 	call	PUT_PLAYER_SPRITE
 ; Has the player reached the right side of the screen?
 	ld	a, [player.x]
-	cp	256-8
+	cp	256 -8
 	jr	nz, .LOOP ; no
 	
 ; yes: Go to main menu
@@ -576,11 +579,14 @@ CHAPTER_OVER:
 ; Is the last chapter?
 	ld	a, d
 	cp	5
-	jr	z, ENDING ; yes: goto ending
+	jp	z, ENDING ; yes: goto ending
 ; no: Unlocks the next chapter in the main menu
 	push	de ; (preserves chapter counter)
+IFEXIST DEMO_MODE
+ELSE
 	inc	a ; 2..5
 	ld	[globals.chapters], a
+ENDIF
 .CHAPTERS_OK:
 ; Initializes the screen
 	call	.INIT
@@ -593,12 +599,40 @@ CHAPTER_OVER:
 	call	MOVE_PLAYER_RIGHT
 	call	UPDATE_PLAYER_ANIMATION
 	call	PUT_PLAYER_SPRITE
-; Has the player reached the right side of the screen?
+; Has the player reached the half of the screen?
 	ld	a, [player.x]
-	cp	256-8
+	cp	128
 	jr	nz, .LEFT_LOOP ; no
+
+IFEXIST DEMO_MODE
+	; TODO check fruits, etc.
 	
-; yes: Go to next stage
+; yes: Sets the player crashed (sprite only)
+	ld	a, PLAYER_SPRITE_INTRO_PATTERN
+	ld	[player_spratr.pattern], a
+	add	4
+	ld	[player_spratr.pattern +4], a
+	call	LDIRVM_SPRATR
+
+; Dramatic pause	
+	call	WAIT_FOUR_SECONDS
+	
+; "DEMO OVER"
+	ld	hl, TXT_DEMO_OVER
+	ld	de, namtbl_buffer + 17 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	
+	halt
+	call	LDIRVM_NAMTBL
+	call	WAIT_TRIGGER_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
+	
+	jp	MAIN_MENU
+	
+ELSE ; IFEXIST DEMO_MODE
+	; TODO walk right half
+	
+; Go to next stage
 	call	DISSCR_FADE_OUT
 ; Loads chapter song, looped
 	pop	af ; (restores chapter counter in a)
@@ -606,6 +640,7 @@ CHAPTER_OVER:
 	call	REPLAYER.PLAY
 ; Go to next stage
 	jp	NEW_STAGE
+ENDIF ; IFEXIST DEMO_MODE ELSE
 	
 ; Chapter over screen initilization
 ; param d: chapter index (1..5, 0 meaning "tutorial")
@@ -1210,7 +1245,7 @@ UPDATE_BOXES_AND_ROCKS:
 ; Calculate new lower characters
 	ld	a, b ; restores background value
 	and	$06 ; (discards lower bit)
-	or	$b8
+	or	$a8
 ; Sets the new lower characters
 	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
 	inc	a
@@ -1224,7 +1259,7 @@ UPDATE_BOXES_AND_ROCKS:
 ; Yes: calculate new upper characters
 	ld	a, b ; restores background value
 	and	$06 ; (discards lower bit)
-	or	$b0
+	or	$a0
 ; Sets the new upper character
 	ld	[ix + _SPRITEABLE_FOREGROUND], a
 	inc	a
@@ -1249,7 +1284,7 @@ UPDATE_BOXES_AND_ROCKS:
 
 ; Water: calculate new lower characters
 	and	$06 ; (discards lower bit)
-	add	$ac
+	add	$9c
 ; Sets the new lower characters
 	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
 	inc	a
@@ -1258,8 +1293,8 @@ UPDATE_BOXES_AND_ROCKS:
 	bit	1, b
 	ret	z ; no
 ; Yes: sets the new upper characters
-	ld	[ix + _SPRITEABLE_FOREGROUND], $aa
-	ld	[ix + _SPRITEABLE_FOREGROUND +1], $aa +1
+	ld	[ix + _SPRITEABLE_FOREGROUND], $9a
+	ld	[ix + _SPRITEABLE_FOREGROUND +1], $9a +1
 ; Stops the spriteable (after this movement)
 	set	7, [ix + _SPRITEABLE_STATUS]
 	ret
@@ -1425,7 +1460,7 @@ ON_PLAYER_WALK_ON:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Wide tile collision (player width)
+; Wide tile collision (player width): Doors
 ON_PLAYER_WIDE_ON:
 ; Cursor up or down?
 	ld	a, [input.edge]
@@ -1441,7 +1476,35 @@ ON_PLAYER_WIDE_ON:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; UX empujando tiles
+; Walking over tiles (player width): Fragile floor
+ON_PLAYER_WALK_OVER:
+; Reads the tile index and NAMTBL offset and buffer pointer
+	ld	de, [player.xy]
+	call	GET_TILE_VALUE
+	push	hl ; preserves NAMTBL buffer pointer
+	push	af ; preserves actual character
+; Checks if the tile is fragile
+; (avoids touching the wrong character because of player width)
+	call	GET_TILE_FLAGS
+	bit	BIT_WORLD_WALK_OVER, a
+	pop	bc ; restores actual character in b
+	pop	hl ; restores NAMTBL buffer pointer
+	ret	z ; no
+; yes: Is the most fragile character?
+	ld	a, b
+	cp	CHAR_FIRST_FRAGILE
+	jr	z, .REMOVE ; yes
+; no: Increases the fragility of the character in the NAMTBL buffer and VRAM
+	dec	a
+	jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
+.REMOVE:
+; Removes the fragile character in the NAMTBL buffer and VRAM
+	xor	a
+	jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Pushable tiles (player height)
 ON_PLAYER_PUSH:
 
 .RIGHT:

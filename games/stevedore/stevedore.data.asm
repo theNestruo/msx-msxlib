@@ -10,8 +10,8 @@
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
 	
-TXT_COPYRIGHT:
-	db	"@ THENESTRUO & WONDER 2018", $00
+; TXT_COPYRIGHT:
+	; db	"@ THENESTRUO & WONDER 2018", $00
 
 TXT_STAGE:
 	db	"STAGE"
@@ -31,7 +31,7 @@ TXT_GAME_OVER:
 TXT_STAGE_SELECT:
 	db	"STAGE SELECT", $00
 	
-; ._0:	db	"WAREHOUSE (TUTORIAL)",		$00
+; ._0:	db	"WAREHOUSE <TUTORIAL>",		$00
 ; ._1:	db	"LIGHTHOUSE",			$00
 ; ._2:	db	"ABANDONED SHIP",		$00
 ; ._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
@@ -39,14 +39,18 @@ TXT_STAGE_SELECT:
 ; ._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
 	
 TXT_CHAPTER_OVER:
-	db	"SORRY, STEVEDORE",		$00
+	db	"SORRY; STEVEDORE",		$00
 	db	"BUT THE LIGHTHOUSE KEEPER",	$00
-	db	"IS IN ANOTHER BUILDING!",	$00
-	db	"WAS KIDNAPPED BY PIRATES!",	$00
-	db	"SHIPWRECKED!",			$00
-	db	"FELL INTO A CAVE!",		$00
-	db	"WAS CAPTURED BY PANTOJOS!",	$00
+	db	"IS IN ANOTHER BUILDING?",	$00
+	db	"WAS KIDNAPPED BY PIRATES?",	$00
+	db	"SHIPWRECKED?",			$00
+	db	"FELL INTO A CAVE?",		$00
+	db	"WAS CAPTURED BY PANTOJOS?",	$00
 	
+IFEXIST DEMO_MODE
+TXT_DEMO_OVER:
+	db	"DEMO OVER", $00
+ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -201,10 +205,10 @@ INTRO_DATA:
 	incbin	"games/stevedore/maps/intro_screen.tmx.bin.zx7"
 	
 .BROKEN_BRIDGE_CHARS:
-	db	$d2, $00, $d0 ; 3 bytes
+	db	$ca, $00, $c8 ; 3 bytes
 	
 .FLOOR_CHARS:
-	db	$02, $01, $02, $64, $84, $85, $10, $01, $02 ; 9 bytes
+	db	$25, $24, $25, $64, $84, $85, $14, $24, $25 ; 9 bytes
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -217,7 +221,7 @@ STAGE_SELECT:
 	.HEIGHT:	equ 8	
 
 .FLOOR_CHARS:
-	db	$01, $02, $84, $85, $10, $01 ; 6 bytes
+	db	$24, $25, $84, $85, $14, $24 ; 6 bytes
 
 .MENU_0_TABLE:
 ; 1st chapter open
@@ -303,11 +307,6 @@ NAMTBL_PACKED_TABLE:
 .STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
 .STAGE_04:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
 .STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
-; .STAGE_01:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
-; .STAGE_02:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
-; .STAGE_03:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
-; .STAGE_04:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
-; .STAGE_05:	incbin	"games/stevedore/maps/dummy_stage.tmx.bin.zx7"
 
 ; Ship
 .STAGE_06:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
@@ -347,11 +346,12 @@ CHARSET_PACKED:
 	incbin	"games/stevedore/gfx/charset.pcx.clr.zx7"
 	
 ; Charset-related symbolic constants
-	SKELETON_FIRST_CHAR:	equ $1a
+	SKELETON_FIRST_CHAR:	equ $2e
 	TRAP_UPPER_RIGHT_CHAR:	equ $6e
 	TRAP_UPPER_LEFT_CHAR:	equ $6f
 	TRAP_LOWER_RIGHT_CHAR:	equ $7e
 	TRAP_LOWER_LEFT_CHAR:	equ $7f
+	CHAR_FIRST_FRAGILE:	equ $d0
 	BOX_FIRST_CHAR:		equ $d8
 	ROCK_FIRST_CHAR:	equ $dc
 	CHAR_FIRST_ITEM:	equ $e0
@@ -368,7 +368,7 @@ CHARSET_TITLE_PACKED:
 	
 	TITLE_CHAR_FIRST:	equ 96
 	TITLE_WIDTH:		equ 16
-	TITLE_HEIGHT:		equ 3
+	TITLE_HEIGHT:		equ 4
 	TITLE_CENTER:		equ (SCR_WIDTH - TITLE_WIDTH) /2
 	
 CHARSET_DYNAMIC:
@@ -396,37 +396,41 @@ SPRTBL_PACKED:
 	PLAYER_SPRITE_COLOR_1:		equ 15
 	PLAYER_SPRITE_COLOR_2:		equ 9
 	
-	BAT_SPRITE_PATTERN:		equ $50
-	BAT_SPRITE_COLOR:		equ 4
+	PLAYER_SPRITE_INTRO_PATTERN:	equ $50
 
-	SPIDER_SPRITE_PATTERN:		equ $60
-	SPIDER_SPRITE_COLOR:		equ 13
+	BAT_SPRITE_PATTERN:		equ $60
+	BAT_SPRITE_COLOR:		equ 4
 	
-	OCTOPUS_SPRITE_PATTERN:		equ $68
-	OCTOPUS_SPRITE_COLOR:		equ 13
-	
-	SNAKE_SPRITE_PATTERN:		equ $70
-	SNAKE_SPRITE_COLOR:		equ 2
+	; ...
 	
 	SKELETON_SPRITE_PATTERN:	equ $80
 	SKELETON_SPRITE_COLOR:		equ 15
 	
-	SAVAGE_SPRITE_PATTERN:		equ $90
+	SNAKE_SPRITE_PATTERN:		equ $90
+	SNAKE_SPRITE_COLOR:		equ 2
+	
+	SAVAGE_SPRITE_PATTERN:		equ $a0
 	SAVAGE_SPRITE_COLOR:		equ 8
 
-	BOX_SPRITE_PATTERN:		equ $a0
+	SPIDER_SPRITE_PATTERN:		equ $b0
+	SPIDER_SPRITE_COLOR:		equ 13
+	
+	OCTOPUS_SPRITE_PATTERN:		equ $b8
+	OCTOPUS_SPRITE_COLOR:		equ 13
+	
+	; ...
+	
+	BOX_SPRITE_PATTERN:		equ $c8
 	BOX_SPRITE_COLOR:		equ 9
 	
-	ROCK_SPRITE_PATTERN:		equ $a4
+	ROCK_SPRITE_PATTERN:		equ $cc
 	ROCK_SPRITE_COLOR:		equ 14
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
 
-	ARROW_RIGHT_SPRITE_PATTERN:	equ $a8
-	ARROW_LEFT_SPRITE_PATTERN:	equ $ac
+	ARROW_RIGHT_SPRITE_PATTERN:	equ $d0
+	ARROW_LEFT_SPRITE_PATTERN:	equ $d4
 	ARROW_SPRITE_COLOR:		equ 14
-	
-	PLAYER_SPRITE_INTRO_PATTERN:	equ $b0
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
