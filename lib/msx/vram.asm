@@ -399,6 +399,38 @@ LDIRVM_NAMTBL_FADE_INOUT:
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
+; Reads a string from a 0-terminated string array
+; param hl: source of the first string
+; param a: string index
+; ret hl: source of the a-th string
+GET_TEXT:
+	ld	d, a
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Reads a string from a 0-terminated string array
+; param hl: source of the first string
+; param d: string index
+; ret hl: source of the d-th string
+.USING_D:
+	xor	a ; (looks for $00)
+; Checks the border case (d == 0)
+	cp	d
+	ret	z ; yes: text found
+; no: Looks for the proper text
+.LOOP:
+; Moves the pointer to the next text
+	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
+	cpir
+; Is the proper text?
+	dec	d
+	ret	z ; yes
+; No: repeats the loop
+	jr	.LOOP
+	
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Writes a 0-terminated string centered in the NAMTBL buffer
 ; param hl: source string
 ; param de: NAMTBL buffer pointer (beginning of the line)
@@ -520,6 +552,10 @@ PRINT_BCD:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Prints a block of b x c characters
+; param hl: source data
+; param bc: [height, width] of the block
+; param de: NAMTBL buffer pointer
 PRINT_BLOCK:
 ; For each row
 	push	bc ; preserves counters

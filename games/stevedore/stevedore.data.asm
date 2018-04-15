@@ -9,9 +9,6 @@
 ; Literals
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
-	
-; TXT_COPYRIGHT:
-	; db	"@ THENESTRUO & WONDER 2018", $00
 
 TXT_STAGE:
 	db	"STAGE"
@@ -31,12 +28,12 @@ TXT_GAME_OVER:
 TXT_STAGE_SELECT:
 	db	"STAGE SELECT", $00
 	
-; ._0:	db	"WAREHOUSE <TUTORIAL>",		$00
-; ._1:	db	"LIGHTHOUSE",			$00
-; ._2:	db	"ABANDONED SHIP",		$00
-; ._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
-; ._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
-; ._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
+._0:	db	"WAREHOUSE <TUTORIAL>",		$00
+._1:	db	"LIGHTHOUSE",			$00
+._2:	db	"ABANDONED SHIP",		$00
+._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
+._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
+._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
 	
 TXT_CHAPTER_OVER:
 	db	"SORRY; STEVEDORE",		$00
@@ -56,7 +53,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	1			; .chapters
+	db	4			; .chapters
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -368,7 +365,7 @@ CHARSET_TITLE_PACKED:
 	
 	TITLE_CHAR_FIRST:	equ 96
 	TITLE_WIDTH:		equ 16
-	TITLE_HEIGHT:		equ 4
+	TITLE_HEIGHT:		equ 3
 	TITLE_CENTER:		equ (SCR_WIDTH - TITLE_WIDTH) /2
 	
 CHARSET_DYNAMIC:

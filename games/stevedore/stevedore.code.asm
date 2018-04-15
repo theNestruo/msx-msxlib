@@ -53,7 +53,7 @@ INTRO:
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
-	; xor	a ; DEBUG LINE
+	xor	a ; DEBUG LINE
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 IFEXIST DEBUG_STAGE
@@ -190,7 +190,7 @@ MAIN_MENU:
 	call	CLS_SPRATR
 	
 ; Prints the title
-	ld	hl, namtbl_buffer + 2 *SCR_WIDTH + TITLE_CENTER
+	ld	hl, namtbl_buffer + 1 *SCR_WIDTH + TITLE_CENTER
 	ld	a, TITLE_CHAR_FIRST
 .TITLE_ROW_LOOP:
 	ld	b, TITLE_WIDTH
@@ -207,12 +207,16 @@ MAIN_MENU:
 	cp	TITLE_CHAR_FIRST + TITLE_HEIGHT * TITLE_WIDTH
 	jr	c, .TITLE_ROW_LOOP ; no
 	
-; Prints copyright notice
-	; ld	hl, TXT_COPYRIGHT
-	; ld	de, namtbl_buffer + 6 *SCR_WIDTH
-	; call	PRINT_CENTERED_TEXT
+; Prints "STAGE SELECT"
+	ld	hl, TXT_STAGE_SELECT
+	ld	de, namtbl_buffer + 6 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+; "LIGHTHOUSE" and similar texts
+	inc	hl ; (points to the first text)
+	ld	a, [globals.chapters]
+	call	PRINT_SELECTED_CHAPTER_NAME.HL_A_OK
 	
-; Initializes the selection with the latests chapter
+; Initializes the selection with the latest chapter
 	ld	a, [globals.chapters]
 	ld	[menu.selected_chapter], a
 ; Initializes the menu values from the look-up-table
@@ -665,21 +669,11 @@ ENDIF ; IFEXIST DEMO_MODE ELSE
 	call	PRINT_CENTERED_TEXT
 
 ; Searchs for the correct text
+	inc	hl ; (points to the first text)
 	pop	de ; (restores chapter counter)
 	inc	d ; (the tutorial is the 0-based text)
-	inc	hl ; (points to the first text)
-.SKIP_TEXT:
-	dec	d
-	jr	z, .TEXT_FOUND ; text found
-; Moves the pointer to the next text
-	xor	a ; (looks for $00)
-	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
-	cpir
-; Repeats the loop
-	jr	.SKIP_TEXT
-	
+	call	GET_TEXT.USING_D
 ; "IS IN ANOTHER BUILDING!" and similar texts
-.TEXT_FOUND:
 	ld	de, namtbl_buffer + 10 * SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
 
@@ -770,9 +764,19 @@ MAIN_MENU_INPUT:
 .MOVE_TO_A:
 	ld	[menu.selected_chapter], a
 .MOVE:
+; Removes the name of the selected chapter
+	ld	hl, namtbl_buffer + 8 *SCR_WIDTH
+	call	CLEAR_LINE
+	halt
+	call	LDIRVM_NAMTBL
+; Out animation
 	call	PLAYER_DISAPPEARING_ANIMATION
 	call	UPDATE_MENU_PLAYER
-	jp	PLAYER_APPEARING_ANIMATION
+; In animation
+	call	PLAYER_APPEARING_ANIMATION
+	call	PRINT_SELECTED_CHAPTER_NAME
+	halt
+	jp	LDIRVM_NAMTBL
 
 ; Moves the selection to the left
 .LEFT:
@@ -828,6 +832,18 @@ PREPARE_DISAPPEARING_MASK:
 	inc	hl
 	djnz	.LOOP
 	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Prints the name of the selected chapter
+PRINT_SELECTED_CHAPTER_NAME:
+	ld	hl, TXT_STAGE_SELECT._0
+	ld	a, [menu.selected_chapter]
+.HL_A_OK:
+; "LIGHTHOUSE" and similar texts
+	call	GET_TEXT
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH
+	jp	PRINT_CENTERED_TEXT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
