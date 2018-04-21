@@ -21,6 +21,10 @@ TXT_LIVES:
 	.SIZE: 		equ $ - TXT_LIVES
 	.CENTER:	equ (SCR_WIDTH - .SIZE - 2) /2 ; "0 ..."
 	db	$00
+
+TXT_LIFE:
+	db	"LIFE LEFT"
+	db	$00
 	
 TXT_GAME_OVER:
 	db	"GAME OVER", $00
@@ -53,7 +57,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	2 ; 1			; .chapters ; DEBUG LINE
+	db	5 ; 1			; .chapters ; DEBUG LINE
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -115,12 +119,21 @@ ENEMY_0:
 	db	OCTOPUS_SPRITE_PATTERN
 	db	OCTOPUS_SPRITE_COLOR
 	db	$00 ; (not lethal)
-	dw	$ + 2
-; The enemy does not move
-	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
-	dw	STATIONARY_ENEMY_HANDLER
-	db	0 ; 0 = forever
+	dw	ENEMY_TYPE_WAVER ; $ + 2
+; ; The enemy floats up
+	; dw	PUT_ENEMY_SPRITE_PATTERN
+	; db	OCTOPUS_SPRITE_PATTERN or FLAG_ENEMY_PATTERN_ANIM
+	; dw	ENEMY_OCTOPUS.FLOAT_UP_HANDLER
+	; db	16 ; 16 pixels
+	; dw	SET_NEW_STATE_HANDLER
+	; db	ENEMY_STATE.NEXT
+; ; The enemy floats down
+	; dw	PUT_ENEMY_SPRITE_PATTERN
+	; db	OCTOPUS_SPRITE_PATTERN
+	; dw	ENEMY_OCTOPUS.FLOAT_DOWN_HANDLER
+	; db	16 ; 16 pixels
+	; dw	SET_NEW_STATE_HANDLER
+	; db	-5 * ENEMY_STATE.SIZE ; (restart)
 
 ; Snake: the snake walks, the pauses, turning around, and continues
 .SNAKE:
@@ -435,8 +448,8 @@ SPRTBL_PACKED:
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
 
-	ARROW_RIGHT_SPRITE_PATTERN:	equ $d0
-	ARROW_LEFT_SPRITE_PATTERN:	equ $d4
+	ARROW_RIGHT_SPRITE_PATTERN:	equ $b8
+	ARROW_LEFT_SPRITE_PATTERN:	equ $bc
 	ARROW_SPRITE_COLOR:		equ 14
 	
 	OIL_SPRITE_PATTERN:		equ $d8

@@ -92,6 +92,8 @@ INIT_ENEMY:
 	ld	[de], a ; .animation_delay
 	inc	de
 	ld	[de], a ; .frame_counter
+	inc	de
+	ld	[de], a ; .bullet_frame_counter
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -249,6 +251,22 @@ PUT_ENEMY_SPRITE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Puts the enemy sprite using an specific pattern
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret z (continue)
+PUT_ENEMY_SPRITE_PATTERN:
+	ld	e, [ix + enemy.y]
+	ld	d, [ix + enemy.x]
+	ld	c, [iy + ENEMY_STATE.ARGS]
+	ld	b, [ix + enemy.color]
+	call	PUT_SPRITE
+; ret z (continue)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Toggles the left flag of the enemy
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
@@ -260,7 +278,7 @@ TURN_ENEMY:
 	ld	[ix + enemy.pattern], a
 ; ret z (continue)
 	xor	a
-	ret	; (no enemy is expected to have the pattern $00)
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

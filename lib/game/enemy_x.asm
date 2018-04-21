@@ -12,8 +12,18 @@ ENEMY_TYPE_STATIONARY:
 ; The enemy does not move
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
-	dw	STATIONARY_ENEMY_HANDLER
-	db	0 ; 0 = forever
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Stationary (animated): The enemy does not move at all
+.ANIMATED:
+; The enemy does not move
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -23,12 +33,9 @@ ENEMY_TYPE_FLYER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FLYER_ENEMY_HANDLER
-	db	0 ; 0 = forever
-; then turns around and continues
-	dw	TURN_ENEMY
 	db	0 ; (unused)
-	dw	SET_NEW_STATE_HANDLER
-	db	-3 * ENEMY_STATE.SIZE ; (restart)
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -38,13 +45,10 @@ ENEMY_TYPE_WALKER:
 ; The enemy walks ahead
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
-	dw	WALKER_ENEMY_HANDLER
-	db	0 ; 0 = forever
-; then turns around and continues
-	dw	TURN_ENEMY
+	dw	WALKER_ENEMY_HANDLER.CONTINUOUS
 	db	0 ; (unused)
-	dw	SET_NEW_STATE_HANDLER
-	db	-3 * ENEMY_STATE.SIZE ; (restart)
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -168,8 +172,19 @@ ENEMY_TYPE_FALLER:
 ; Sticky - The enemy sticks to walls and ceilings.
 ; Example: Super Mario 2's Spark
 
-; Waver - The enemy floats in a sine wave pattern.
-; Example: Castlevania's Medusa Head
+; -----------------------------------------------------------------------------
+; Waver: The enemy floats in a sine wave pattern.
+ENEMY_TYPE_WAVER:
+; The enemy floats in a sine wave pattern
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	WAVER_ENEMY_HANDLER
+	db	0 ; (unused)
+	dw	FLYER_ENEMY_HANDLER
+	db	0 ; (unused)
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
+; -----------------------------------------------------------------------------
 
 ; Rotator - The enemy rotates around a fixed point.
 ; Sometimes, the fixed point moves, and can move according to any movement attribute in this list.
@@ -273,29 +288,20 @@ STATIONARY_ENEMY_HANDLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Flyer state handler: The enemy flies (or floats)
+; Flyer state handler: The enemy flies (or floats),
+; turning around when the wall is hit
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: distance (frames/pixels) (0 = forever)
-; ret z/nz: if the state has finished (wall hit or distance reached)
+; ret z: continue
 FLYER_ENEMY_HANDLER:
-	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, .RIGHT
-	; jr	.HANDLER_LEFT ; falls through
-
-.LEFT:
-	call	CAN_ENEMY_FLY.LEFT
-	ret	z ; no
-; moves left
-	dec	[ix + enemy.x]
-	jp	STATIONARY_ENEMY_HANDLER
-
-.RIGHT:
-	call	CAN_ENEMY_FLY.RIGHT
-	ret	z ; no
-; moves right
-	inc	[ix + enemy.x]
-	jp	STATIONARY_ENEMY_HANDLER
+; Checks wall
+	call	CAN_ENEMY_FLY
+	jp	z, TURN_ENEMY ; yes: turns around
+; no: moves the enemy
+	call	MOVE_ENEMY
+; ret z (continue)
+	xor	a
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -305,23 +311,28 @@ FLYER_ENEMY_HANDLER:
 ; param [iy + ENEMY_STATE.ARGS]: distance (frames/pixels) (0 = forever)
 ; ret z/nz: if the state has finished (cannot walk or distance reached)
 WALKER_ENEMY_HANDLER:
-	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, .RIGHT
-	; jr	.LEFT ; falls through
-
-.LEFT:
-	call	CAN_ENEMY_WALK.LEFT
+	call	CAN_ENEMY_WALK
 	ret	z ; no
-; moves left
-	dec	[ix + enemy.x]
+; yes: moves the enemy
+	call	MOVE_ENEMY
+; Checks distance
 	jp	STATIONARY_ENEMY_HANDLER
+; -----------------------------------------------------------------------------
 
-.RIGHT:
-	call	CAN_ENEMY_WALK.RIGHT
-	ret	z ; no
-; moves right
-	inc	[ix + enemy.x]
-	jp	STATIONARY_ENEMY_HANDLER
+; -----------------------------------------------------------------------------
+; Walker state handler: the enemy walks ahead along the ground,
+; turning around when the wall is hit or at the end of the platform
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret z: continue
+.CONTINUOUS:
+	call	CAN_ENEMY_WALK
+	jp	z, TURN_ENEMY ; yes: turns around
+; yes: moves the enemy
+	call	MOVE_ENEMY
+; ret z (continue)
+	xor	a
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -341,7 +352,7 @@ FALLER_ENEMY_HANDLER:
 	ld	a, [ix + enemy.frame_counter]
 	inc	[ix + enemy.frame_counter]
 	add	ENEMY_DY_TABLE.FALL_OFFSET
-	call	READ_ENEMY_DY_VALUE
+	call	READ_FALLER_ENEMY_DY_VALUE
 ; moves down
 	add	[ix + enemy.y]
 	ld	[ix + enemy.y], a
@@ -357,6 +368,10 @@ FALLER_ENEMY_HANDLER:
 ; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
 ; ret z/nz: if the state has finished
 RISER_ENEMY_HANDLER:
+	call	.AND
+	jp	STATIONARY_ENEMY_HANDLER
+
+.AND:
 ; Has reached the ceiling?
 	call	GET_ENEMY_TILE_FLAGS_ABOVE
 	cpl	; (negative check to ret z/nz properly)
@@ -364,8 +379,33 @@ RISER_ENEMY_HANDLER:
 	ret	z ; yes (continue)
 ; moves up
 	dec	[ix + enemy.y]
-	jp	STATIONARY_ENEMY_HANDLER
+; ret z ; (continue)
+	xor	a
+	ret
 ; -----------------------------------------------------------------------------
+
+; ; -----------------------------------------------------------------------------
+; ; Lower: The enemy can decrease its height.
+; ; param ix: pointer to the current enemy
+; ; param iy: pointer to the current enemy state
+; ; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
+; ; ret z/nz: if the state has finished
+; LOWER_ENEMY_HANDLER:
+	; call	.AND
+	; jp	STATIONARY_ENEMY_HANDLER
+
+; .AND:
+; ; Has reached the ground?
+	; call	GET_ENEMY_TILE_FLAGS_UNDER
+	; cpl	; (negative check to ret z/nz properly)
+	; bit	BIT_WORLD_SOLID, a
+	; ret	z ; yes (continue)
+; ; moves down
+	; inc	[ix + enemy.y]
+; ; ret z ; (continue)
+	; xor	a
+	; ret
+; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; ; Jumper: The enemy bounces or jumps.
@@ -392,6 +432,19 @@ RISER_ENEMY_HANDLER:
 	; ret
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+; Waver: The enemy floats in a sine wave pattern.
+; Example: Castlevania's Medusa Head
+WAVER_ENEMY_HANDLER:
+	inc	[ix + enemy.frame_counter]
+	ld	a, [ix + enemy.frame_counter]
+	call	READ_WAVER_ENEMY_DY_VALUE ; ._16
+	add	[ix + enemy.y]
+	ld	[ix + enemy.y], a
+; ret z
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
@@ -474,6 +527,31 @@ CAN_ENEMY_FLY.RIGHT:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Moves the enemy 1 pixel forward
+; param ix: pointer to the current enemy
+MOVE_ENEMY:
+	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	jr	z, .RIGHT
+	; jr	.LEFT ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Moves the enemy 1 pixel to the left
+; param ix: pointer to the current enemy
+.LEFT:
+	dec	[ix + enemy.x]
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Moves the enemy 1 pixel to the right
+; param ix: pointer to the current enemy
+.RIGHT:
+	inc	[ix + enemy.x]
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Reads the tile flags above the enemy
 ; param ix: pointer to the current enemy
 ; ret a: tile flags
@@ -526,7 +604,8 @@ GET_ENEMY_TILE_FLAGS_UNDER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-READ_ENEMY_DY_VALUE:
+; param a
+READ_FALLER_ENEMY_DY_VALUE:
 	; ld	a, [player.dy_index]
 	cp	ENEMY_DY_TABLE.SIZE
 	jr	c, .FROM_TABLE
@@ -536,6 +615,36 @@ READ_ENEMY_DY_VALUE:
 .FROM_TABLE:
 	ld	hl, ENEMY_DY_TABLE
 	jp	GET_HL_A_BYTE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; param a
+READ_WAVER_ENEMY_DY_VALUE:
+; ._16:
+	ld	a, [ix + enemy.frame_counter]
+; ._16_A_OK:
+.A_OK:
+	and	$3f
+	ld	hl, .DATA ; _16
+	jp	GET_HL_A_BYTE
+; .DATA_16:
+.DATA:
+	db	0,-1, 0, 0,  -1, 0,-1, 0,  -1,-1,-1, 0,  -1,-1,-1,-1
+	db	0,-1,-1,-1,   0,-1, 0,-1,   0, 0,-1, 0,   0, 0, 0, 0
+	db	0, 1, 0, 0,   1, 0, 1, 0,   1, 1, 1, 0,   1, 1, 1, 1
+	db	0, 1, 1, 1,   0, 1, 0, 1,   0, 0, 1, 0,   0, 0, 0, 0
+	
+; ._8:
+	; ld	a, [ix + enemy.frame_counter]
+; ._8_A_OK:
+	; and	$1f
+	; ld	hl, .DATA_8
+	; jp	GET_HL_A_BYTE
+; .DATA_8:
+	; db	 0, 0,  -1,0,  -1,0,  -1,-1
+	; db	-1,-1,  0,-1,   0,-1,   0, 0
+	; db	 0, 0,   1,0,   1,0,   1, 1
+	; db	 1, 1,  0, 1,   0, 1,   0, 0
 ; -----------------------------------------------------------------------------
 
 ; EOF

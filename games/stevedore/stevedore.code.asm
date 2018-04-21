@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 4
+	DEBUG_STAGE:		equ 6 -1 ; DEBUG LINE
 	
 ; Demo mode
 	DEMO_MODE:
@@ -53,7 +53,7 @@ INTRO:
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
-	xor	a ; DEBUG LINE
+	; xor	a ; DEBUG LINE
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 	
 IFEXIST DEBUG_STAGE
@@ -360,9 +360,15 @@ NEW_STAGE:
 	add	$30 ; "0"
 	ld	[de], a
 	inc	de
-; " LIVES LEFT"
 	inc	de ; " "
+; "LIVES LEFT" / "LIFE LEFT"
+	cp	$31 ; "1"
+	jr	z, .LIFE
 	ld	hl, TXT_LIVES
+	jr	.HL_OK
+.LIFE:
+	ld	hl, TXT_LIFE
+.HL_OK:
 	call	PRINT_TEXT
 
 ; Fade in
@@ -1017,7 +1023,7 @@ POST_PROCESS_STAGE_ELEMENT:
 	cp	TRAP_LOWER_LEFT_CHAR
 	jp	z, .NEW_LEFT_TRAP
 	cp	TRAP_LOWER_RIGHT_CHAR
-	jr	z, .NEW_RIGHT_TRAP
+	jp	z, .NEW_RIGHT_TRAP
 ; Is it '0', '1', '2', ...
 	sub	'0'
 	jr	z, .SET_START_POINT ; '0'
@@ -1357,6 +1363,46 @@ UPDATE_FRAMES_PUSHING:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+ENEMY_OCTOPUS:
+
+.FLOAT_UP_HANDLER:
+; Floats until hitting the wall
+	call	.FLOAT_LEFT_RIGHT
+; moves up
+	call	GET_ENEMY_TILE_FLAGS_ABOVE
+	bit	BIT_WORLD_SOLID, a
+	jr	nz, .NO_FLOAT_UP
+	dec	[ix + enemy.y]
+.NO_FLOAT_UP:
+	jp	STATIONARY_ENEMY_HANDLER
+
+.FLOAT_DOWN_HANDLER:
+; Floats until hitting the wall
+	call	.FLOAT_LEFT_RIGHT
+; moves down
+	call	GET_ENEMY_TILE_FLAGS_UNDER
+	bit	BIT_WORLD_SOLID, a
+	jr	nz, .NO_FLOAT_DOWN
+	inc	[ix + enemy.y]
+.NO_FLOAT_DOWN:
+	jp	STATIONARY_ENEMY_HANDLER
+
+.FLOAT_LEFT_RIGHT:
+; Wall hit?
+	call	CAN_ENEMY_FLY
+	jp	z, TURN_ENEMY ; yes: turns around
+; no: moves forward
+	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	jr	z, .MOVE_RIGHT
+.MOVE_LEFT:
+	dec	[ix + enemy.x]
+	ret
+.MOVE_RIGHT:
+	inc	[ix + enemy.x]
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Skeleton: the skeleton is slept until the star is picked up,
 ; then, it becomes of type walker (follower with pause)
 ENEMY_SKELETON.HANDLER:
@@ -1397,26 +1443,28 @@ ENEMY_SKELETON.HANDLER:
 ENEMY_TRAP:
 
 .TRIGGER_RIGHT_HANDLER:
+; The player is at the same y?
 	ld	h, PLAYER_ENEMY_Y_SIZE
 	call	CHECK_PLAYER_COLLISION.Y
-	jp	nc, RET_NOT_ZERO
-; right?
+	jp	nc, RET_NOT_ZERO ; no
+; yes: to the right?
 	ld	a, [player.x]
 	cp	[ix + enemy.x]
-	jp	c, RET_NOT_ZERO
-; Sets the next state as the enemy state
+	jp	c, RET_NOT_ZERO ; no
+; yes: sets the next state as the enemy state
 	ld	bc, ENEMY_STATE.NEXT
 	jp	SET_NEW_STATE_HANDLER.BC_OK
 	
 .TRIGGER_LEFT_HANDLER:
+; The player is at the same y?
 	ld	h, PLAYER_ENEMY_Y_SIZE
 	call	CHECK_PLAYER_COLLISION.Y
-	jp	nc, RET_NOT_ZERO
-; left?
+	jp	nc, RET_NOT_ZERO ; no
+; yes: to the left?
 	ld	a, [player.x]
 	cp	[ix + enemy.x]
-	jp	nc, RET_NOT_ZERO
-; Sets the next state as the enemy state
+	jp	nc, RET_NOT_ZERO ; no
+; yes: sets the next state as the enemy state
 	ld	bc, ENEMY_STATE.NEXT
 	jp	SET_NEW_STATE_HANDLER.BC_OK
 	

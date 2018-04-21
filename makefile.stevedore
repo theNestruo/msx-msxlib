@@ -259,5 +259,5 @@ $(ROM): $(ROM_INTERMEDIATE)
 	$(REMOVE) $@
 	$(PACK) $<
 
-warehouse.pt3.hl ship.pt3.hl: $(GAME_PATH)\sfx\headerless.asm warehouse.pt3 ship.pt3
+warehouse.pt3.hl ship.pt3.hl jungle.pt3.hl cave.pt3.hl: $(GAME_PATH)\sfx\headerless.asm warehouse.pt3 ship.pt3 jungle.pt3 cave.pt3
 	$(ASM) $<
