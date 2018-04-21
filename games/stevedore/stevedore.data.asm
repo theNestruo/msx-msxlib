@@ -53,7 +53,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	4			; .chapters
+	db	2 ; 1			; .chapters ; DEBUG LINE
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -112,6 +112,15 @@ ENEMY_0:
 
 ; Octopus: not implemented yet	
 .OCTOPUS:
+	db	OCTOPUS_SPRITE_PATTERN
+	db	OCTOPUS_SPRITE_COLOR
+	db	$00 ; (not lethal)
+	dw	$ + 2
+; The enemy does not move
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	STATIONARY_ENEMY_HANDLER
+	db	0 ; 0 = forever
 
 ; Snake: the snake walks, the pauses, turning around, and continues
 .SNAKE:
@@ -192,6 +201,11 @@ BULLET_0:
 	db	ARROW_LEFT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
 	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
+	
+.OIL_UP:
+	db	OIL_SPRITE_PATTERN
+	db	OIL_SPRITE_COLOR
+	db	BULLET_DIR_UP OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -398,29 +412,25 @@ SPRTBL_PACKED:
 	BAT_SPRITE_PATTERN:		equ $60
 	BAT_SPRITE_COLOR:		equ 4
 	
-	; ...
-	
-	SKELETON_SPRITE_PATTERN:	equ $80
+	SKELETON_SPRITE_PATTERN:	equ $70
 	SKELETON_SPRITE_COLOR:		equ 15
 	
-	SNAKE_SPRITE_PATTERN:		equ $90
+	SNAKE_SPRITE_PATTERN:		equ $80
 	SNAKE_SPRITE_COLOR:		equ 2
 	
-	SAVAGE_SPRITE_PATTERN:		equ $a0
+	SAVAGE_SPRITE_PATTERN:		equ $90
 	SAVAGE_SPRITE_COLOR:		equ 8
 
-	SPIDER_SPRITE_PATTERN:		equ $b0
+	SPIDER_SPRITE_PATTERN:		equ $a0
 	SPIDER_SPRITE_COLOR:		equ 13
 	
-	OCTOPUS_SPRITE_PATTERN:		equ $b8
-	OCTOPUS_SPRITE_COLOR:		equ 13
+	OCTOPUS_SPRITE_PATTERN:		equ $a8
+	OCTOPUS_SPRITE_COLOR:		equ 1
 	
-	; ...
-	
-	BOX_SPRITE_PATTERN:		equ $c8
+	BOX_SPRITE_PATTERN:		equ $b0
 	BOX_SPRITE_COLOR:		equ 9
 	
-	ROCK_SPRITE_PATTERN:		equ $cc
+	ROCK_SPRITE_PATTERN:		equ $b4
 	ROCK_SPRITE_COLOR:		equ 14
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
@@ -428,6 +438,9 @@ SPRTBL_PACKED:
 	ARROW_RIGHT_SPRITE_PATTERN:	equ $d0
 	ARROW_LEFT_SPRITE_PATTERN:	equ $d4
 	ARROW_SPRITE_COLOR:		equ 14
+	
+	OIL_SPRITE_PATTERN:		equ $d8
+	OIL_SPRITE_COLOR:		equ 7
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

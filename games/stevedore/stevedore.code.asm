@@ -1026,9 +1026,11 @@ POST_PROCESS_STAGE_ELEMENT:
 	dec	a
 	jr	z, .NEW_SPIDER ; '2'
 	dec	a
-	jr	z, .NEW_SNAKE ; '3'
+	jr	z, .NEW_OCTOPUS ; '3'
 	dec	a
-	jr	z, .NEW_SAVAGE ; '4'
+	jr	z, .NEW_SNAKE ; '4'
+	dec	a
+	jr	z, .NEW_SAVAGE ; '5'
 	ret
 	
 .SET_START_POINT:
@@ -1076,6 +1078,11 @@ POST_PROCESS_STAGE_ELEMENT:
 	jp	INIT_ENEMY
 
 .NEW_OCTOPUS:
+; Initializes a new octopus
+	ld	[hl], $f3 ; (water)
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, ENEMY_0.OCTOPUS
+	jp	INIT_ENEMY
 
 .NEW_SNAKE:
 ; Initializes a new snake
