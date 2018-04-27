@@ -7,6 +7,9 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
+TXT_COPYRIGHT:
+	db	"@ THENESTRUO = WONDER 2018", $00
+	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
 
@@ -57,7 +60,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	5 ; 1			; .chapters ; DEBUG LINE
+	db	1 ; 1			; .chapters ; DEBUG LINE
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -167,18 +170,15 @@ ENEMY_0:
 	db	$00 ; (not lethal)
 	dw	$ + 2
 ; Does the player overlaps y coordinate?
+	dw	TRIGGER_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_M
 	dw	ENEMY_TRAP.TRIGGER_RIGHT_HANDLER
 	db	0 ; (unused)
 ; Shoot
 	dw	ENEMY_TRAP.SHOOT_RIGHT_HANDLER
 	db	0 ; (unused)
-	dw	SET_NEW_STATE_HANDLER
-	db	ENEMY_STATE.NEXT
-; then pause and restart
-	dw	STATIONARY_ENEMY_HANDLER
-	db	CFG_ENEMY_PAUSE_M
-	dw	SET_NEW_STATE_HANDLER
-	db	-4 * ENEMY_STATE.SIZE; (restart)
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
 	
 ; Trap (pointing left): shoots when the player is in front of it
 .TRAP_LEFT:
@@ -187,18 +187,15 @@ ENEMY_0:
 	db	$00 ; (not lethal)
 	dw	$ + 2
 ; Does the player overlaps y coordinate?
+	dw	TRIGGER_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_M
 	dw	ENEMY_TRAP.TRIGGER_LEFT_HANDLER
 	db	0 ; (unused)
 ; Shoot
 	dw	ENEMY_TRAP.SHOOT_LEFT_HANDLER
 	db	0 ; (unused)
-	dw	SET_NEW_STATE_HANDLER
-	db	ENEMY_STATE.NEXT
-; then pause and restart
-	dw	STATIONARY_ENEMY_HANDLER
-	db	CFG_ENEMY_PAUSE_M
-	dw	SET_NEW_STATE_HANDLER
-	db	-4 * ENEMY_STATE.SIZE; (restart)
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -340,9 +337,9 @@ NAMTBL_PACKED_TABLE:
 .STAGE_10:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
 
 ; Jungle
-.STAGE_11:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
-.STAGE_12:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
-.STAGE_13:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
+.STAGE_11:	incbin	"games/stevedore/maps/stage_11.tmx.bin.zx7"
+.STAGE_12:	incbin	"games/stevedore/maps/stage_12.tmx.bin.zx7"
+.STAGE_13:	incbin	"games/stevedore/maps/stage_12.tmx.bin.zx7"
 .STAGE_14:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
 .STAGE_15:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
 

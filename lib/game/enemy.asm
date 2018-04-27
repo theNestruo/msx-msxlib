@@ -93,7 +93,7 @@ INIT_ENEMY:
 	inc	de
 	ld	[de], a ; .frame_counter
 	inc	de
-	ld	[de], a ; .bullet_frame_counter
+	ld	[de], a ; .trigger_frame_counter
 	ret
 ; -----------------------------------------------------------------------------
 

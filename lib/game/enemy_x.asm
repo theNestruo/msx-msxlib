@@ -45,6 +45,8 @@ ENEMY_TYPE_WALKER:
 ; The enemy walks ahead
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	0 ; (unused)
 	dw	WALKER_ENEMY_HANDLER.CONTINUOUS
 	db	0 ; (unused)
 	dw	RET_NOT_ZERO
@@ -58,6 +60,8 @@ ENEMY_TYPE_WALKER:
 ; The enemy walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	0 ; (unused)
 	dw	WALKER_ENEMY_HANDLER
 	db	0 ; 0 = forever
 ; then
@@ -66,11 +70,13 @@ ENEMY_TYPE_WALKER:
 ; pauses, turning around
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	0 ; (unused)
 	dw	STATIONARY_ENEMY_HANDLER.TURNING ; then pauses, turning around
 	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 ; and continues
 	dw	SET_NEW_STATE_HANDLER	; and continues
-	db	-5 * ENEMY_STATE.SIZE ; (restart)
+	db	-7 * ENEMY_STATE.SIZE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -79,6 +85,8 @@ ENEMY_TYPE_WALKER:
 .FOLLOWER:
 ; The enemy pauses briefly
 	dw	PUT_ENEMY_SPRITE
+	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	0 ; (unused)
 	dw	STATIONARY_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium pause
@@ -90,11 +98,13 @@ ENEMY_TYPE_WALKER:
 ; walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	0 ; (unused)
 	dw	WALKER_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium distance
 ; and continues
 	dw	SET_NEW_STATE_HANDLER
-	db	-6 * ENEMY_STATE.SIZE ; (restart)
+	db	-8 * ENEMY_STATE.SIZE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -104,6 +114,8 @@ ENEMY_TYPE_WALKER:
 .FOLLOWER_WITH_PAUSE:
 ; The enemy pauses, turning around
 	dw	PUT_ENEMY_SPRITE
+	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	0 ; (unused)
 	dw	STATIONARY_ENEMY_HANDLER.TURNING
 	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
@@ -115,16 +127,25 @@ ENEMY_TYPE_WALKER:
 ; walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	0 ; (unused)
 	dw	WALKER_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium distance
 ; and continues
 	dw	SET_NEW_STATE_HANDLER
-	db	-6 * ENEMY_STATE.SIZE ; (restart)
+	db	-8 * ENEMY_STATE.SIZE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Faller: The enemy falls from the ceiling onto the ground.
 ENEMY_TYPE_FALLER:
+; Yes: The enemy falls onto the ground
+	dw	PUT_ENEMY_SPRITE_ANIM
+	db	0 ; (unused)
+	dw	FALLER_ENEMY_HANDLER
+	db	0 ; 0 = forever
+	dw	RET_NOT_ZERO
+	; db	0 ; (unused)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -441,8 +462,27 @@ WAVER_ENEMY_HANDLER:
 	call	READ_WAVER_ENEMY_DY_VALUE ; ._16
 	add	[ix + enemy.y]
 	ld	[ix + enemy.y], a
-; ret z
+; ret z (continue)
 	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Trigger state handler: puases until the enemy can shoot again
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARGS]: number of frames to wait between shoots
+; ret z/nz: if the state has finished
+TRIGGER_ENEMY_HANDLER:
+; Can shoot?
+	inc	[ix + enemy.trigger_frame_counter]
+	ld	a, [iy + ENEMY_STATE.ARGS]
+	sub	[ix + enemy.trigger_frame_counter] ; (sub to avoid extra xor a)
+	ret	nz ; no: ret nz (halt)
+; yes: Resets trigger frame counter
+	; xor	a ; (unnecessary)
+	ld	[ix + enemy.trigger_frame_counter], a
+; ret z (continue)
 	ret
 ; -----------------------------------------------------------------------------
 

@@ -108,9 +108,15 @@ CFG_CUSTOM_PALETTE:
 	CFG_PT3_HEADERLESS:
 
 ; PT3-based implementation
-	include	"lib\msx\replayer_pt3.asm"
+	include	"lib/msx/replayer_pt3.asm"
 ; WYZPlayer v0.47c-based implementation
-	; include	"lib\msx\replayer_wyz.asm"
+	; include	"lib/msx/replayer_wyz.asm"
+
+; Define to use relative volume version (the default is fixed volume)
+	; CFG_AYFX_RELATIVE:
+
+; ayFX REPLAYER v1.31
+	include	"libext/ayFX-replayer/ayFX-ROM.tniasm.asm"
 ; -----------------------------------------------------------------------------
 
 

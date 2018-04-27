@@ -24,7 +24,7 @@
 	DEBUG_STAGE:		equ 6 -1 ; DEBUG LINE
 	
 ; Demo mode
-	DEMO_MODE:
+	; DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -44,20 +44,11 @@ MAIN_INIT:
 	ld	de, globals
 	ld	bc, GLOBALS_0.SIZE
 	ldir
-; ------VVVV----falls through--------------------------------------------------
-	
-; -----------------------------------------------------------------------------
-; Intro sequence
-INTRO:
-; Is SEL key pressed?
-	halt
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	6, [hl]
-	; xor	a ; DEBUG LINE
-	jp	z, MAIN_MENU ; yes: skip intro / tutorial
-	
+
 IFEXIST DEBUG_STAGE
 ; Is ESC key pressed?
+	halt
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	2, [hl]
 	jr	z, .DONT_USE_DEBUG_STAGE ; yes: do not go to debug stage
 ; Loads debug stage
@@ -69,7 +60,33 @@ IFEXIST DEBUG_STAGE
 	jp	GAME_LOOP
 .DONT_USE_DEBUG_STAGE:
 ENDIF
+; ------VVVV----falls through--------------------------------------------------
 
+; -----------------------------------------------------------------------------
+; Copyright notice and "skip intro" secret option
+COPYRIGHT:
+; Prints copyright notice
+	call	CLS_NAMTBL
+	call	CLS_SPRATR
+	ld	hl, TXT_COPYRIGHT
+	ld	de, namtbl_buffer + 11 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	
+; Fade in, pause, fade out
+	call	ENASCR_FADE_IN
+	call	WAIT_TRIGGER_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
+	
+; Is SEL key pressed?
+	halt
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	6, [hl]
+	jp	z, MAIN_MENU ; yes: skip intro / tutorial
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Intro sequence
+INTRO:
 ; Loads intro screen into NAMTBL buffer
 	ld	hl, INTRO_DATA.NAMTBL_PACKED
 	ld	de, namtbl_buffer
@@ -1452,8 +1469,10 @@ ENEMY_TRAP:
 	cp	[ix + enemy.x]
 	jp	c, RET_NOT_ZERO ; no
 ; yes: sets the next state as the enemy state
-	ld	bc, ENEMY_STATE.NEXT
-	jp	SET_NEW_STATE_HANDLER.BC_OK
+	; ld	bc, ENEMY_STATE.NEXT
+	; jp	SET_NEW_STATE_HANDLER.BC_OK
+	xor	a
+	ret	z
 	
 .TRIGGER_LEFT_HANDLER:
 ; The player is at the same y?
@@ -1465,8 +1484,10 @@ ENEMY_TRAP:
 	cp	[ix + enemy.x]
 	jp	nc, RET_NOT_ZERO ; no
 ; yes: sets the next state as the enemy state
-	ld	bc, ENEMY_STATE.NEXT
-	jp	SET_NEW_STATE_HANDLER.BC_OK
+	; ld	bc, ENEMY_STATE.NEXT
+	; jp	SET_NEW_STATE_HANDLER.BC_OK
+	xor	a
+	ret	z
 	
 .SHOOT_RIGHT_HANDLER:
 	ld	hl, BULLET_0.ARROW_RIGHT

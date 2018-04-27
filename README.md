@@ -4,11 +4,12 @@ TO BE WRITTEN
 
 ## External libraries
 
+* [ayFX Replayer v1.31] by SapphiRe
+* [CoolColors] (c) Fabio R. Schmidlin, 1997
 * [Pletter 0.5c1](http://xl2s.eu.pn/pletter.html) (c) XL2S Entertainment 2008
 * [PT3 Replayer] by Dioniso, MSX-KUN (ROM version), SapphiRe (asMSX version)
 * [WYZPlayer 0.47c](https://github.com/AugustoRuiz/WYZTracker)
 * [ZX7](https://github.com/z88dk/z88dk/tree/master/libsrc/_DEVELOPMENT/compress/zx7/z80)
-* [CoolColors] (c) Fabio R. Schmidlin, 1997
 
 ## External tools
 

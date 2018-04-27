@@ -43,6 +43,14 @@ wyzplayer_buffer:
 	rb	$20
 
 ENDIF
+
+
+IFDEF CFG_REPLAYER_AYFX
+
+; ayFX REPLAYER v1.31 variables
+	include	"libext/ayFX-replayer/ayFX-RAM.tniasm.asm"
+
+ENDIF
 ; -----------------------------------------------------------------------------
 
 ; EOF
