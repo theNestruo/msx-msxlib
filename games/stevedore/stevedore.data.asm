@@ -8,7 +8,7 @@
 ; -----------------------------------------------------------------------------
 ; Literals
 TXT_COPYRIGHT:
-	db	"@ THENESTRUO = WONDER 2018", $00
+	db	"@ 2018 THENESTRUO = WONDER", $00
 	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -302,7 +302,11 @@ STAGE_SELECT:
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
+IFEXIST DEMO_MODE
+	dw	.STAGE_01, .STAGE_02, .STAGE_11, .STAGE_14, .STAGE_14
+ELSE
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
+ENDIF ; IFEXIST DEMO_MODE
 	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
 	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
 	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20

@@ -46,7 +46,7 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	0 ; (unused)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	WALKER_ENEMY_HANDLER.CONTINUOUS
 	db	0 ; (unused)
 	dw	RET_NOT_ZERO
@@ -61,7 +61,7 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	0 ; (unused)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	WALKER_ENEMY_HANDLER
 	db	0 ; 0 = forever
 ; then
@@ -71,7 +71,7 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	0 ; (unused)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	STATIONARY_ENEMY_HANDLER.TURNING ; then pauses, turning around
 	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 ; and continues
@@ -87,7 +87,7 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	0 ; (unused)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	STATIONARY_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium pause
 ; then turns towards the player
@@ -99,7 +99,7 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	0 ; (unused)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	WALKER_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium distance
 ; and continues
@@ -116,7 +116,7 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	0 ; (unused)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	STATIONARY_ENEMY_HANDLER.TURNING
 	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
 ; then turns towards the player
@@ -128,7 +128,7 @@ ENEMY_TYPE_WALKER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	0 ; (unused)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	WALKER_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium distance
 ; and continues
@@ -143,7 +143,7 @@ ENEMY_TYPE_FALLER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER
-	db	0 ; 0 = forever
+	db	(1 << BIT_WORLD_SOLID)
 	dw	RET_NOT_ZERO
 	; db	0 ; (unused)
 ; -----------------------------------------------------------------------------
@@ -165,7 +165,7 @@ ENEMY_TYPE_FALLER:
 	dw	PUT_ENEMY_SPRITE_ANIM
 	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER
-	db	0 ; 0 = forever
+	db	(1 << BIT_WORLD_SOLID)
 	dw	SET_NEW_STATE_HANDLER
 	db	ENEMY_STATE.NEXT
 ; then rises back up
@@ -365,9 +365,13 @@ WALKER_ENEMY_HANDLER:
 FALLER_ENEMY_HANDLER:
 ; Has fallen onto the ground?
 	call	GET_ENEMY_TILE_FLAGS_UNDER
-	cpl	; (negative check to ret z/nz properly)
-	bit	BIT_WORLD_SOLID, a
-	ret	z ; yes (continue)
+	; cpl	; (negative check to ret z/nz properly)
+	; bit	BIT_WORLD_SOLID, a
+	; ret	z ; yes (continue)
+	ld	b, [iy + ENEMY_STATE.ARGS]
+	and	b
+	jp	nz, RET_ZERO
+	; ret	z ; yes (continue)
 	
 ; Computes falling speed	
 	ld	a, [ix + enemy.frame_counter]
@@ -389,10 +393,6 @@ FALLER_ENEMY_HANDLER:
 ; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
 ; ret z/nz: if the state has finished
 RISER_ENEMY_HANDLER:
-	call	.AND
-	jp	STATIONARY_ENEMY_HANDLER
-
-.AND:
 ; Has reached the ceiling?
 	call	GET_ENEMY_TILE_FLAGS_ABOVE
 	cpl	; (negative check to ret z/nz properly)
@@ -400,8 +400,7 @@ RISER_ENEMY_HANDLER:
 	ret	z ; yes (continue)
 ; moves up
 	dec	[ix + enemy.y]
-; ret z ; (continue)
-	xor	a
+; ret nz (halt)
 	ret
 ; -----------------------------------------------------------------------------
 

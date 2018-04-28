@@ -21,10 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 6 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
 	
 ; Demo mode
-	; DEMO_MODE:
+	DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ COPYRIGHT:
 	call	CLS_NAMTBL
 	call	CLS_SPRATR
 	ld	hl, TXT_COPYRIGHT
-	ld	de, namtbl_buffer + 11 *SCR_WIDTH
+	ld	de, namtbl_buffer + 20 *SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
 	
 ; Fade in, pause, fade out
