@@ -59,7 +59,8 @@ INNER:		djnz	INNER				; Inner loop
 REPLAYER:	.INCLUDE	"PT3-ROM.ASM"
 
 		; --- INCLUDE MUSIC in ROM code (don't forget to strip first 100 bytes of PT3 module ---
-MUSIC:		.INCBIN		"MUSIC.100"
+MUSIC_FILE:	.INCBIN		"EXAMPLE.PT3"
+		MUSIC	equ MUSIC_FILE + 100
 
 
 
