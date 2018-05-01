@@ -21,10 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 6 -1 ; DEBUG LINE
 	
 ; Demo mode
-	DEMO_MODE:
+	; DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1379,45 +1379,45 @@ UPDATE_FRAMES_PUSHING:
 	ret
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-ENEMY_OCTOPUS:
+; ; -----------------------------------------------------------------------------
+; ENEMY_OCTOPUS:
 
-.FLOAT_UP_HANDLER:
-; Floats until hitting the wall
-	call	.FLOAT_LEFT_RIGHT
-; moves up
-	call	GET_ENEMY_TILE_FLAGS_ABOVE
-	bit	BIT_WORLD_SOLID, a
-	jr	nz, .NO_FLOAT_UP
-	dec	[ix + enemy.y]
-.NO_FLOAT_UP:
-	jp	STATIONARY_ENEMY_HANDLER
+; .FLOAT_UP_HANDLER:
+; ; Floats until hitting the wall
+	; call	.FLOAT_LEFT_RIGHT
+; ; moves up
+	; call	GET_ENEMY_TILE_FLAGS_ABOVE
+	; bit	BIT_WORLD_SOLID, a
+	; jr	nz, .NO_FLOAT_UP
+	; dec	[ix + enemy.y]
+; .NO_FLOAT_UP:
+	; jp	STATIONARY_ENEMY_HANDLER
 
-.FLOAT_DOWN_HANDLER:
-; Floats until hitting the wall
-	call	.FLOAT_LEFT_RIGHT
-; moves down
-	call	GET_ENEMY_TILE_FLAGS_UNDER
-	bit	BIT_WORLD_SOLID, a
-	jr	nz, .NO_FLOAT_DOWN
-	inc	[ix + enemy.y]
-.NO_FLOAT_DOWN:
-	jp	STATIONARY_ENEMY_HANDLER
+; .FLOAT_DOWN_HANDLER:
+; ; Floats until hitting the wall
+	; call	.FLOAT_LEFT_RIGHT
+; ; moves down
+	; call	GET_ENEMY_TILE_FLAGS_UNDER
+	; bit	BIT_WORLD_SOLID, a
+	; jr	nz, .NO_FLOAT_DOWN
+	; inc	[ix + enemy.y]
+; .NO_FLOAT_DOWN:
+	; jp	STATIONARY_ENEMY_HANDLER
 
-.FLOAT_LEFT_RIGHT:
-; Wall hit?
-	call	CAN_ENEMY_FLY
-	jp	z, TURN_ENEMY ; yes: turns around
-; no: moves forward
-	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, .MOVE_RIGHT
-.MOVE_LEFT:
-	dec	[ix + enemy.x]
-	ret
-.MOVE_RIGHT:
-	inc	[ix + enemy.x]
-	ret
-; -----------------------------------------------------------------------------
+; .FLOAT_LEFT_RIGHT:
+; ; Wall hit?
+	; call	CAN_ENEMY_FLY
+	; jp	z, TURN_ENEMY ; yes: turns around
+; ; no: moves forward
+	; bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	; jr	z, .MOVE_RIGHT
+; .MOVE_LEFT:
+	; dec	[ix + enemy.x]
+	; ret
+; .MOVE_RIGHT:
+	; inc	[ix + enemy.x]
+	; ret
+; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Skeleton: the skeleton is slept until the star is picked up,
@@ -1425,8 +1425,8 @@ ENEMY_OCTOPUS:
 ENEMY_SKELETON.HANDLER:
 ; Has the star been picked up?
 	ld	hl, stage.flags
-	bit	BIT_STAGE_STAR, [hl]
-	jp	z, RET_NOT_ZERO ; no
+	bit	BIT_STAGE_KEY, [hl]
+	jp	z, END_ENEMY_HANDLER ; no
 
 ; yes: locates the skeleton characters
 	ld	e, [ix + enemy.y]
@@ -1443,66 +1443,60 @@ ENEMY_SKELETON.HANDLER:
 	dec	hl
 	call	VPOKE_NAMTBL_ADDRESS ; left char (NATMBL)
 	pop	ix ; restores ix
-; Shows the sprite in the next frame
-	call	PUT_ENEMY_SPRITE ; (side effect: a = 0)
 ; Makes the enemy lethal
 	set	BIT_ENEMY_LETHAL, [ix + enemy.flags]
-; Makes the enemy a walker (follower with pause)
-	ld	hl, ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
-	ld	[ix + enemy.state_h], h
-	ld	[ix + enemy.state_l], l
-; ret nz (halt)
-	dec	a
+; ret 2 (continue with next state handler)
+	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-ENEMY_TRAP:
+; ; -----------------------------------------------------------------------------
+; ENEMY_TRAP:
 
-.TRIGGER_RIGHT_HANDLER:
-; The player is at the same y?
-	ld	h, PLAYER_ENEMY_Y_SIZE
-	call	CHECK_PLAYER_COLLISION.Y
-	jp	nc, RET_NOT_ZERO ; no
-; yes: to the right?
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jp	c, RET_NOT_ZERO ; no
-; yes: sets the next state as the enemy state
-	; ld	bc, ENEMY_STATE.NEXT
-	; jp	SET_NEW_STATE_HANDLER.BC_OK
-	xor	a
-	ret	z
+; .TRIGGER_RIGHT_HANDLER:
+; ; The player is at the same y?
+	; ld	h, PLAYER_ENEMY_Y_SIZE
+	; call	CHECK_PLAYER_COLLISION.Y
+	; jp	nc, RET_NOT_ZERO ; no
+; ; yes: to the right?
+	; ld	a, [player.x]
+	; cp	[ix + enemy.x]
+	; jp	c, RET_NOT_ZERO ; no
+; ; yes: sets the next state as the enemy state
+	; ; ld	bc, ENEMY_STATE.NEXT
+	; ; jp	SET_NEW_STATE_HANDLER.BC_OK
+	; xor	a
+	; ret	z
 	
-.TRIGGER_LEFT_HANDLER:
-; The player is at the same y?
-	ld	h, PLAYER_ENEMY_Y_SIZE
-	call	CHECK_PLAYER_COLLISION.Y
-	jp	nc, RET_NOT_ZERO ; no
-; yes: to the left?
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jp	nc, RET_NOT_ZERO ; no
-; yes: sets the next state as the enemy state
-	; ld	bc, ENEMY_STATE.NEXT
-	; jp	SET_NEW_STATE_HANDLER.BC_OK
-	xor	a
-	ret	z
+; .TRIGGER_LEFT_HANDLER:
+; ; The player is at the same y?
+	; ld	h, PLAYER_ENEMY_Y_SIZE
+	; call	CHECK_PLAYER_COLLISION.Y
+	; jp	nc, RET_NOT_ZERO ; no
+; ; yes: to the left?
+	; ld	a, [player.x]
+	; cp	[ix + enemy.x]
+	; jp	nc, RET_NOT_ZERO ; no
+; ; yes: sets the next state as the enemy state
+	; ; ld	bc, ENEMY_STATE.NEXT
+	; ; jp	SET_NEW_STATE_HANDLER.BC_OK
+	; xor	a
+	; ret	z
 	
-.SHOOT_RIGHT_HANDLER:
-	ld	hl, BULLET_0.ARROW_RIGHT
-	call	INIT_BULLET_FROM_ENEMY
-; ret z (continue)
-	xor	a
-	ret
+; .SHOOT_RIGHT_HANDLER:
+	; ld	hl, BULLET_0.ARROW_RIGHT
+	; call	INIT_BULLET_FROM_ENEMY
+; ; ret z (continue)
+	; xor	a
+	; ret
 
-.SHOOT_LEFT_HANDLER:
-	ld	hl, BULLET_0.ARROW_LEFT
-	call	INIT_BULLET_FROM_ENEMY
-; ret z (continue)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
+; .SHOOT_LEFT_HANDLER:
+	; ld	hl, BULLET_0.ARROW_LEFT
+	; call	INIT_BULLET_FROM_ENEMY
+; ; ret z (continue)
+	; xor	a
+	; ret
+; ; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================

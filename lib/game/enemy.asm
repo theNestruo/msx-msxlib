@@ -32,15 +32,17 @@
 ; Any enemy state handler routine:
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
-; ret nz: if the state handler has not finished yet.
-;	The enemy update process will halt until the next frame.
-; ret z: if the state handler has finished.
-;	The enemy update process continues immediately with the next state.
+; ret z: the enemy update process has finished for the current frame.
+; ret nz: the enemy update process for the current frame
+;	continues with the next state handler;
+;	the handler for the next state handler is returned by the state handler.
 	ENEMY_STATE.HANDLER_L:	equ 0 ; State handler address (low)
 	ENEMY_STATE.HANDLER_H:	equ 1 ; State handler address (high)
-	ENEMY_STATE.ARGS:	equ 2 ; State handler arguments
-	ENEMY_STATE.SIZE:	equ 3
-	ENEMY_STATE.NEXT:	equ ENEMY_STATE.SIZE ; (for legiblity)
+	ENEMY_STATE.ARG_0:	equ 2 ; State handler arguments
+	ENEMY_STATE.ARG_1:	equ 3 ; State handler arguments
+	ENEMY_STATE.ARG_2:	equ 4 ; State handler arguments
+	ENEMY_STATE.ARG_3:	equ 5 ; State handler arguments
+	ENEMY_STATE.ARG_4:	equ 6 ; State handler arguments
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -122,10 +124,14 @@ UPDATE_ENEMIES:
 	ld	h, [iy + ENEMY_STATE.HANDLER_H]
 	call	JP_HL ; emulates "call [hl]"
 ; Has the handler finished?
-	jp	nz, .SKIP_ENEMY ; no: pending frames
+	or	a
+	jr	z, .SKIP_ENEMY ; yes: the enemy update process has finished
 ; Skips to the next state handler
-	ld	bc, ENEMY_STATE.SIZE
-	add	iy, bc
+	ld	c, a ; ld bc, a
+	rla
+	sbc	a, a
+	ld	b, a
+	add	iy, bc ; iy += bc
 	jp	.HANDLER_LOOP
 	
 .SKIP_ENEMY:
@@ -144,80 +150,72 @@ UPDATE_ENEMIES:
 ;
 
 ; -----------------------------------------------------------------------------
-; Sets a new current state for the current enemy, relative to the current state
+; Sets a new current state for the current enemy
 ; (this state handler is usually the last handler of a state)
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
-; ret nz (halt)
+; param [iy + ENEMY_STATE.ARG_0]: address of the next state (word)
+; ret z (halt)
 SET_NEW_STATE_HANDLER:
-; Reads the offset to the next state in bc (16-bit signed)
-	ld	a, [iy + ENEMY_STATE.ARGS]
-	ld	c, a ; ld bc, a
-	rla
-	sbc	a, a
-	ld	b, a
-	
-.BC_OK:
+; Reads the address of the next state in hl
+	ld	l, [iy + ENEMY_STATE.ARG_0]
+	ld	h, [iy + ENEMY_STATE.ARG_1]
 ; Sets the new state as the enemy state
-	push	iy ; hl = iy + bc
-	pop	hl
-	add	hl, bc
-	ld	[ix + enemy.state_h], h
 	ld	[ix + enemy.state_l], l
+	ld	[ix + enemy.state_h], h
 ; Resets the animation flag
 	res	BIT_ENEMY_PATTERN_ANIM, [ix + enemy.pattern]
 ; Resets the animation delay and the frame counter
 	xor	a
 	ld	[ix + enemy.animation_delay], a
 	ld	[ix + enemy.frame_counter], a
-; ret nz (halt)
-	dec	a
+; ret z (halt)
 	ret
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Sets a new current state for the current enemy,
-; relative to the current state,
-; when the player and the enemy are in overlapping x coordinates
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
-; ret z (continue) if the state does not change (no overlapping coordinates)
-; ret nz (halt) if the state changes
-.ON_X_COLLISION:
-	ld	l, PLAYER_ENEMY_X_SIZE
-	call	CHECK_PLAYER_COLLISION.X
-	jp	c, SET_NEW_STATE_HANDLER
-; ret z (continue)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
+; ; -----------------------------------------------------------------------------
+; ; Sets a new current state for the current enemy
+; ; when the player and the enemy are in overlapping x coordinates
+; ; param ix: pointer to the current enemy
+; ; param iy: pointer to the current enemy state
+; ; param [iy + ENEMY_STATE.ARG_0]: offset to the next state (in bytes)
+; ; ret z (continue) if the state does not change (no overlapping coordinates)
+; ; ret nz (halt) if the state changes
+; .ON_X_COLLISION:
+	; ld	l, PLAYER_ENEMY_X_SIZE
+	; call	CHECK_PLAYER_COLLISION.X
+	; jp	c, SET_NEW_STATE_HANDLER
+; ; ret z (continue)
+	; xor	a
+	; ret
+; ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Sets a new current state for the current enemy,
-; relative to the current state,
-; when the player and the enemy are in overlapping y coordinates
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
-; ret z (continue) if the state does not change (no overlapping coordinates)
-; ret nz (halt) if the state changes
-.ON_Y_COLLISION:
-	ld	h, PLAYER_ENEMY_Y_SIZE
-	call	CHECK_PLAYER_COLLISION.Y
-	jp	c, SET_NEW_STATE_HANDLER
-; ret z (continue)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
+; ; -----------------------------------------------------------------------------
+; ; Sets a new current state for the current enemy,
+; ; relative to the current state,
+; ; when the player and the enemy are in overlapping y coordinates
+; ; param ix: pointer to the current enemy
+; ; param iy: pointer to the current enemy state
+; ; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
+; ; ret z (continue) if the state does not change (no overlapping coordinates)
+; ; ret nz (halt) if the state changes
+; .ON_Y_COLLISION:
+	; ld	h, PLAYER_ENEMY_Y_SIZE
+	; call	CHECK_PLAYER_COLLISION.Y
+	; jp	c, SET_NEW_STATE_HANDLER
+; ; ret z (continue)
+	; xor	a
+	; ret
+; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Updates animation counter and toggles the animation flag,
 ; then puts the enemy sprite
+; This function can be used as an enemy state handler
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
-; ret z (continue)
+; ret nz (continue)
+; ret a: 2 (continue with next state handler)
 PUT_ENEMY_SPRITE_ANIM:
 ; Updates animation counter
 	ld	a, [ix + enemy.animation_delay]
@@ -236,53 +234,57 @@ PUT_ENEMY_SPRITE_ANIM:
 
 ; -----------------------------------------------------------------------------
 ; Puts the enemy sprite
+; This function can be used as an enemy state handler
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
-; ret z (continue)
+; ret nz (continue)
+; ret a: 2 (continue with next state handler)
 PUT_ENEMY_SPRITE:
 	ld	e, [ix + enemy.y]
 	ld	d, [ix + enemy.x]
 	ld	c, [ix + enemy.pattern]
 	ld	b, [ix + enemy.color]
 	call	PUT_SPRITE
-; ret z (continue)
-	xor	a
+; ret 2 (continue with next state handler)
+	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Puts the enemy sprite using an specific pattern
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret z (continue)
-PUT_ENEMY_SPRITE_PATTERN:
-	ld	e, [ix + enemy.y]
-	ld	d, [ix + enemy.x]
-	ld	c, [iy + ENEMY_STATE.ARGS]
-	ld	b, [ix + enemy.color]
-	call	PUT_SPRITE
-; ret z (continue)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
+; ; -----------------------------------------------------------------------------
+; ; Puts the enemy sprite using an specific pattern
+; ; param ix: pointer to the current enemy
+; ; param iy: pointer to the current enemy state
+; ; ret z (continue)
+; PUT_ENEMY_SPRITE_PATTERN:
+	; ld	e, [ix + enemy.y]
+	; ld	d, [ix + enemy.x]
+	; ld	c, [iy + ENEMY_STATE.ARGS]
+	; ld	b, [ix + enemy.color]
+	; call	PUT_SPRITE
+; ; ret z (continue)
+	; xor	a
+	; ret
+; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Toggles the left flag of the enemy
+; This function can be used as an enemy state handler
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
-; ret z (continue)
+; ret a: 2 (continue with next state handler)
 TURN_ENEMY:
 ; Toggles the left flag
 	ld	a, FLAG_ENEMY_PATTERN_LEFT
 	xor	[ix + enemy.pattern]
 	ld	[ix + enemy.pattern], a
-; ret z (continue)
-	xor	a
+; ret 2 (continue with next state handler)
+	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Turns the enemy towards the player
+; This function can be used as an enemy state handler
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
 ; ret z (continue)
@@ -295,25 +297,27 @@ TURN_ENEMY:
 
 ; -----------------------------------------------------------------------------
 ; Turns the enemy left
+; This function can be used as an enemy state handler
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
 ; ret z (continue)
 .LEFT:
 	set	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-; ret z (continue)
-	xor	a
+; ret 2 (continue with next state handler)
+	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
 	
 ; -----------------------------------------------------------------------------
 ; Turns the enemy right
+; This function can be used as an enemy state handler
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
 ; ret z (continue)
 .RIGHT:
 	res	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-; ret z (continue)
-	xor	a
+; ret 2 (continue with next state handler)
+	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
 

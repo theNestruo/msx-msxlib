@@ -11,9 +11,7 @@
 ENEMY_TYPE_STATIONARY:
 ; The enemy does not move
 	dw	PUT_ENEMY_SPRITE
-	db	0 ; (unused)
-	dw	RET_NOT_ZERO
-	; db	0 ; (unused)
+	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -21,9 +19,7 @@ ENEMY_TYPE_STATIONARY:
 .ANIMATED:
 ; The enemy does not move
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
-	dw	RET_NOT_ZERO
-	; db	0 ; (unused)
+	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -31,11 +27,8 @@ ENEMY_TYPE_STATIONARY:
 ENEMY_TYPE_FLYER:
 ; The enemy flies
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	FLYER_ENEMY_HANDLER
-	db	0 ; (unused)
-	dw	RET_NOT_ZERO
-	; db	0 ; (unused)
+	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -44,13 +37,10 @@ ENEMY_TYPE_FLYER:
 ENEMY_TYPE_WALKER:
 ; The enemy walks ahead
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER.CONTINUOUS
-	db	0 ; (unused)
-	dw	RET_NOT_ZERO
-	; db	0 ; (unused)
+	dw	WALKER_ENEMY_HANDLER
+	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -59,24 +49,21 @@ ENEMY_TYPE_WALKER:
 .WITH_PAUSE:
 ; The enemy walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER
-	db	0 ; 0 = forever
+	dw	WALKER_ENEMY_HANDLER.NOTIFY
 ; then
 	dw	SET_NEW_STATE_HANDLER
-	db	ENEMY_STATE.NEXT
+	dw	$ + 2
 ; pauses, turning around
 	dw	PUT_ENEMY_SPRITE
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	STATIONARY_ENEMY_HANDLER.TURNING ; then pauses, turning around
+	dw	WAIT_ENEMY_HANDLER.TURNING
 	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 ; and continues
-	dw	SET_NEW_STATE_HANDLER	; and continues
-	db	-7 * ENEMY_STATE.SIZE ; (restart)
+	dw	SET_NEW_STATE_HANDLER
+	dw	.WITH_PAUSE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -85,26 +72,23 @@ ENEMY_TYPE_WALKER:
 .FOLLOWER:
 ; The enemy pauses briefly
 	dw	PUT_ENEMY_SPRITE
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	STATIONARY_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_M ; medium pause
 ; then turns towards the player
 	dw	TURN_ENEMY.TOWARDS_PLAYER
-	db	0 ; (unused)
 	dw	SET_NEW_STATE_HANDLER
-	db	ENEMY_STATE.NEXT
-; walks ahead along the ground
+	dw	$ + 2
+; walks ahead along the ground a medium distance
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER
+	dw	WALKER_ENEMY_HANDLER.RANGED
 	db	CFG_ENEMY_PAUSE_M ; medium distance
 ; and continues
 	dw	SET_NEW_STATE_HANDLER
-	db	-8 * ENEMY_STATE.SIZE ; (restart)
+	dw	.FOLLOWER ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -114,26 +98,23 @@ ENEMY_TYPE_WALKER:
 .FOLLOWER_WITH_PAUSE:
 ; The enemy pauses, turning around
 	dw	PUT_ENEMY_SPRITE
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	STATIONARY_ENEMY_HANDLER.TURNING
-	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 times, medium pause
+	dw	WAIT_ENEMY_HANDLER.TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 ; then turns towards the player
 	dw	TURN_ENEMY.TOWARDS_PLAYER
-	db	0 ; (unused)
 	dw	SET_NEW_STATE_HANDLER
-	db	ENEMY_STATE.NEXT
+	dw	$ + 2
 ; walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER
+	dw	WALKER_ENEMY_HANDLER.RANGED
 	db	CFG_ENEMY_PAUSE_M ; medium distance
 ; and continues
 	dw	SET_NEW_STATE_HANDLER
-	db	-8 * ENEMY_STATE.SIZE ; (restart)
+	dw	.FOLLOWER_WITH_PAUSE ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -141,108 +122,100 @@ ENEMY_TYPE_WALKER:
 ENEMY_TYPE_FALLER:
 ; Yes: The enemy falls onto the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER
 	db	(1 << BIT_WORLD_SOLID)
-	dw	RET_NOT_ZERO
-	; db	0 ; (unused)
+	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Faller (with trigger): The enemy falls onto the ground
 ; when the player x coordinate overlaps with the enemy's
-.WITH_TRIGGER:
-; Does the player overlaps x coordinate?
+.TRIGGERED:
+; The enemy waits until the player overlaps x coordinate
 	dw	PUT_ENEMY_SPRITE
-	db	0 ; (unused)
-	dw	SET_NEW_STATE_HANDLER.ON_X_COLLISION
-	db	2 * ENEMY_STATE.SIZE ; (skip one)
-; No: the enemy remains stationary
-	dw	STATIONARY_ENEMY_HANDLER
-	db	0 ; 0 = forever
-	
-; Yes: The enemy falls onto the ground
+	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; then the enemy falls onto the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	FALLER_ENEMY_HANDLER
 	db	(1 << BIT_WORLD_SOLID)
 	dw	SET_NEW_STATE_HANDLER
-	db	ENEMY_STATE.NEXT
+	dw	$ + 2
 ; then rises back up
 	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
 	dw	RISER_ENEMY_HANDLER
-	db	0 ; 0 = forever
+	db	(1 << BIT_WORLD_SOLID)
 	dw	SET_NEW_STATE_HANDLER
-	db	-8 * ENEMY_STATE.SIZE; (restart)
+	dw	.TRIGGERED ; (restart)
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Riser: The enemy can increase its height.
-; ENEMY_TYPE_RISER:
-; -----------------------------------------------------------------------------
+; ; -----------------------------------------------------------------------------
+; ; Riser: The enemy can increase its height.
+; ; ENEMY_TYPE_RISER:
+; ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Jumper: The enemy bounces or jumps.
-; ENEMY_TYPE_JUMPER:
-; -----------------------------------------------------------------------------
+; ; -----------------------------------------------------------------------------
+; ; Jumper: The enemy bounces or jumps.
+; ; ENEMY_TYPE_JUMPER:
+; ; -----------------------------------------------------------------------------
 
-; Ducker - The enemy can reduce its height (including, melting into the floor).
-; Example: Super Mario's Piranha Plants
+; ; Ducker - The enemy can reduce its height (including, melting into the floor).
+; ; Example: Super Mario's Piranha Plants
 
-; Sticky - The enemy sticks to walls and ceilings.
-; Example: Super Mario 2's Spark
+; ; Sticky - The enemy sticks to walls and ceilings.
+; ; Example: Super Mario 2's Spark
 
-; -----------------------------------------------------------------------------
-; Waver: The enemy floats in a sine wave pattern.
-ENEMY_TYPE_WAVER:
-; The enemy floats in a sine wave pattern
-	dw	PUT_ENEMY_SPRITE_ANIM
-	db	0 ; (unused)
-	dw	WAVER_ENEMY_HANDLER
-	db	0 ; (unused)
-	dw	FLYER_ENEMY_HANDLER
-	db	0 ; (unused)
-	dw	RET_NOT_ZERO
+; ; -----------------------------------------------------------------------------
+; ; Waver: The enemy floats in a sine wave pattern.
+; ENEMY_TYPE_WAVER:
+; ; The enemy floats in a sine wave pattern
+	; dw	PUT_ENEMY_SPRITE_ANIM
 	; db	0 ; (unused)
-; -----------------------------------------------------------------------------
+	; dw	WAVER_ENEMY_HANDLER
+	; db	0 ; (unused)
+	; dw	FLYER_ENEMY_HANDLER
+	; db	0 ; (unused)
+	; dw	RET_NOT_ZERO
+	; ; db	0 ; (unused)
+; ; -----------------------------------------------------------------------------
 
-; Rotator - The enemy rotates around a fixed point.
-; Sometimes, the fixed point moves, and can move according to any movement attribute in this list.
-; Also, the rotation direction may change.
-; Example: Super Mario 3's Rotodisc,
-; These jetpack enemeis from Sunsoft's Batman (notice that the point which they rotate around is the player)
+; ; Rotator - The enemy rotates around a fixed point.
+; ; Sometimes, the fixed point moves, and can move according to any movement attribute in this list.
+; ; Also, the rotation direction may change.
+; ; Example: Super Mario 3's Rotodisc,
+; ; These jetpack enemeis from Sunsoft's Batman (notice that the point which they rotate around is the player)
 
-; Swinger - The enemy swings from a fixed point.
-; Example: Castlevania's swinging blades
+; ; Swinger - The enemy swings from a fixed point.
+; ; Example: Castlevania's swinging blades
 
-; Pacer - The enemy changes direction in response to a trigger (like reaching the edge of a platform).
-; Example: Super Mario's Red Koopas
+; ; Pacer - The enemy changes direction in response to a trigger (like reaching the edge of a platform).
+; ; Example: Super Mario's Red Koopas
 
-; Roamer - The enemy changes direction completely randomly.
-; Example: Legend of Zelda's Octoroks
+; ; Roamer - The enemy changes direction completely randomly.
+; ; Example: Legend of Zelda's Octoroks
 
-; Liner - The enemy moves directly to a spot on the screen.
-; Forgot to record the enemies I saw doing this, but usually they move from one spot to another in straight lines,
-; sometimes randomly, other times, trying to 'slice' through the player.
+; ; Liner - The enemy moves directly to a spot on the screen.
+; ; Forgot to record the enemies I saw doing this, but usually they move from one spot to another in straight lines,
+; ; sometimes randomly, other times, trying to 'slice' through the player.
 
-; Teleporter - The enemy can teleport from one location to another.
-; Example: Zelda's Wizrobes
+; ; Teleporter - The enemy can teleport from one location to another.
+; ; Example: Zelda's Wizrobes
 
-; Dasher - The enemy dashes in a direction, faster than its normal movement speed.
-; Example: Zelda's Rope Snakes
+; ; Dasher - The enemy dashes in a direction, faster than its normal movement speed.
+; ; Example: Zelda's Rope Snakes
 
-; Ponger - The enemy ignores gravity and physics, and bounces off walls in straight lines.
-; Example: Zelda 2's "Bubbles"
+; ; Ponger - The enemy ignores gravity and physics, and bounces off walls in straight lines.
+; ; Example: Zelda 2's "Bubbles"
 
-; Geobound - The enemy is physically stuck to the geometry of the level, sometimes appears as level geometry.
-; Examples: Megaman's Spikes, Super Mario's Piranha Plants, CastleVania's White Dragon
+; ; Geobound - The enemy is physically stuck to the geometry of the level, sometimes appears as level geometry.
+; ; Examples: Megaman's Spikes, Super Mario's Piranha Plants, CastleVania's White Dragon
 
-; Tethered - The enemy is tethered to the level's geometry by a chain or a rope.
-; Example: Super Mario's Chain Chomps
+; ; Tethered - The enemy is tethered to the level's geometry by a chain or a rope.
+; ; Example: Super Mario's Chain Chomps
 
-; Swooper - A floating enemy that swoops down, often returning to its original position, but not always.
-; Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
+; ; Swooper - A floating enemy that swoops down, often returning to its original position, but not always.
+; ; Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
 
 ;
 ; =============================================================================
@@ -251,60 +224,107 @@ ENEMY_TYPE_WAVER:
 ;
 
 ; -----------------------------------------------------------------------------
-; Stationary state handler: the enemy does not move
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
-; ret z/nz: if the state has finished
-STATIONARY_ENEMY_HANDLER:
-; Is the argument zero?
-	ld	a, [iy + ENEMY_STATE.ARGS]
-	or	a
-	jr	z, .FOREVER
-; increases frame counter
-	inc	[ix + enemy.frame_counter]
-; ret z/nz
-	; ld	a, [iy + ENEMY_STATE.ARGS] ; unnecessary
-	cp	[ix + enemy.frame_counter]
+; Finish state handler (to be used in comparisons only; inline otherwise)
+; param ix: pointer to the current enemy (ignored)
+; param iy: pointer to the current enemy state (ignored)
+; ret a: always halt (0)
+END_ENEMY_HANDLER:	equ	RET_ZERO
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Continue state handler (to be used in comparisons only; inline otherwise)
+; param ix: pointer to the current enemy (ignored)
+; param iy: pointer to the current enemy state (ignored)
+; ret a: always continue (2, 3, etc.)
+CONTINUE_ENEMY_HANDLER:
+.NO_ARGS:
+	ld	a, 2
 	ret
-	
-.FOREVER:
-; ret nz (halt)
-	inc	a
+.ONE_ARG:
+	ld	a, 3
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Stationary state handler: the enemy does not move, but turns around
+; Wait state handler: wait a number of frames
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
-; param [iy+_STATE_ARGUMENT]: ttffffff:
+; param [iy + ENEMY_STATE.ARG_0]: number of frames
+; ret a: continue (3) if the wait has finished, halt (0) otherwise
+WAIT_ENEMY_HANDLER:
+; increases frame counter and compares with argument
+	inc	[ix + enemy.frame_counter]
+	ld	a, [ix + enemy.frame_counter]
+	cp	[iy + ENEMY_STATE.ARG_0]
+; ret 3/0
+	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: wait a number of frames, turning around
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy+ENEMY_STATE.ARG_0]: ttffffff:
 ; - f the frames to wait before each turn
 ; - t the times to turn minus 1 (0 = 1 time, 1 = 2 times, etc.)
-; ret z/nz: if the state has finished
+; ret a: continue (3) if the wait has finished, halt (0) otherwise
 .TURNING:
 ; compares frame counter with frames
 	ld	a, [ix + enemy.frame_counter]
 	ld	b, a ; preserves frame counter in b
-	xor	[iy + ENEMY_STATE.ARGS]
+	xor	[iy + ENEMY_STATE.ARG_0]
 	and	$3f ; masks the ffffff part
 	jr	z, .DO_TURN
 ; increases frame counter
 	inc	[ix + enemy.frame_counter]
-; ret nz (halt)
+; ret 0 (halt)
+	xor	a
 	ret
 	
 .DO_TURN:
 	call	TURN_ENEMY
 ; compares frame counter with times
 	ld	a, b ; restores frame counter in b
-	cp	[iy + ENEMY_STATE.ARGS]
-	ret	z ; (continue)
+	cp	[iy + ENEMY_STATE.ARG_0]
+	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG
 ; resets frame part of frame counter and increases times counter
 	and	$c0
 	add	$40
 	ld	[ix + enemy.frame_counter], a
-; ret nz (halt)
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait X collision state handler:
+; waits until the player and the enemy are in overlapping x coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the x coordinates are overlapping, halt (0) otherwise
+.X_COLLISION:
+	ld	l, PLAYER_ENEMY_X_SIZE
+	call	CHECK_PLAYER_COLLISION.X
+	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; ret 2 (continue)
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait Y collision state handler:
+; waits until the player and the enemy are in overlapping y coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the y coordinates are overlapping, halt (0) otherwise
+.Y_COLLISION:
+	ld	l, PLAYER_ENEMY_Y_SIZE
+	call	CHECK_PLAYER_COLLISION.Y
+	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; ret 2 (continue)
+; ret 0 (halt)
+	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -312,66 +332,98 @@ STATIONARY_ENEMY_HANDLER:
 ; Flyer state handler: The enemy flies (or floats),
 ; turning around when the wall is hit
 ; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret z: continue
+; param iy: pointer to the current enemy state (ignored)
+; ret a: always continue (2)
 FLYER_ENEMY_HANDLER:
 ; Checks wall
 	call	CAN_ENEMY_FLY
 	jp	z, TURN_ENEMY ; yes: turns around
 ; no: moves the enemy
 	call	MOVE_ENEMY
-; ret z (continue)
-	xor	a
+; ret 2 (continue with next state handler)
+	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Walker state handler: the enemy walks ahead along the ground
+; Flyer state handler: The enemy flies (or floats), until a wall is hit
 ; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: distance (frames/pixels) (0 = forever)
-; ret z/nz: if the state has finished (cannot walk or distance reached)
-WALKER_ENEMY_HANDLER:
-	call	CAN_ENEMY_WALK
-	ret	z ; no
-; yes: moves the enemy
+; param iy: pointer to the current enemy state (ignored)
+; ret a: continue (2) if a wall has been hit, halt (0) otherwise
+.NOTIFY:
+; Checks wall
+	call	CAN_ENEMY_FLY
+	jp	z, END_ENEMY_HANDLER ; yes
+; no: moves the enemy
 	call	MOVE_ENEMY
-; Checks distance
-	jp	STATIONARY_ENEMY_HANDLER
+; ret halt (0)
+	xor	a
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Walker state handler: the enemy walks ahead along the ground,
 ; turning around when the wall is hit or at the end of the platform
 ; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret z: continue
-.CONTINUOUS:
+; param iy: pointer to the current enemy state (ignored)
+; ret a: always continue (2)
+WALKER_ENEMY_HANDLER:
+; Checks floor (or wall)
 	call	CAN_ENEMY_WALK
-	jp	z, TURN_ENEMY ; yes: turns around
+	jp	z, TURN_ENEMY ; no: turns around
 ; yes: moves the enemy
 	call	MOVE_ENEMY
-; ret z (continue)
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Walker state handler: the enemy walks ahead along the ground,
+; until a wall is hit or the end of the platform is reached
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; ret a: continue (2) if a wall has been hit, halt (0) otherwise
+.NOTIFY:
+; Checks floor (or wall)
+	call	CAN_ENEMY_WALK
+	jp	z, CONTINUE_ENEMY_HANDLER.NO_ARGS ; no
+; yes: moves the enemy
+	call	MOVE_ENEMY
+; ret halt (0)
 	xor	a
 	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Walker state handler: the enemy walks ahead a number of pixels along the ground,
+; until a wall is hit, the end of the platform is reached
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; param [iy + ENEMY_STATE.ARGS]: distance (frames/pixels) (0 = forever)
+; ret a: continue (3) if a wall has been hit, halt (0) otherwise
+.RANGED:
+; Checks floor (or wall)
+	call	CAN_ENEMY_WALK
+	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG ; no
+; yes: moves the enemy
+	call	MOVE_ENEMY
+; increases frame counter, compares with argument, and ret 3/0
+	jp	WAIT_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Faller state handler: the enemy falls onto the ground.
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: (ignored)
-; ret z/nz: if the state has finished
+; param [iy + ENEMY_STATE.ARG_0]: mask of tile flags to check
+; ret a: continue (3) if already on the ground, halt (0) otherwise
 FALLER_ENEMY_HANDLER:
 ; Has fallen onto the ground?
 	call	GET_ENEMY_TILE_FLAGS_UNDER
-	; cpl	; (negative check to ret z/nz properly)
-	; bit	BIT_WORLD_SOLID, a
-	; ret	z ; yes (continue)
-	ld	b, [iy + ENEMY_STATE.ARGS]
+	ld	b, [iy + ENEMY_STATE.ARG_0]
 	and	b
-	jp	nz, RET_ZERO
-	; ret	z ; yes (continue)
+	jp	nz, CONTINUE_ENEMY_HANDLER.ONE_ARG
 	
 ; Computes falling speed	
 	ld	a, [ix + enemy.frame_counter]
@@ -381,8 +433,8 @@ FALLER_ENEMY_HANDLER:
 ; moves down
 	add	[ix + enemy.y]
 	ld	[ix + enemy.y], a
-; ret nz (halt)
-	; inc	a ; (unnecessary)
+; ret halt (0)
+	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -390,100 +442,102 @@ FALLER_ENEMY_HANDLER:
 ; Riser: The enemy can increase its height.
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
-; ret z/nz: if the state has finished
+; param [iy + ENEMY_STATE.ARG_0]: mask of tile flags to check
+; ret a: continue (3) if already reached the ceiling, halt (0) otherwise
 RISER_ENEMY_HANDLER:
 ; Has reached the ceiling?
 	call	GET_ENEMY_TILE_FLAGS_ABOVE
-	cpl	; (negative check to ret z/nz properly)
-	bit	BIT_WORLD_SOLID, a
-	ret	z ; yes (continue)
+	ld	b, [iy + ENEMY_STATE.ARG_0]
+	and	b
+	jp	nz, CONTINUE_ENEMY_HANDLER.ONE_ARG
+	
 ; moves up
 	dec	[ix + enemy.y]
-; ret nz (halt)
-	ret
-; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; ; Lower: The enemy can decrease its height.
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
-; ; ret z/nz: if the state has finished
-; LOWER_ENEMY_HANDLER:
-	; call	.AND
-	; jp	STATIONARY_ENEMY_HANDLER
-
-; .AND:
-; ; Has reached the ground?
-	; call	GET_ENEMY_TILE_FLAGS_UNDER
-	; cpl	; (negative check to ret z/nz properly)
-	; bit	BIT_WORLD_SOLID, a
-	; ret	z ; yes (continue)
-; ; moves down
-	; inc	[ix + enemy.y]
-; ; ret z ; (continue)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; ; Jumper: The enemy bounces or jumps.
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; param [iy + ENEMY_STATE.ARGS]: (ignored)
-; ; ret z/nz: if the state has finished
-; JUMPER_ENEMY_HANDLER:
-	; ld	a, [ix + enemy.frame_counter]
-	; cp	ENEMY_DY_TABLE.SIZE -1
-	; jr	z, .DY_MAX ; yes
-; ; increases frame counter
-	; inc	[ix + enemy.frame_counter]
-; .DY_MAX:
-	; ld	hl, ENEMY_DY_TABLE
-	; call	GET_HL_A_BYTE
-	
-	; add	[ix + enemy.y]
-	; ld	[ix + enemy.y], a
-	
-; ; ret nz (halt)
-	; xor	a
-	; inc	a
-	; ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Waver: The enemy floats in a sine wave pattern.
-; Example: Castlevania's Medusa Head
-WAVER_ENEMY_HANDLER:
-	inc	[ix + enemy.frame_counter]
-	ld	a, [ix + enemy.frame_counter]
-	call	READ_WAVER_ENEMY_DY_VALUE ; ._16
-	add	[ix + enemy.y]
-	ld	[ix + enemy.y], a
-; ret z (continue)
+; ret halt (0)
 	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Trigger state handler: puases until the enemy can shoot again
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARGS]: number of frames to wait between shoots
-; ret z/nz: if the state has finished
-TRIGGER_ENEMY_HANDLER:
-; Can shoot?
-	inc	[ix + enemy.trigger_frame_counter]
-	ld	a, [iy + ENEMY_STATE.ARGS]
-	sub	[ix + enemy.trigger_frame_counter] ; (sub to avoid extra xor a)
-	ret	nz ; no: ret nz (halt)
-; yes: Resets trigger frame counter
-	; xor	a ; (unnecessary)
-	ld	[ix + enemy.trigger_frame_counter], a
-; ret z (continue)
-	ret
-; -----------------------------------------------------------------------------
+; ; ; -----------------------------------------------------------------------------
+; ; ; Lower: The enemy can decrease its height.
+; ; ; param ix: pointer to the current enemy
+; ; ; param iy: pointer to the current enemy state
+; ; ; param [iy + ENEMY_STATE.ARGS]: number of frames (0 = forever)
+; ; ; ret z/nz: if the state has finished
+; ; LOWER_ENEMY_HANDLER:
+	; ; call	.AND
+	; ; jp	STATIONARY_ENEMY_HANDLER
+
+; ; .AND:
+; ; ; Has reached the ground?
+	; ; call	GET_ENEMY_TILE_FLAGS_UNDER
+	; ; cpl	; (negative check to ret z/nz properly)
+	; ; bit	BIT_WORLD_SOLID, a
+	; ; ret	z ; yes (continue)
+; ; ; moves down
+	; ; inc	[ix + enemy.y]
+; ; ; ret z ; (continue)
+	; ; xor	a
+	; ; ret
+; ; ; -----------------------------------------------------------------------------
+
+; ; -----------------------------------------------------------------------------
+; ; ; Jumper: The enemy bounces or jumps.
+; ; ; param ix: pointer to the current enemy
+; ; ; param iy: pointer to the current enemy state
+; ; ; param [iy + ENEMY_STATE.ARGS]: (ignored)
+; ; ; ret z/nz: if the state has finished
+; ; JUMPER_ENEMY_HANDLER:
+	; ; ld	a, [ix + enemy.frame_counter]
+	; ; cp	ENEMY_DY_TABLE.SIZE -1
+	; ; jr	z, .DY_MAX ; yes
+; ; ; increases frame counter
+	; ; inc	[ix + enemy.frame_counter]
+; ; .DY_MAX:
+	; ; ld	hl, ENEMY_DY_TABLE
+	; ; call	GET_HL_A_BYTE
+	
+	; ; add	[ix + enemy.y]
+	; ; ld	[ix + enemy.y], a
+	
+; ; ; ret nz (halt)
+	; ; xor	a
+	; ; inc	a
+	; ; ret
+; ; -----------------------------------------------------------------------------
+
+; ; -----------------------------------------------------------------------------
+; ; Waver: The enemy floats in a sine wave pattern.
+; ; Example: Castlevania's Medusa Head
+; WAVER_ENEMY_HANDLER:
+	; inc	[ix + enemy.frame_counter]
+	; ld	a, [ix + enemy.frame_counter]
+	; call	READ_WAVER_ENEMY_DY_VALUE ; ._16
+	; add	[ix + enemy.y]
+	; ld	[ix + enemy.y], a
+; ; ret z (continue)
+	; xor	a
+	; ret
+; ; -----------------------------------------------------------------------------
+
+; ; -----------------------------------------------------------------------------
+; ; Trigger state handler: puases until the enemy can shoot again
+; ; param ix: pointer to the current enemy
+; ; param iy: pointer to the current enemy state
+; ; param [iy + ENEMY_STATE.ARGS]: number of frames to wait between shoots
+; ; ret z/nz: if the state has finished
+; TRIGGER_ENEMY_HANDLER:
+; ; Can shoot?
+	; inc	[ix + enemy.trigger_frame_counter]
+	; ld	a, [iy + ENEMY_STATE.ARGS]
+	; sub	[ix + enemy.trigger_frame_counter] ; (sub to avoid extra xor a)
+	; ret	nz ; no: ret nz (halt)
+; ; yes: Resets trigger frame counter
+	; ; xor	a ; (unnecessary)
+	; ld	[ix + enemy.trigger_frame_counter], a
+; ; ret z (continue)
+	; ret
+; ; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================

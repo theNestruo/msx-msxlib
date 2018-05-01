@@ -60,7 +60,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	1 ; 1			; .chapters ; DEBUG LINE
+	db	5 ; 1			; .chapters ; DEBUG LINE
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -115,14 +115,14 @@ ENEMY_0:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL
-	dw	ENEMY_TYPE_FALLER.WITH_TRIGGER
+	dw	ENEMY_TYPE_FALLER.TRIGGERED
 
 ; Octopus: not implemented yet	
 .OCTOPUS:
 	db	OCTOPUS_SPRITE_PATTERN
 	db	OCTOPUS_SPRITE_COLOR
 	db	$00 ; (not lethal)
-	dw	ENEMY_TYPE_WAVER ; $ + 2
+	dw	ENEMY_TYPE_STATIONARY ; $ + 2
 ; ; The enemy floats up
 	; dw	PUT_ENEMY_SPRITE_PATTERN
 	; db	OCTOPUS_SPRITE_PATTERN or FLAG_ENEMY_PATTERN_ANIM
@@ -154,7 +154,11 @@ ENEMY_0:
 	dw	$ + 2
 ; Slept until the star is picked up
 	dw	ENEMY_SKELETON.HANDLER
-	db	0 ; (unused)
+; (shows the sprite in the first frame after awakening)
+	dw	PUT_ENEMY_SPRITE
+; then becomes of type walker (follower with pause)
+	dw	SET_NEW_STATE_HANDLER
+	dw	ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
 
 ; Savage: the savage walks towards the player, pausing briefly
 .SAVAGE:
@@ -168,34 +172,34 @@ ENEMY_0:
 	db	ARROW_RIGHT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
 	db	$00 ; (not lethal)
-	dw	$ + 2
-; Does the player overlaps y coordinate?
-	dw	TRIGGER_ENEMY_HANDLER
-	db	CFG_ENEMY_PAUSE_M
-	dw	ENEMY_TRAP.TRIGGER_RIGHT_HANDLER
-	db	0 ; (unused)
-; Shoot
-	dw	ENEMY_TRAP.SHOOT_RIGHT_HANDLER
-	db	0 ; (unused)
-	dw	RET_NOT_ZERO
+	dw	ENEMY_TYPE_STATIONARY ; $ + 2
+; ; Does the player overlaps y coordinate?
+	; dw	TRIGGER_ENEMY_HANDLER
+	; db	CFG_ENEMY_PAUSE_M
+	; dw	ENEMY_TRAP.TRIGGER_RIGHT_HANDLER
 	; db	0 ; (unused)
+; ; Shoot
+	; dw	ENEMY_TRAP.SHOOT_RIGHT_HANDLER
+	; db	0 ; (unused)
+	; dw	RET_NOT_ZERO
+	; ; db	0 ; (unused)
 	
 ; Trap (pointing left): shoots when the player is in front of it
 .TRAP_LEFT:
 	db	ARROW_LEFT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
 	db	$00 ; (not lethal)
-	dw	$ + 2
-; Does the player overlaps y coordinate?
-	dw	TRIGGER_ENEMY_HANDLER
-	db	CFG_ENEMY_PAUSE_M
-	dw	ENEMY_TRAP.TRIGGER_LEFT_HANDLER
-	db	0 ; (unused)
-; Shoot
-	dw	ENEMY_TRAP.SHOOT_LEFT_HANDLER
-	db	0 ; (unused)
-	dw	RET_NOT_ZERO
+	dw	ENEMY_TYPE_STATIONARY ; $ + 2
+; ; Does the player overlaps y coordinate?
+	; dw	TRIGGER_ENEMY_HANDLER
+	; db	CFG_ENEMY_PAUSE_M
+	; dw	ENEMY_TRAP.TRIGGER_LEFT_HANDLER
 	; db	0 ; (unused)
+; ; Shoot
+	; dw	ENEMY_TRAP.SHOOT_LEFT_HANDLER
+	; db	0 ; (unused)
+	; dw	RET_NOT_ZERO
+	; ; db	0 ; (unused)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -308,7 +312,7 @@ ELSE
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
 ENDIF ; IFEXIST DEMO_MODE
 	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
-	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
+	dw	.STAGE_11, .STAGE_14, .STAGE_12, .STAGE_14, .STAGE_15
 	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
 	dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
 ; Intro
