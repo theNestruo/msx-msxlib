@@ -7,8 +7,8 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-TXT_COPYRIGHT:
-	db	"@ 2018 THENESTRUO = WONDER", $00
+; TXT_COPYRIGHT:
+	; db	"@ 2018 THENESTRUO = WONDER", $00
 	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -104,6 +104,7 @@ PLAYER_0:
 ENEMY_0:
 
 ; Bat: the bat flies, the turns around and continues
+	db	$00
 .BAT:
 	db	BAT_SPRITE_PATTERN
 	db	BAT_SPRITE_COLOR
@@ -111,6 +112,7 @@ ENEMY_0:
 	dw	ENEMY_TYPE_FLYER
 
 ; Spider: the spider falls onto the ground the the player is near
+	db	$00
 .SPIDER:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
@@ -118,56 +120,127 @@ ENEMY_0:
 	dw	ENEMY_TYPE_FALLER.TRIGGERED
 
 ; Octopus: not implemented yet	
+	db	$f3 ; (water)
 .OCTOPUS:
 	db	OCTOPUS_SPRITE_PATTERN
 	db	OCTOPUS_SPRITE_COLOR
 	db	$00 ; (not lethal)
-	dw	ENEMY_TYPE_STATIONARY ; $ + 2
-; ; The enemy floats up
-	; dw	PUT_ENEMY_SPRITE_PATTERN
-	; db	OCTOPUS_SPRITE_PATTERN or FLAG_ENEMY_PATTERN_ANIM
-	; dw	ENEMY_OCTOPUS.FLOAT_UP_HANDLER
-	; db	16 ; 16 pixels
-	; dw	SET_NEW_STATE_HANDLER
-	; db	ENEMY_STATE.NEXT
-; ; The enemy floats down
-	; dw	PUT_ENEMY_SPRITE_PATTERN
-	; db	OCTOPUS_SPRITE_PATTERN
-	; dw	ENEMY_OCTOPUS.FLOAT_DOWN_HANDLER
-	; db	16 ; 16 pixels
-	; dw	SET_NEW_STATE_HANDLER
-	; db	-5 * ENEMY_STATE.SIZE ; (restart)
+	dw	$ + 2
+; The enemy floats in a sine wave pattern
+	dw	ENEMY_OCTOPUS.WAVER_HANDLER ; PUT_ENEMY_SPRITE + WAVER_ENEMY_HANDLER
+	dw	FLYER_ENEMY_HANDLER
+; Is the player in overlapping x coordinates?
+	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+; Shoot
+	dw	ENEMY_OCTOPUS.SHOOT_HANDLER
+.HANG:
+	jr	$
 
 ; Snake: the snake walks, the pauses, turning around, and continues
+	db	$00
 .SNAKE:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL
-	dw	ENEMY_TYPE_WALKER.WITH_PAUSE
+	dw	$ + 2
+; Walker (with pauses): the enemy walks ahead along the ground,
+; then pauses, turning around, and continues
+.SNAKE_BEHAVIOUR:
+; The enemy walks ahead along the ground
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER.NOTIFY
+; then
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; pauses, turning around
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER.TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	.SNAKE_BEHAVIOUR ; (restart)
 
 ; Skeleton: the skeleton is slept until the star is picked up,
 ; then, it becomes of type walker (follower with pause)
+	db	SKELETON_FIRST_CHAR +1
 .SKELETON:
 	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
 	db	SKELETON_SPRITE_COLOR
 	db	$00 ; (not lethal in the initial state)
 	dw	$ + 2
+.SKELETON_BEHAVIOUR_IDLE:
 ; Slept until the star is picked up
-	dw	ENEMY_SKELETON.HANDLER
+	dw	ENEMY_SKELETON.IDLE_HANDLER
 ; (shows the sprite in the first frame after awakening)
 	dw	PUT_ENEMY_SPRITE
 ; then becomes of type walker (follower with pause)
 	dw	SET_NEW_STATE_HANDLER
-	dw	ENEMY_TYPE_WALKER.FOLLOWER_WITH_PAUSE
+	dw	$ + 2
+; Follower (with pauses):
+; the enemy walks a medium distance along the ground,
+; towards the player, then pauses, turning around, and continues
+.SKELETON_BEHAVIOUR:
+; The enemy pauses, turning around
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER.TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
+; then turns towards the player
+	dw	TURN_ENEMY.TOWARDS_PLAYER
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; walks ahead along the ground
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER.RANGED
+	db	CFG_ENEMY_PAUSE_M ; medium distance
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	.SKELETON_BEHAVIOUR ; (restart)
+
 
 ; Savage: the savage walks towards the player, pausing briefly
+	db	$00
 .SAVAGE:
 	db	SAVAGE_SPRITE_PATTERN
 	db	SAVAGE_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL
-	dw	ENEMY_TYPE_WALKER.FOLLOWER
+	dw	$ + 2
+; Follower: the enemy walks a medium distance along the ground,
+; towards the player, then pauses briefly, and continues
+.SAVAGE_BEHAVIOUR:
+; The enemy pauses briefly
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_M ; medium pause
+; then turns towards the player
+	dw	TURN_ENEMY.TOWARDS_PLAYER
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; walks ahead along the ground a medium distance
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER.RANGED
+	db	CFG_ENEMY_PAUSE_M ; medium distance
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	.SAVAGE_BEHAVIOUR ; (restart)
+
 
 ; Trap (pointing right): shoots when the player is in front of it
+	db	TRAP_LOWER_RIGHT_CHAR
 .TRAP_RIGHT:
 	db	ARROW_RIGHT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
@@ -185,6 +258,7 @@ ENEMY_0:
 	; ; db	0 ; (unused)
 	
 ; Trap (pointing left): shoots when the player is in front of it
+	db	TRAP_LOWER_LEFT_CHAR
 .TRAP_LEFT:
 	db	ARROW_LEFT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
@@ -347,23 +421,23 @@ ENDIF ; IFEXIST DEMO_MODE
 ; Jungle
 .STAGE_11:	incbin	"games/stevedore/maps/stage_11.tmx.bin.zx7"
 .STAGE_12:	incbin	"games/stevedore/maps/stage_12.tmx.bin.zx7"
-.STAGE_13:	incbin	"games/stevedore/maps/stage_12.tmx.bin.zx7"
+.STAGE_13:	incbin	"games/stevedore/maps/stage_13.tmx.bin.zx7"
 .STAGE_14:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
-.STAGE_15:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
+.STAGE_15:	incbin	"games/stevedore/maps/stage_15.tmx.bin.zx7"
 
 ; Volcano
-.STAGE_16:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_17:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_18:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_19:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_20:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_16:	incbin	"games/stevedore/maps/stage_16.tmx.bin.zx7"
+.STAGE_17:	incbin	"games/stevedore/maps/stage_17.tmx.bin.zx7"
+.STAGE_18:	incbin	"games/stevedore/maps/stage_18.tmx.bin.zx7"
+.STAGE_19:	incbin	"games/stevedore/maps/stage_19.tmx.bin.zx7"
+.STAGE_20:	incbin	"games/stevedore/maps/stage_20.tmx.bin.zx7"
 
 ; Temple
-.STAGE_21:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_22:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_23:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_24:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
-.STAGE_25:	incbin	"games/stevedore/maps/test_screen.tmx.bin.zx7"
+.STAGE_21:	incbin	"games/stevedore/maps/stage_21.tmx.bin.zx7"
+.STAGE_22:	incbin	"games/stevedore/maps/stage_22.tmx.bin.zx7"
+.STAGE_23:	incbin	"games/stevedore/maps/stage_23.tmx.bin.zx7"
+.STAGE_24:	incbin	"games/stevedore/maps/stage_24.tmx.bin.zx7"
+.STAGE_25:	incbin	"games/stevedore/maps/stage_25.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -457,8 +531,8 @@ SPRTBL_PACKED:
 	ARROW_LEFT_SPRITE_PATTERN:	equ $bc
 	ARROW_SPRITE_COLOR:		equ 14
 	
-	OIL_SPRITE_PATTERN:		equ $d8
-	OIL_SPRITE_COLOR:		equ 7
+	OIL_SPRITE_PATTERN:		equ $c0
+	OIL_SPRITE_COLOR:		equ 5
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

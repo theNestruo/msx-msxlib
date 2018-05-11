@@ -7,7 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Define to visually debug frame timing
-	CFG_DEBUG_BDRCLR:
+	; CFG_DEBUG_BDRCLR:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -58,6 +58,9 @@
 ; Number of sprites that won't enter the flickering loop
 ; (i.e.: number of sprites that will use the most priority planes)
 	CFG_SPRITES_NO_FLICKER:	equ 5
+	
+; If defined, in/out fades sweep from center instead of sweeping from left to right
+	CFG_FADE_TYPE_DOUBLE:
 
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
@@ -71,7 +74,7 @@
 
 ; Custom initial palette in $0GRB format (with R, G, B in 0..7).
 CFG_CUSTOM_PALETTE:
-	dw	$0000, $0000, $0522, $0623, $0215, $0337, $0250, $0637
+	dw	$0000, $0000, $0522, $0623, $0105, $0337, $0150, $0637
 	dw	$0272, $0373, $0561, $0674, $0300, $0333, $0555, $0777
 ; Example: Default MSX2 palette
 	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
@@ -137,8 +140,8 @@ CFG_CUSTOM_PALETTE:
 
 ; Tile indexes (values) to be returned by GET_TILE_VALUE
 ; when the coordinates are over and under visible screen
-	CFG_TILES_VALUE_OVER:	equ $03 ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	CFG_TILES_VALUE_UNDER:	equ $08 ; BIT_WORLD_DEATH
+	CFG_TILES_VALUE_OVER:	equ $30 ; tile with BIT_WORLD_FLOOR | BIT_WORLD_SOLID flags
+	CFG_TILES_VALUE_UNDER:	equ $e8 ; tile with BIT_WORLD_DEATH flags
 
 ; Table of tile flags in pairs (up to index, tile flags)
 TILE_FLAGS_TABLE:

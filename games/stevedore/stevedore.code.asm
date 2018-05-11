@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 6 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 11 -1 ; DEBUG LINE
 	
 ; Demo mode
 	; DEMO_MODE:
@@ -65,17 +65,17 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Copyright notice and "skip intro" secret option
 COPYRIGHT:
-; Prints copyright notice
-	call	CLS_NAMTBL
-	call	CLS_SPRATR
-	ld	hl, TXT_COPYRIGHT
-	ld	de, namtbl_buffer + 20 *SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
+; ; Prints copyright notice
+	; call	CLS_NAMTBL
+	; call	CLS_SPRATR
+	; ld	hl, TXT_COPYRIGHT
+	; ld	de, namtbl_buffer + 20 *SCR_WIDTH
+	; call	PRINT_CENTERED_TEXT
 	
-; Fade in, pause, fade out
-	call	ENASCR_FADE_IN
-	call	WAIT_TRIGGER_FOUR_SECONDS
-	call	DISSCR_FADE_OUT
+; ; Fade in, pause, fade out
+	; call	ENASCR_FADE_IN
+	; call	WAIT_TRIGGER_FOUR_SECONDS
+	; call	DISSCR_FADE_OUT
 	
 ; Is SEL key pressed?
 	halt
@@ -405,18 +405,18 @@ GAME_LOOP:
 ; Prepares next frame (1/2)
 	call	PUT_PLAYER_SPRITE
 
-; IFDEF CFG_DEBUG_BDRCLR
-	; ld	b, 1
-	; call	SET_BDRCLR ; black: free frame time
-; ENDIF
+IFDEF CFG_DEBUG_BDRCLR
+	ld	b, 1
+	call	SET_BDRCLR ; black: free frame time
+ENDIF
 	
 ; Synchronization (halt)
 	halt
 	
-; IFDEF CFG_DEBUG_BDRCLR
-	; ld	b, 4
-	; call	SET_BDRCLR ; blue: VDP busy
-; ENDIF
+IFDEF CFG_DEBUG_BDRCLR
+	ld	b, 4
+	call	SET_BDRCLR ; blue: VDP busy
+ENDIF
 
 ; Blit buffers to VRAM
 	call	EXECUTE_VPOKES
@@ -426,10 +426,10 @@ GAME_LOOP:
 	call	RESET_SPRITES
 	call	UPDATE_DYNAMIC_CHARSET	; (custom)
 	
-; IFDEF CFG_DEBUG_BDRCLR
-	; ld	b, 6 ; red: game logic
-	; call	SET_BDRCLR
-; ENDIF
+IFDEF CFG_DEBUG_BDRCLR
+	ld	b, 6 ; red: game logic
+	call	SET_BDRCLR
+ENDIF
 	
 ; Read input devices
 	call	READ_INPUT
@@ -694,7 +694,6 @@ ENDIF ; IFEXIST DEMO_MODE ELSE
 ; Searchs for the correct text
 	inc	hl ; (points to the first text)
 	pop	de ; (restores chapter counter)
-	inc	d ; (the tutorial is the 0-based text)
 	call	GET_TEXT.USING_D
 ; "IS IN ANOTHER BUILDING!" and similar texts
 	ld	de, namtbl_buffer + 10 * SCR_WIDTH
@@ -1045,15 +1044,21 @@ POST_PROCESS_STAGE_ELEMENT:
 	sub	'0'
 	jr	z, .SET_START_POINT ; '0'
 	dec	a
-	jr	z, .NEW_BAT ; '1'
+	jr	z, .NEW_BAT_1 ; '1'
 	dec	a
-	jr	z, .NEW_SPIDER ; '2'
+	jr	z, .NEW_BAT_2 ; '2'
 	dec	a
-	jr	z, .NEW_OCTOPUS ; '3'
+	jr	z, .NEW_SPIDER ; '3'
 	dec	a
-	jr	z, .NEW_SNAKE ; '4'
+	jr	z, .NEW_OCTOPUS ; '4'
 	dec	a
-	jr	z, .NEW_SAVAGE ; '5'
+	jr	z, .NEW_SNAKE_1 ; '5'
+	dec	a
+	jr	z, .NEW_SNAKE_2 ; '6'
+	dec	a
+	jr	z, .NEW_SNAKE_3 ; '7'
+	dec	a
+	jr	z, .NEW_SAVAGE ; '8'
 	ret
 	
 .SET_START_POINT:
@@ -1086,7 +1091,8 @@ POST_PROCESS_STAGE_ELEMENT:
 	ld	hl, ENEMY_0.SKELETON
 	jp	INIT_ENEMY
 
-.NEW_BAT:
+.NEW_BAT_1:
+.NEW_BAT_2:
 ; Initializes a new bat
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
@@ -1107,7 +1113,9 @@ POST_PROCESS_STAGE_ELEMENT:
 	ld	hl, ENEMY_0.OCTOPUS
 	jp	INIT_ENEMY
 
-.NEW_SNAKE:
+.NEW_SNAKE_1:
+.NEW_SNAKE_2:
+.NEW_SNAKE_3:
 ; Initializes a new snake
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
@@ -1420,9 +1428,46 @@ UPDATE_FRAMES_PUSHING:
 ; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Skeleton: the skeleton is slept until the star is picked up,
-; then, it becomes of type walker (follower with pause)
-ENEMY_SKELETON.HANDLER:
+; Octopus: the octopus floats in a sine wave pattern
+ENEMY_OCTOPUS.WAVER_HANDLER:
+; Is the wave pattern ascending?
+	inc	[ix + enemy.frame_counter]
+	ld	a, [ix + enemy.frame_counter]
+	bit	5, a
+	jr	z, .ASCENDING ; yes
+	
+; no: descending
+	ld	c, OCTOPUS_SPRITE_PATTERN
+	jr	.SPRITE_OK
+.ASCENDING:
+	ld	c, OCTOPUS_SPRITE_PATTERN +4
+	
+.SPRITE_OK:
+	ld	e, [ix + enemy.y]
+	ld	d, [ix + enemy.x]
+	ld	b, [ix + enemy.color]
+	call	PUT_SPRITE
+
+; Reads and applies the dy
+	call	READ_WAVER_ENEMY_DY_VALUE
+	add	[ix + enemy.y]
+	ld	[ix + enemy.y], a
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+
+; Octopus: the octopus shoots oil up
+ENEMY_OCTOPUS.SHOOT_HANDLER:
+	ld	hl, BULLET_0.OIL_UP
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Skeleton: the skeleton is slept until the star is picked up
+ENEMY_SKELETON.IDLE_HANDLER:
 ; Has the star been picked up?
 	ld	hl, stage.flags
 	bit	BIT_STAGE_KEY, [hl]

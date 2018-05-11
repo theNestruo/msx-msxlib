@@ -298,26 +298,42 @@ DISSCR_FADE_OUT:
 	ld	a, SPAT_END
 	call	WRTVRM
 
-; Fade out
-	ld	hl, NAMTBL
-	ld	b, SCR_WIDTH
-; For each column...
-.COL:
-	push	bc ; preserves column counter
-	push	hl ; preserves pointer
-	ld	de, SCR_WIDTH
-	ld	b, SCR_HEIGHT
-	ld	a, $20 ; " " ASCII
-; For each char...
-.CHAR:
-	call	WRTVRM
-	add	hl, de
-	djnz	.CHAR
+IFDEF CFG_FADE_TYPE_DOUBLE
+; Fade out (double)
+	ld	b, SCR_WIDTH /2
+.COL2:
+	push	bc ; preserves counter
+; Erases the left column
+	ld	a, SCR_WIDTH /2
+	sub	b
+	ld	c, b ; (preserves counter in c)
+	call	WRTVRM_NAMTBL_COLUMN_OUT ; (c untouched)
+; Prints the right column
+	ld	a, SCR_WIDTH /2 -1
+	add	c
+	call	WRTVRM_NAMTBL_COLUMN_OUT
+; (sync)
 	halt
-	pop	hl ; restores pointer
-	inc	hl
-	pop	bc ; restores column counter
+; Moves left a position
+	pop	bc ; restores contadore
+	djnz	.COL2
+
+ELSE
+; Fade out (simple)
+	ld	b, SCR_WIDTH
+.COL:
+	push	bc ; preserves counter
+; Erases the column
+	ld	a, SCR_WIDTH
+	sub	b
+	call	WRTVRM_NAMTBL_COLUMN_OUT
+; (sync)
+	halt
+; Moves right a position
+	pop	bc ; restores contadore
 	djnz	.COL
+
+ENDIF ; IFDEF CFG_FADE_TYPE_DOUBLE
 
 ; Disables the screen
 	jp	DISSCR
@@ -358,16 +374,80 @@ LDIRVM_NAMTBL_FADE_INOUT:
 	call	WRTVRM
 
 .KEEP_SPRITES:
-; Fade in
-	ld	hl, NAMTBL
-	ld	de, namtbl_buffer
-	ld	c, SCR_WIDTH
-; For each column...
+IFDEF CFG_FADE_TYPE_DOUBLE
+; Fade in (double)
+	ld	b, SCR_WIDTH /2
+.COL2:
+	push	bc ; preserves counters
+; Prints the left column
+	ld	a, b
+	dec	a
+	ld	c, b ; (preserves counter in c)
+	call	LDIRVM_NAMTBL_COLUMN ; (c untouched)
+; Prints the right column
+	ld	a, SCR_WIDTH
+	sub	c
+	call	LDIRVM_NAMTBL_COLUMN
+; (sync)
+	halt
+; Moves left a position
+	pop	bc ; restores contadores
+	djnz	.COL2
+	
+ELSE
+; Fade in (simple)
+	ld	b, SCR_WIDTH
 .COL:
-	push	hl ; preserves souce pointer
-	push	de ; preserves destination pointer
-	ld	b, SCR_HEIGHT
+	push	bc ; preserves counters
+; Prints the column
+	ld	a, SCR_WIDTH
+	sub	b
+	call	LDIRVM_NAMTBL_COLUMN
+; (sync)
+	halt
+; Moves right a position
+	pop	bc ; restores contadores
+	djnz	.COL
+ENDIF ; IFDEF CFG_FADE_TYPE_DOUBLE
+
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Clears just a column of the NAMTBL
+; param a: the column to LDIRVM (0..31)
+; tocuhes af, b, de, hl
+WRTVRM_NAMTBL_COLUMN_OUT:
+; Calculates the destination address
+	ld	hl, NAMTBL
+	call	ADD_HL_A
 ; For each char...
+	ld	de, SCR_WIDTH
+	ld	b, SCR_HEIGHT
+	ld	a, $20 ; " " ASCII
+.CHAR:
+; Erases the character
+	call	WRTVRM
+	add	hl, de
+	djnz	.CHAR
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; LDIRVM just a column from the NAMTBL buffer
+; param a: the column to LDIRVM (0..31)
+; tocuhes af, b, de, hl
+LDIRVM_NAMTBL_COLUMN:
+; Calculates the origin address
+	ld	hl, NAMTBL
+	push	af ; preserves the column
+	call	ADD_HL_A
+	pop	af ; restores the column
+; Calculates the destination address
+	ld	de, namtbl_buffer
+	call	ADD_DE_A
+; For each char...
+	ld	b, SCR_HEIGHT
 .CHAR:
 	push	bc ; preserves counters
 	ld	a, [de]
@@ -380,16 +460,6 @@ LDIRVM_NAMTBL_FADE_INOUT:
 	ex	de, hl
 	pop	bc ; restores counters
 	djnz	.CHAR
-	push	bc ; preserves counters
-	halt
-; Moves right a position
-	pop	bc ; restores contadores
-	pop	de ; restores destination pointer
-	inc	de
-	pop	hl ; restores source pointer
-	inc	hl
-	dec	c
-	jr	nz, .COL
 	ret
 ; -----------------------------------------------------------------------------
 

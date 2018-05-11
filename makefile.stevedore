@@ -44,7 +44,19 @@ DATAS=\
 	$(GAME_PATH)\maps\stage_10.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_11.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_12.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_13.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\maps\stage_14.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_15.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_16.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_17.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_18.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_19.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_20.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_21.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_22.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_23.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_24.tmx.bin.$(PACK_EXTENSION) \
+	$(GAME_PATH)\maps\stage_25.tmx.bin.$(PACK_EXTENSION) \
 	$(GAME_PATH)\sfx\warehouse.pt3.hl.$(PACK_EXTENSION) \
 	$(GAME_PATH)\sfx\ship.pt3.hl.$(PACK_EXTENSION) \
 	$(GAME_PATH)\sfx\jungle.pt3.hl.$(PACK_EXTENSION) \
@@ -79,7 +91,19 @@ DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\maps\stage_10.tmx.bin \
 	$(GAME_PATH)\maps\stage_11.tmx.bin \
 	$(GAME_PATH)\maps\stage_12.tmx.bin \
+	$(GAME_PATH)\maps\stage_13.tmx.bin \
 	$(GAME_PATH)\maps\stage_14.tmx.bin \
+	$(GAME_PATH)\maps\stage_15.tmx.bin \
+	$(GAME_PATH)\maps\stage_16.tmx.bin \
+	$(GAME_PATH)\maps\stage_17.tmx.bin \
+	$(GAME_PATH)\maps\stage_18.tmx.bin \
+	$(GAME_PATH)\maps\stage_19.tmx.bin \
+	$(GAME_PATH)\maps\stage_20.tmx.bin \
+	$(GAME_PATH)\maps\stage_21.tmx.bin \
+	$(GAME_PATH)\maps\stage_22.tmx.bin \
+	$(GAME_PATH)\maps\stage_23.tmx.bin \
+	$(GAME_PATH)\maps\stage_24.tmx.bin \
+	$(GAME_PATH)\maps\stage_25.tmx.bin \
 	$(GAME_PATH)\sfx\warehouse.pt3.hl \
 	$(GAME_PATH)\sfx\ship.pt3.hl \
 	$(GAME_PATH)\sfx\jungle.pt3.hl \
