@@ -248,7 +248,7 @@ PD_LP2:		LD A,[BC]
 		JR C,PD_ESAM
 		ADD A,A
 		LD E,A
-		LD HL,((SPCCOMS+$DF20) MOD 65536)	; Adapted from original Speccy version (saves 6 bytes)
+		LD HL,SPCCOMS.HL_VALUE
 		ADD HL,DE
 		LD E,[HL]
 		INC HL
@@ -441,6 +441,7 @@ SPCCOMS:	dw C_NOP
 		dw C_NOP
 		dw C_NOP
 		dw C_NOP
+.HL_VALUE:	equ (SPCCOMS+$DF20) MOD 65536; Adapted from original Speccy version (saves 6 bytes)
 
 CHREGS:		XOR A
 		LD [AYREGS+AR_AmplC],A
