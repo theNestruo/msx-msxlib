@@ -386,7 +386,7 @@ ELSE
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
 ENDIF ; IFEXIST DEMO_MODE
 	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
-	dw	.STAGE_11, .STAGE_14, .STAGE_12, .STAGE_14, .STAGE_15
+	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
 	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
 	dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
 ; Intro
@@ -532,7 +532,7 @@ SPRTBL_PACKED:
 	ARROW_SPRITE_COLOR:		equ 14
 	
 	OIL_SPRITE_PATTERN:		equ $c0
-	OIL_SPRITE_COLOR:		equ 5
+	OIL_SPRITE_COLOR:		equ 10
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
