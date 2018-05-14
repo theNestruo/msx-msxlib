@@ -150,6 +150,28 @@ UPDATE_ENEMIES:
 ;
 
 ; -----------------------------------------------------------------------------
+; Finish state handler (to be used in comparisons only; inline otherwise)
+; param ix: pointer to the current enemy (ignored)
+; param iy: pointer to the current enemy state (ignored)
+; ret a: always halt (0)
+END_ENEMY_HANDLER:	equ	RET_ZERO
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Continue state handler (to be used in comparisons only; inline otherwise)
+; param ix: pointer to the current enemy (ignored)
+; param iy: pointer to the current enemy state (ignored)
+; ret a: always continue (2, 3, etc.)
+CONTINUE_ENEMY_HANDLER:
+.NO_ARGS:
+	ld	a, 2
+	ret
+.ONE_ARG:
+	ld	a, 3
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Sets a new current state for the current enemy
 ; (this state handler is usually the last handler of a state)
 ; param ix: pointer to the current enemy
@@ -172,41 +194,6 @@ SET_NEW_STATE_HANDLER:
 ; ret z (halt)
 	ret
 ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; ; Sets a new current state for the current enemy
-; ; when the player and the enemy are in overlapping x coordinates
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; param [iy + ENEMY_STATE.ARG_0]: offset to the next state (in bytes)
-; ; ret z (continue) if the state does not change (no overlapping coordinates)
-; ; ret nz (halt) if the state changes
-; .ON_X_COLLISION:
-	; ld	l, PLAYER_ENEMY_X_SIZE
-	; call	CHECK_PLAYER_COLLISION.X
-	; jp	c, SET_NEW_STATE_HANDLER
-; ; ret z (continue)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; ; Sets a new current state for the current enemy,
-; ; relative to the current state,
-; ; when the player and the enemy are in overlapping y coordinates
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; param [iy + ENEMY_STATE.ARGS]: offset to the next state (in bytes)
-; ; ret z (continue) if the state does not change (no overlapping coordinates)
-; ; ret nz (halt) if the state changes
-; .ON_Y_COLLISION:
-	; ld	h, PLAYER_ENEMY_Y_SIZE
-	; call	CHECK_PLAYER_COLLISION.Y
-	; jp	c, SET_NEW_STATE_HANDLER
-; ; ret z (continue)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Updates animation counter and toggles the animation flag,
@@ -318,6 +305,153 @@ TURN_ENEMY:
 	res	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
 ; ret 2 (continue with next state handler)
 	ld	a, 2
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: wait a number of frames
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARG_0]: number of frames
+; ret a: continue (3) if the wait has finished, halt (0) otherwise
+WAIT_ENEMY_HANDLER:
+; increases frame counter and compares with argument
+	inc	[ix + enemy.frame_counter]
+	ld	a, [ix + enemy.frame_counter]
+	cp	[iy + ENEMY_STATE.ARG_0]
+; ret 3/0
+	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: wait a number of frames, turning around
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy+ENEMY_STATE.ARG_0]: ttffffff:
+; - f the frames to wait before each turn
+; - t the times to turn minus 1 (0 = 1 time, 1 = 2 times, etc.)
+; ret a: continue (3) if the wait has finished, halt (0) otherwise
+.TURNING:
+; compares frame counter with frames
+	ld	a, [ix + enemy.frame_counter]
+	ld	b, a ; preserves frame counter in b
+	xor	[iy + ENEMY_STATE.ARG_0]
+	and	$3f ; masks the ffffff part
+	jr	z, .DO_TURN
+; increases frame counter
+	inc	[ix + enemy.frame_counter]
+; ret 0 (halt)
+	xor	a
+	ret
+	
+.DO_TURN:
+	call	TURN_ENEMY
+; compares frame counter with times
+	ld	a, b ; restores frame counter in b
+	cp	[iy + ENEMY_STATE.ARG_0]
+	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG
+; resets frame part of frame counter and increases times counter
+	and	$c0
+	add	$40
+	ld	[ix + enemy.frame_counter], a
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait X collision state handler:
+; waits until the player and the enemy are in overlapping x coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy+ENEMY_STATE.ARG_0]: horizontal maximum distance (usually, PLAYER_ENEMY_X_SIZE)
+; ret a: continue (3) if the x coordinates are overlapping, halt (0) otherwise
+.X_COLLISION:
+	ld	l, [iy + ENEMY_STATE.ARG_0]
+	call	CHECK_PLAYER_COLLISION.X
+	jp	c, CONTINUE_ENEMY_HANDLER.ONE_ARG ; ret 3 (continue)
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait Y collision state handler:
+; waits until the player and the enemy are in overlapping y coordinates
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy+ENEMY_STATE.ARG_0]: vertical maximum distance (usually, PLAYER_ENEMY_Y_SIZE)
+; ret a: continue (3) if the y coordinates are overlapping, halt (0) otherwise
+.Y_COLLISION:
+	ld	h, [iy + ENEMY_STATE.ARG_0]
+	call	CHECK_PLAYER_COLLISION.Y
+	jp	c, CONTINUE_ENEMY_HANDLER.ONE_ARG ; ret 3 (continue)
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is left of the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is left of the enemy, halt (0) otherwise
+.PLAYER_LEFT:
+; Is the player to the left?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; yes: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is right of the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is right of the enemy, halt (0) otherwise
+.PLAYER_RIGHT:
+; Is the player to the right?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jp	nc, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; yes: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Trigger state handler: pauses until the enemy can shoot again
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; ret a: continue (2) if the wait has finished, halt (0) otherwise
+TRIGGER_ENEMY_HANDLER:
+; Has the pause finished?
+	ld	a, [ix + enemy.trigger_frame_counter]
+	or	a
+	jp	z, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes
+; no
+	dec	[ix + enemy.trigger_frame_counter]
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Trigger state handler reset: restarts the trigger frame counter
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; param [iy + ENEMY_STATE.ARG_0]: number of frames to wait between shoots
+; ret a: continue (3)
+.RESET:
+; resets trigger frame counter
+	ld	a, [iy + ENEMY_STATE.ARG_0]
+	ld	[ix + enemy.trigger_frame_counter], a
+; ret 3 (continue with next state handler)
+	ld	a, 3
 	ret
 ; -----------------------------------------------------------------------------
 

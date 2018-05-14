@@ -31,6 +31,7 @@ enemy:
 ; Current frame counter
 	.frame_counter:	equ $ - enemy
 	rb	1
+; Current trigger frame counter
 	.trigger_frame_counter: equ $ - enemy
 	rb	1
 	.SIZE:		equ $ - enemy

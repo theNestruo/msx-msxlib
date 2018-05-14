@@ -33,14 +33,16 @@ ENEMY_TYPE_FLYER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Walker: the enemy walks ahead along the ground,
-; then turns around and continues
+; Walker: the enemy walks along the ground
+; (see also: Pacer)
 ENEMY_TYPE_WALKER:
 ; The enemy walks ahead
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER
+	db	(1 << BIT_WORLD_FLOOR)
+	dw	FLYER_ENEMY_HANDLER ; (flyer to fall when reaching edges)
+; then turns around and continues
+	dw	TURN_ENEMY
 	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
@@ -61,6 +63,7 @@ ENEMY_TYPE_FALLER:
 ; The enemy waits until the player overlaps x coordinate
 	dw	PUT_ENEMY_SPRITE
 	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	db	PLAYER_ENEMY_X_SIZE + 6 ; 3 pixels before the actual collision
 	dw	SET_NEW_STATE_HANDLER
 	dw	$ + 2
 ; then the enemy falls onto the ground
@@ -132,10 +135,19 @@ ENEMY_TYPE_WAVER_FLYER:
 ; ; Example: Castlevania's swinging blades
 ; ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Pacer - The enemy changes direction in response to a trigger (like reaching the edge of a platform).
-; ; Example: Super Mario's Red Koopas
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Pacer: The enemy changes direction in response to a trigger
+; (like reaching the edge of a platform) (see also: Walker)
+ENEMY_TYPE_PACER:
+; The enemy walks ahead
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER
+; then turns around and continues
+	dw	TURN_ENEMY
+	dw	END_ENEMY_HANDLER
+; -----------------------------------------------------------------------------
 
 ; ; -----------------------------------------------------------------------------
 ; ; Roamer - The enemy changes direction completely randomly.
@@ -183,111 +195,6 @@ ENEMY_TYPE_WAVER_FLYER:
 ;	Convenience enemy state handlers (platformer game)
 ; =============================================================================
 ;
-
-; -----------------------------------------------------------------------------
-; Finish state handler (to be used in comparisons only; inline otherwise)
-; param ix: pointer to the current enemy (ignored)
-; param iy: pointer to the current enemy state (ignored)
-; ret a: always halt (0)
-END_ENEMY_HANDLER:	equ	RET_ZERO
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Continue state handler (to be used in comparisons only; inline otherwise)
-; param ix: pointer to the current enemy (ignored)
-; param iy: pointer to the current enemy state (ignored)
-; ret a: always continue (2, 3, etc.)
-CONTINUE_ENEMY_HANDLER:
-.NO_ARGS:
-	ld	a, 2
-	ret
-.ONE_ARG:
-	ld	a, 3
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: wait a number of frames
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy + ENEMY_STATE.ARG_0]: number of frames
-; ret a: continue (3) if the wait has finished, halt (0) otherwise
-WAIT_ENEMY_HANDLER:
-; increases frame counter and compares with argument
-	inc	[ix + enemy.frame_counter]
-	ld	a, [ix + enemy.frame_counter]
-	cp	[iy + ENEMY_STATE.ARG_0]
-; ret 3/0
-	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: wait a number of frames, turning around
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; param [iy+ENEMY_STATE.ARG_0]: ttffffff:
-; - f the frames to wait before each turn
-; - t the times to turn minus 1 (0 = 1 time, 1 = 2 times, etc.)
-; ret a: continue (3) if the wait has finished, halt (0) otherwise
-.TURNING:
-; compares frame counter with frames
-	ld	a, [ix + enemy.frame_counter]
-	ld	b, a ; preserves frame counter in b
-	xor	[iy + ENEMY_STATE.ARG_0]
-	and	$3f ; masks the ffffff part
-	jr	z, .DO_TURN
-; increases frame counter
-	inc	[ix + enemy.frame_counter]
-; ret 0 (halt)
-	xor	a
-	ret
-	
-.DO_TURN:
-	call	TURN_ENEMY
-; compares frame counter with times
-	ld	a, b ; restores frame counter in b
-	cp	[iy + ENEMY_STATE.ARG_0]
-	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG
-; resets frame part of frame counter and increases times counter
-	and	$c0
-	add	$40
-	ld	[ix + enemy.frame_counter], a
-; ret 0 (halt)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait X collision state handler:
-; waits until the player and the enemy are in overlapping x coordinates
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret a: continue (2) if the x coordinates are overlapping, halt (0) otherwise
-.X_COLLISION:
-	ld	l, PLAYER_ENEMY_X_SIZE
-	call	CHECK_PLAYER_COLLISION.X
-	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; ret 2 (continue)
-; ret 0 (halt)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait Y collision state handler:
-; waits until the player and the enemy are in overlapping y coordinates
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret a: continue (2) if the y coordinates are overlapping, halt (0) otherwise
-.Y_COLLISION:
-	ld	l, PLAYER_ENEMY_Y_SIZE
-	call	CHECK_PLAYER_COLLISION.Y
-	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; ret 2 (continue)
-; ret 0 (halt)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Flyer state handler: The enemy flies (or floats),
@@ -480,38 +387,6 @@ WAVER_ENEMY_HANDLER:
 	ld	[ix + enemy.y], a
 ; ret 2 (continue with next state handler)
 	ld	a, 2
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Trigger state handler: pauses until the enemy can shoot again
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state (ignored)
-; ret a: continue (2) if the wait has finished, halt (0) otherwise
-TRIGGER_ENEMY_HANDLER:
-; Has the pause finished?
-	ld	a, [ix + enemy.trigger_frame_counter]
-	or	a
-	jp	z, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes
-; no
-	dec	[ix + enemy.trigger_frame_counter]
-; ret 0 (halt)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Trigger state handler reset: restarts the trigger frame counter
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state (ignored)
-; param [iy + ENEMY_STATE.ARG_0]: number of frames to wait between shoots
-; ret a: continue (3)
-.RESET:
-; resets trigger frame counter
-	ld	a, [iy + ENEMY_STATE.ARG_0]
-	ld	[ix + enemy.trigger_frame_counter], a
-; ret 3 (continue with next state handler)
-	ld	a, 3
 	ret
 ; -----------------------------------------------------------------------------
 

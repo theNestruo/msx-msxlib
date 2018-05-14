@@ -7,8 +7,11 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-; TXT_COPYRIGHT:
-	; db	"@ 2018 THENESTRUO = WONDER", $00
+TXT_COPYRIGHT:
+	db	"STEVEDORE", $00
+	db	"@ 2018 THENESTRUO = WONDER", $00
+	db	"PRIVATE BETA: DO NOT PUBLISH", $00
+	db	$00
 	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -76,6 +79,14 @@ STAGE_0:
 	db	0			; .flags
 	db	0			; .frame_counter
 	.SIZE:	equ $ - STAGE_0
+	
+; Initial (per stage) player vars
+PLAYER_0:
+	db	48, 128			; .y, .x ; (intro screen coords)
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
+	.SIZE:	equ $ - PLAYER_0
 
 ; Initial (per stage) sprite attributes table
 SPRATR_0:
@@ -89,14 +100,6 @@ SPRATR_0:
 	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_2
 ; SPAT end marker (No "volatile" sprites)
 	db	SPAT_END
-	
-; Initial (per stage) player vars
-PLAYER_0:
-	db	48, 128			; .y, .x ; (intro screen coords)
-	db	0			; .animation_delay
-	db	PLAYER_STATE_FLOOR	; .state
-	db	0			; .dy_index
-	.SIZE:	equ $ - PLAYER_0
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -119,12 +122,12 @@ ENEMY_0:
 	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_FALLER.TRIGGERED
 
-; Octopus: not implemented yet	
+; Octopus: the octopus floats in a sine wave pattern, shooting up
 	db	$f3 ; (water)
 .OCTOPUS:
 	db	OCTOPUS_SPRITE_PATTERN
 	db	OCTOPUS_SPRITE_COLOR
-	db	$00 ; (not lethal)
+	db	FLAG_ENEMY_LETHAL ; (not important)
 	dw	$ + 2
 ; The enemy floats in a sine wave pattern
 	dw	ENEMY_OCTOPUS.WAVER_HANDLER ; PUT_ENEMY_SPRITE + WAVER_ENEMY_HANDLER
@@ -132,12 +135,11 @@ ENEMY_0:
 ; Is the player in overlapping x coordinates?
 	dw	TRIGGER_ENEMY_HANDLER
 	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	db	PLAYER_BULLET_X_SIZE
+; Shoot
 	dw	TRIGGER_ENEMY_HANDLER.RESET
 	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
-; Shoot
 	dw	ENEMY_OCTOPUS.SHOOT_HANDLER
-.HANG:
-	jr	$
 
 ; Snake: the snake walks, the pauses, turning around, and continues
 	db	$00
@@ -245,17 +247,17 @@ ENEMY_0:
 	db	ARROW_RIGHT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
 	db	$00 ; (not lethal)
-	dw	ENEMY_TYPE_STATIONARY ; $ + 2
-; ; Does the player overlaps y coordinate?
-	; dw	TRIGGER_ENEMY_HANDLER
-	; db	CFG_ENEMY_PAUSE_M
-	; dw	ENEMY_TRAP.TRIGGER_RIGHT_HANDLER
-	; db	0 ; (unused)
-; ; Shoot
-	; dw	ENEMY_TRAP.SHOOT_RIGHT_HANDLER
-	; db	0 ; (unused)
-	; dw	RET_NOT_ZERO
-	; ; db	0 ; (unused)
+	dw	$ + 2
+; Is the player in overlapping y coordinates...
+	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
+	db	PLAYER_BULLET_Y_SIZE
+; ... and to the right?
+	dw	WAIT_ENEMY_HANDLER.PLAYER_RIGHT
+; Shoot right
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	dw	ENEMY_TRAP.SHOOT_RIGHT_HANDLER
 	
 ; Trap (pointing left): shoots when the player is in front of it
 	db	TRAP_LOWER_LEFT_CHAR
@@ -263,17 +265,17 @@ ENEMY_0:
 	db	ARROW_LEFT_SPRITE_PATTERN
 	db	ARROW_SPRITE_COLOR
 	db	$00 ; (not lethal)
-	dw	ENEMY_TYPE_STATIONARY ; $ + 2
-; ; Does the player overlaps y coordinate?
-	; dw	TRIGGER_ENEMY_HANDLER
-	; db	CFG_ENEMY_PAUSE_M
-	; dw	ENEMY_TRAP.TRIGGER_LEFT_HANDLER
-	; db	0 ; (unused)
-; ; Shoot
-	; dw	ENEMY_TRAP.SHOOT_LEFT_HANDLER
-	; db	0 ; (unused)
-	; dw	RET_NOT_ZERO
-	; ; db	0 ; (unused)
+	dw	$ + 2
+; Is the player in overlapping y coordinates...
+	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
+	db	PLAYER_BULLET_Y_SIZE
+; ... and to the left?
+	dw	WAIT_ENEMY_HANDLER.PLAYER_LEFT
+; Shoot left
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	dw	ENEMY_TRAP.SHOOT_LEFT_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -307,7 +309,7 @@ INTRO_DATA:
 	db	$ca, $00, $c8 ; 3 bytes
 	
 .FLOOR_CHARS:
-	db	$25, $24, $25, $64, $84, $85, $14, $24, $25 ; 9 bytes
+	db	$25, $24, $25, $5c, $84, $85, $05, $24, $25 ; 9 bytes
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

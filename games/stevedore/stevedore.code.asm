@@ -21,10 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 6 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
 	
 ; Demo mode
-	; DEMO_MODE:
+	DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -65,17 +65,30 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Copyright notice and "skip intro" secret option
 COPYRIGHT:
-; ; Prints copyright notice
-	; call	CLS_NAMTBL
-	; call	CLS_SPRATR
-	; ld	hl, TXT_COPYRIGHT
-	; ld	de, namtbl_buffer + 20 *SCR_WIDTH
-	; call	PRINT_CENTERED_TEXT
+IFEXIST TXT_COPYRIGHT
+; Prints copyright notice
+	call	CLS_NAMTBL
+	call	CLS_SPRATR
+	ld	hl, TXT_COPYRIGHT
+	ld	de, namtbl_buffer + 16 *SCR_WIDTH
+.LOOP:
+	push	de ; preserves destination
+	call	PRINT_CENTERED_TEXT
+	pop	de ; restores destination
+	ld	bc, 2 *SCR_WIDTH
+	ex	de, hl ; de += bc
+	add	hl, bc
+	ex	de, hl
+	inc	hl
+	xor	a
+	cp	[hl]
+	jr	nz, .LOOP
 	
-; ; Fade in, pause, fade out
-	; call	ENASCR_FADE_IN
-	; call	WAIT_TRIGGER_FOUR_SECONDS
-	; call	DISSCR_FADE_OUT
+; Fade in, pause, fade out
+	call	ENASCR_FADE_IN
+	call	WAIT_TRIGGER_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
+ENDIF ; IFDEF TXT_COPYRIGHT
 	
 ; Is SEL key pressed?
 	halt
@@ -466,12 +479,11 @@ ENDIF
 	; cp	PLAYER_STATE_DEAD
 	; jr	z, PLAYER_OVER ; player is dead
 
+.THIS_IS_BAD:
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 8
 	call	SET_BDRCLR ; red: this is bad
 ENDIF
-
-.THIS_IS_BAD:
 	halt
 	call	BEEP
 	jr	.THIS_IS_BAD
@@ -1387,46 +1399,6 @@ UPDATE_FRAMES_PUSHING:
 	ret
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ENEMY_OCTOPUS:
-
-; .FLOAT_UP_HANDLER:
-; ; Floats until hitting the wall
-	; call	.FLOAT_LEFT_RIGHT
-; ; moves up
-	; call	GET_ENEMY_TILE_FLAGS_ABOVE
-	; bit	BIT_WORLD_SOLID, a
-	; jr	nz, .NO_FLOAT_UP
-	; dec	[ix + enemy.y]
-; .NO_FLOAT_UP:
-	; jp	STATIONARY_ENEMY_HANDLER
-
-; .FLOAT_DOWN_HANDLER:
-; ; Floats until hitting the wall
-	; call	.FLOAT_LEFT_RIGHT
-; ; moves down
-	; call	GET_ENEMY_TILE_FLAGS_UNDER
-	; bit	BIT_WORLD_SOLID, a
-	; jr	nz, .NO_FLOAT_DOWN
-	; inc	[ix + enemy.y]
-; .NO_FLOAT_DOWN:
-	; jp	STATIONARY_ENEMY_HANDLER
-
-; .FLOAT_LEFT_RIGHT:
-; ; Wall hit?
-	; call	CAN_ENEMY_FLY
-	; jp	z, TURN_ENEMY ; yes: turns around
-; ; no: moves forward
-	; bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	; jr	z, .MOVE_RIGHT
-; .MOVE_LEFT:
-	; dec	[ix + enemy.x]
-	; ret
-; .MOVE_RIGHT:
-	; inc	[ix + enemy.x]
-	; ret
-; ; -----------------------------------------------------------------------------
-
 ; -----------------------------------------------------------------------------
 ; Octopus: the octopus floats in a sine wave pattern
 ENEMY_OCTOPUS.WAVER_HANDLER:
@@ -1435,14 +1407,14 @@ ENEMY_OCTOPUS.WAVER_HANDLER:
 	ld	a, [ix + enemy.frame_counter]
 	bit	5, a
 	jr	z, .ASCENDING ; yes
-	
 ; no: descending
 	ld	c, OCTOPUS_SPRITE_PATTERN
-	jr	.SPRITE_OK
+	jr	.PATTERN_OK
 .ASCENDING:
-	ld	c, OCTOPUS_SPRITE_PATTERN +4
-	
-.SPRITE_OK:
+	ld	c, OCTOPUS_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_ANIM
+.PATTERN_OK:
+
+; Puts the sprite
 	ld	e, [ix + enemy.y]
 	ld	d, [ix + enemy.x]
 	ld	b, [ix + enemy.color]
@@ -1495,53 +1467,23 @@ ENEMY_SKELETON.IDLE_HANDLER:
 	ret
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ENEMY_TRAP:
-
-; .TRIGGER_RIGHT_HANDLER:
-; ; The player is at the same y?
-	; ld	h, PLAYER_ENEMY_Y_SIZE
-	; call	CHECK_PLAYER_COLLISION.Y
-	; jp	nc, RET_NOT_ZERO ; no
-; ; yes: to the right?
-	; ld	a, [player.x]
-	; cp	[ix + enemy.x]
-	; jp	c, RET_NOT_ZERO ; no
-; ; yes: sets the next state as the enemy state
-	; ; ld	bc, ENEMY_STATE.NEXT
-	; ; jp	SET_NEW_STATE_HANDLER.BC_OK
-	; xor	a
-	; ret	z
+; -----------------------------------------------------------------------------
+ENEMY_TRAP:
 	
-; .TRIGGER_LEFT_HANDLER:
-; ; The player is at the same y?
-	; ld	h, PLAYER_ENEMY_Y_SIZE
-	; call	CHECK_PLAYER_COLLISION.Y
-	; jp	nc, RET_NOT_ZERO ; no
-; ; yes: to the left?
-	; ld	a, [player.x]
-	; cp	[ix + enemy.x]
-	; jp	nc, RET_NOT_ZERO ; no
-; ; yes: sets the next state as the enemy state
-	; ; ld	bc, ENEMY_STATE.NEXT
-	; ; jp	SET_NEW_STATE_HANDLER.BC_OK
-	; xor	a
-	; ret	z
-	
-; .SHOOT_RIGHT_HANDLER:
-	; ld	hl, BULLET_0.ARROW_RIGHT
-	; call	INIT_BULLET_FROM_ENEMY
-; ; ret z (continue)
-	; xor	a
-	; ret
+.SHOOT_RIGHT_HANDLER:
+	ld	hl, BULLET_0.ARROW_RIGHT
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
+	ret
 
-; .SHOOT_LEFT_HANDLER:
-	; ld	hl, BULLET_0.ARROW_LEFT
-	; call	INIT_BULLET_FROM_ENEMY
-; ; ret z (continue)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
+.SHOOT_LEFT_HANDLER:
+	ld	hl, BULLET_0.ARROW_LEFT
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
