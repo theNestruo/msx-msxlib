@@ -63,14 +63,14 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	5 ; 1			; .chapters ; DEBUG LINE
+	db	1			; .chapters
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
 	db	$00, $00, $00		; .score
-	db	3			; .lives
+	db	4			; .lives
 	.SIZE:	equ $ - GAME_0
 
 ; Initial value of the stage-scoped vars
@@ -122,15 +122,15 @@ ENEMY_0:
 	db	FLAG_ENEMY_LETHAL
 	dw	ENEMY_TYPE_FALLER.TRIGGERED
 
-; Octopus: the octopus floats in a sine wave pattern, shooting up
+; JELLYFISH: the JELLYFISH floats in a sine wave pattern, shooting up
 	db	$f3 ; (water)
-.OCTOPUS:
-	db	OCTOPUS_SPRITE_PATTERN
-	db	OCTOPUS_SPRITE_COLOR
+.JELLYFISH:
+	db	JELLYFISH_SPRITE_PATTERN
+	db	JELLYFISH_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL ; (not important)
 	dw	$ + 2
 ; The enemy floats in a sine wave pattern
-	dw	ENEMY_OCTOPUS.WAVER_HANDLER ; PUT_ENEMY_SPRITE + WAVER_ENEMY_HANDLER
+	dw	ENEMY_JELLYFISH.WAVER_HANDLER ; PUT_ENEMY_SPRITE + WAVER_ENEMY_HANDLER
 	dw	FLYER_ENEMY_HANDLER
 ; Is the player in overlapping x coordinates?
 	dw	TRIGGER_ENEMY_HANDLER
@@ -139,7 +139,7 @@ ENEMY_0:
 ; Shoot
 	dw	TRIGGER_ENEMY_HANDLER.RESET
 	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
-	dw	ENEMY_OCTOPUS.SHOOT_HANDLER
+	dw	ENEMY_JELLYFISH.SHOOT_HANDLER
 
 ; Snake: the snake walks, the pauses, turning around, and continues
 	db	$00
@@ -292,9 +292,9 @@ BULLET_0:
 	db	ARROW_SPRITE_COLOR
 	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
 	
-.OIL_UP:
-	db	OIL_SPRITE_PATTERN
-	db	OIL_SPRITE_COLOR
+.SPARK_UP:
+	db	SPARK_SPRITE_PATTERN
+	db	SPARK_SPRITE_COLOR
 	db	BULLET_DIR_UP OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
@@ -383,7 +383,7 @@ STAGE_SELECT:
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
 IFEXIST DEMO_MODE
-	dw	.STAGE_01, .STAGE_02, .STAGE_11, .STAGE_14, .STAGE_14
+	dw	.STAGE_01, .STAGE_03, .STAGE_06, .STAGE_11, .STAGE_14
 ELSE
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
 ENDIF ; IFEXIST DEMO_MODE
@@ -505,42 +505,56 @@ SPRTBL_PACKED:
 
 	BAT_SPRITE_PATTERN:		equ $60
 	BAT_SPRITE_COLOR:		equ 4
-	
-	SKELETON_SPRITE_PATTERN:	equ $70
-	SKELETON_SPRITE_COLOR:		equ 15
-	
-	SNAKE_SPRITE_PATTERN:		equ $80
+	BAT_SPRITE_COLOR_2:		equ 4
+
+	SNAKE_SPRITE_PATTERN:		equ $70
 	SNAKE_SPRITE_COLOR:		equ 2
+	SNAKE_SPRITE_COLOR_2:		equ 2
+	SNAKE_SPRITE_COLOR_3:		equ 2
+	
+	PIRATE_SPRITE_PATTERN:		equ $80
+	PIRATE_SPRITE_COLOR:		equ 14
 	
 	SAVAGE_SPRITE_PATTERN:		equ $90
 	SAVAGE_SPRITE_COLOR:		equ 8
-
-	SPIDER_SPRITE_PATTERN:		equ $a0
+	
+	SKELETON_SPRITE_PATTERN:	equ $a0
+	SKELETON_SPRITE_COLOR:		equ 15
+	
+	SPIDER_SPRITE_PATTERN:		equ $b0
 	SPIDER_SPRITE_COLOR:		equ 13
 	
-	OCTOPUS_SPRITE_PATTERN:		equ $a8
-	OCTOPUS_SPRITE_COLOR:		equ 1
+	JELLYFISH_SPRITE_PATTERN:	equ $b8
+	JELLYFISH_SPRITE_COLOR:		equ 15
 	
-	BOX_SPRITE_PATTERN:		equ $b0
+	BOX_SPRITE_PATTERN:		equ $c8
 	BOX_SPRITE_COLOR:		equ 9
 	
-	ROCK_SPRITE_PATTERN:		equ $b4
+	ROCK_SPRITE_PATTERN:		equ $cc
 	ROCK_SPRITE_COLOR:		equ 14
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
 
-	ARROW_RIGHT_SPRITE_PATTERN:	equ $b8
-	ARROW_LEFT_SPRITE_PATTERN:	equ $bc
+	ARROW_RIGHT_SPRITE_PATTERN:	equ $d0
+	ARROW_LEFT_SPRITE_PATTERN:	equ $d4
 	ARROW_SPRITE_COLOR:		equ 14
+
+	KNIFE_RIGHT_SPRITE_PATTERN:	equ $d8
+	KNIFE_LEFT_SPRITE_PATTERN:	equ $dc
+	KNIFE_SPRITE_COLOR:		equ 14
 	
-	OIL_SPRITE_PATTERN:		equ $c0
-	OIL_SPRITE_COLOR:		equ 10
+	SPARK_SPRITE_PATTERN:		equ $e0
+	SPARK_SPRITE_COLOR:		equ 10
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; PT3Player data
 SONG_PACKED_TABLE:
+IFEXIST DEMO_MODE
+	dw	.SONG_0, .SONG_2, .SONG_1, .SONG_3, .SONG_4, .SONG_5
+ELSE
 	dw	.SONG_0, .SONG_1, .SONG_2, .SONG_3, .SONG_4, .SONG_5
+ENDIF
 .SONG_0:
 	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
 .SONG_1:

@@ -21,10 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 12 -1 ; DEBUG LINE
 	
 ; Demo mode
-	DEMO_MODE:
+	; DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1062,7 +1062,7 @@ POST_PROCESS_STAGE_ELEMENT:
 	dec	a
 	jr	z, .NEW_SPIDER ; '3'
 	dec	a
-	jr	z, .NEW_OCTOPUS ; '4'
+	jr	z, .NEW_JELLYFISH ; '4'
 	dec	a
 	jr	z, .NEW_SNAKE_1 ; '5'
 	dec	a
@@ -1118,11 +1118,11 @@ POST_PROCESS_STAGE_ELEMENT:
 	ld	hl, ENEMY_0.SPIDER
 	jp	INIT_ENEMY
 
-.NEW_OCTOPUS:
-; Initializes a new octopus
+.NEW_JELLYFISH:
+; Initializes a new JELLYFISH
 	ld	[hl], $f3 ; (water)
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.OCTOPUS
+	ld	hl, ENEMY_0.JELLYFISH
 	jp	INIT_ENEMY
 
 .NEW_SNAKE_1:
@@ -1400,18 +1400,18 @@ UPDATE_FRAMES_PUSHING:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Octopus: the octopus floats in a sine wave pattern
-ENEMY_OCTOPUS.WAVER_HANDLER:
+; JELLYFISH: the JELLYFISH floats in a sine wave pattern
+ENEMY_JELLYFISH.WAVER_HANDLER:
 ; Is the wave pattern ascending?
 	inc	[ix + enemy.frame_counter]
 	ld	a, [ix + enemy.frame_counter]
 	bit	5, a
 	jr	z, .ASCENDING ; yes
 ; no: descending
-	ld	c, OCTOPUS_SPRITE_PATTERN
+	ld	c, JELLYFISH_SPRITE_PATTERN
 	jr	.PATTERN_OK
 .ASCENDING:
-	ld	c, OCTOPUS_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_ANIM
+	ld	c, JELLYFISH_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_ANIM
 .PATTERN_OK:
 
 ; Puts the sprite
@@ -1428,9 +1428,9 @@ ENEMY_OCTOPUS.WAVER_HANDLER:
 	ld	a, 2
 	ret
 
-; Octopus: the octopus shoots oil up
-ENEMY_OCTOPUS.SHOOT_HANDLER:
-	ld	hl, BULLET_0.OIL_UP
+; JELLYFISH: the JELLYFISH shoots oil up
+ENEMY_JELLYFISH.SHOOT_HANDLER:
+	ld	hl, BULLET_0.SPARK_UP
 	call	INIT_BULLET_FROM_ENEMY
 ; ret 0 (halt)
 	xor	a
@@ -1513,7 +1513,7 @@ ON_PLAYER_WALK_ON:
 	dw	.BONUS	; fruit: cherry
 	dw	.BONUS	; fruit: strawberry
 	dw	.BONUS	; fruit: apple
-	dw	.BONUS	; octopus
+	dw	.BONUS	; JELLYFISH
 
 ; key
 .KEY:
@@ -1527,7 +1527,7 @@ ON_PLAYER_WALK_ON:
 	set	BIT_STAGE_STAR, [hl]
 	ret
 
-; coins, fruits, octopus
+; coins, fruits, JELLYFISH
 .BONUS:
 	ret
 ; -----------------------------------------------------------------------------

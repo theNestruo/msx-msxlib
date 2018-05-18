@@ -64,6 +64,7 @@ ENEMY_TYPE_FALLER:
 	dw	PUT_ENEMY_SPRITE
 	dw	WAIT_ENEMY_HANDLER.X_COLLISION
 	db	PLAYER_ENEMY_X_SIZE + 6 ; 3 pixels before the actual collision
+	dw	WAIT_ENEMY_HANDLER.PLAYER_BELOW
 	dw	SET_NEW_STATE_HANDLER
 	dw	$ + 2
 ; then the enemy falls onto the ground

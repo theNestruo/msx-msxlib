@@ -424,6 +424,36 @@ WAIT_ENEMY_HANDLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is above the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is above the enemy, halt (0) otherwise
+.PLAYER_ABOVE:
+; Is the player above?
+	ld	a, [player.y]
+	cp	[ix + enemy.y]
+	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; yes: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is below the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is below the enemy, halt (0) otherwise
+.PLAYER_BELOW:
+; Is the player below?
+	ld	a, [player.y]
+	cp	[ix + enemy.y]
+	jp	nc, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; yes: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Trigger state handler: pauses until the enemy can shoot again
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
