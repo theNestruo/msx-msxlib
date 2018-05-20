@@ -63,7 +63,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	1			; .chapters
+	db	5			; .chapters
 	db	$00, $00, $00		; .hi_score
 	.SIZE:	equ $ - GLOBALS_0
 	
@@ -209,6 +209,13 @@ ENEMY_0:
 	dw	SET_NEW_STATE_HANDLER
 	dw	.SKELETON_BEHAVIOUR ; (restart)
 
+; Pirate: TODO
+	db	$00
+.PIRATE:
+	db	PIRATE_SPRITE_PATTERN
+	db	PIRATE_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL
+	dw	.SAVAGE_BEHAVIOUR
 
 ; Savage: the savage walks towards the player, pausing briefly
 	db	$00

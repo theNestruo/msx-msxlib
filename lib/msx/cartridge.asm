@@ -70,6 +70,12 @@ IFDEF CFG_INIT_16KB_RAM
 ; halts the execution
 	di
 	halt
+	
+; RAM check warning text
+.TXT:
+	db	"16KB RAM REQUIRED"
+	.TXT_SIZE:	equ $ - .TXT
+	
 .RAM_OK:
 ENDIF ; CFG_INIT_16KB_RAM
 
@@ -170,13 +176,6 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Data
 
-; RAM check warning text
-IFDEF CFG_INIT_16KB_RAM
-.TXT:
-	db	"16KB RAM REQUIRED"
-	.TXT_SIZE:	equ $ - .TXT
-ENDIF ; CFG_INIT_16KB_RAM
-
 ; Frame rate related values
 .FRAME_RATE_50HZ_0:
 	db	50	; frame rate
@@ -202,16 +201,25 @@ ENDIF
 IFEXIST SET_PALETTE
 IFEXIST CFG_CUSTOM_PALETTE
 ELSE
-.COOL_COLORS_PALETTE:
+; Example: Default MSX2 palette
+; .DEFAULT_MSX2_PALETTE:
+	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
+	; dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
 ; CoolColors (c) Fabio R. Schmidlin, 1997
+.COOL_COLORS_PALETTE:
 	dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
 	dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
+; TMS approximate (Wolf's Polka)
+; .TMS_APPROXIMATE_PALETTE:
+	; dw	$0000, $0000, $0522, $0623, $0326, $0337, $0261, $0637
+	; dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
 ENDIF ; CFG_CUSTOM_PALETTE
 ENDIF ; SET_PALETTE
 
 
 IFEXIST REPLAYER.FRAME
-; Hook
+; H.TIMI hook that invokes both the replayer (with frameskip in 60Hz machines)
+; and the previously existing hook
 .HTIMI_HOOK_FRAMESKIP:
 	push	af ; Preserves VDP status register S#0 (a)
 	ld	hl, replayer.frameskip

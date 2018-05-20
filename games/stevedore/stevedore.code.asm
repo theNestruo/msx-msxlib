@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 12 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 7 -1 ; DEBUG LINE
 	
 ; Demo mode
 	; DEMO_MODE:
@@ -515,6 +515,12 @@ ENDIF
 PLAYER_OVER:
 ; Fade out
 	call	DISSCR_FADE_OUT
+
+; Is SEL key pressed?
+	halt
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	6, [hl]
+	jp	z, MAIN_MENU ; yes: go to main menu
 	
 ; Is it a tutorial stage?
 	ld	a, [game.stage]
@@ -1060,17 +1066,19 @@ POST_PROCESS_STAGE_ELEMENT:
 	dec	a
 	jr	z, .NEW_BAT_2 ; '2'
 	dec	a
-	jr	z, .NEW_SPIDER ; '3'
+	jr	z, .NEW_SNAKE_1 ; '3'
 	dec	a
-	jr	z, .NEW_JELLYFISH ; '4'
+	jr	z, .NEW_SNAKE_2 ; '4'
 	dec	a
-	jr	z, .NEW_SNAKE_1 ; '5'
+	jr	z, .NEW_SNAKE_3 ; '5'
 	dec	a
-	jr	z, .NEW_SNAKE_2 ; '6'
+	jr	z, .NEW_PIRATE ; '6'
 	dec	a
-	jr	z, .NEW_SNAKE_3 ; '7'
+	jr	z, .NEW_SAVAGE ; '7'
 	dec	a
-	jr	z, .NEW_SAVAGE ; '8'
+	jr	z, .NEW_SPIDER ; '8'
+	dec	a
+	jr	z, .NEW_JELLYFISH ; '9'
 	ret
 	
 .SET_START_POINT:
@@ -1134,6 +1142,13 @@ POST_PROCESS_STAGE_ELEMENT:
 	ld	hl, ENEMY_0.SNAKE
 	jp	INIT_ENEMY
 
+.NEW_PIRATE:
+; Initializes a new pirate
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, ENEMY_0.PIRATE
+	jp	INIT_ENEMY
+	
 .NEW_SAVAGE:
 ; Initializes a new savage
 	ld	[hl], 0

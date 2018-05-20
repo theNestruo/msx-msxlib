@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="1.0.2" orientation="orthogonal" renderorder="right-down" width="32" height="24" tilewidth="8" tileheight="8" nextobjectid="1">
+<map version="1.0" tiledversion="1.1.5" orientation="orthogonal" renderorder="right-down" width="32" height="24" tilewidth="8" tileheight="8" infinite="0" nextobjectid="1">
  <tileset firstgid="1" name="charset" tilewidth="8" tileheight="8" tilecount="256" columns="16">
   <image source="charset.png" width="128" height="128"/>
  </tileset>
@@ -8,7 +8,7 @@
 96,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,96,
 96,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,96,
 96,1,1,1,1,1,1,107,108,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,96,
-96,1,1,1,1,1,1,123,124,1,1,1,1,1,1,1,1,54,1,1,1,1,1,1,1,1,1,1,1,1,1,96,
+96,1,1,1,1,1,1,123,124,1,1,1,1,1,1,1,1,52,1,1,1,1,1,1,1,1,1,1,1,1,1,96,
 96,1,1,1,1,1,1,107,108,107,108,1,1,1,1,1,45,205,206,205,206,205,206,1,1,1,1,1,1,1,1,96,
 96,1,1,1,1,1,1,123,124,123,124,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,96,
 96,1,1,1,1,1,1,107,108,107,108,1,1,1,1,205,206,205,206,205,206,46,1,1,1,1,1,1,1,1,1,96,
