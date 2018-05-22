@@ -34,6 +34,11 @@ enemy:
 ; Current trigger frame counter
 	.trigger_frame_counter: equ $ - enemy
 	rb	1
+; Backup data for respawning the enemy
+	.RESPAWN_SIZE:	equ .animation_delay ; (from .xy to .state)
+	.respawn_data:	equ $ - enemy
+	rb	.RESPAWN_SIZE
+	
 	.SIZE:		equ $ - enemy
 
 ; (rest of the array)

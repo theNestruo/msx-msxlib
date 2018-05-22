@@ -152,6 +152,7 @@ ENEMY_0:
 ; then pauses, turning around, and continues
 .SNAKE_BEHAVIOUR:
 ; The enemy walks ahead along the ground
+	dw	CHECK_DEAD_ENEMY_HANDLER
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
@@ -160,6 +161,7 @@ ENEMY_0:
 	dw	SET_NEW_STATE_HANDLER
 	dw	$ + 2
 ; pauses, turning around
+	dw	CHECK_DEAD_ENEMY_HANDLER
 	dw	PUT_ENEMY_SPRITE
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)

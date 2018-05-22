@@ -191,6 +191,41 @@ ENEMY_TYPE_PACER:
 ; ; Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
 ; ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+ENEMY_TYPE_DEAD:
+; Kills the enemy
+	dw	KILL_ENEMY_HANDLER
+; (shows the sprite in this frame)
+	dw	PUT_ENEMY_SPRITE_PATTERN
+	db	CFG_ENEMY_DEAD_PATTERN
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; Shows the dead pattern during a short time
+	dw	PUT_ENEMY_SPRITE_PATTERN
+	db	CFG_ENEMY_DEAD_PATTERN
+	dw	WAIT_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_S ; short pause
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; Waits a little
+	dw	WAIT_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_L ; long wait
+	dw	INIT_RESPAWN_ENEMY_HANDLER
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; Shows a respawning animation
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	WAIT_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_L ; long wait
+	dw	SET_NEW_STATE_HANDLER
+	dw	$ + 2
+; Actually respawns the enemy
+	dw	RESPAWN_ENEMY_HANDLER
+; (shows the sprite in the first frame after respawning)
+	dw	PUT_ENEMY_SPRITE
+	dw	END_ENEMY_HANDLER
+; -----------------------------------------------------------------------------
+
 ;
 ; =============================================================================
 ;	Convenience enemy state handlers (platformer game)
@@ -391,6 +426,15 @@ WAVER_ENEMY_HANDLER:
 	ret
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+CHECK_DEAD_ENEMY_HANDLER:
+	call	GET_ENEMY_TILE_FLAGS
+	bit	BIT_WORLD_SOLID, a
+	jp	z, CONTINUE_ENEMY_HANDLER.NO_ARGS ; no
+	ld	hl, ENEMY_TYPE_DEAD
+	jp	SET_NEW_STATE_HANDLER.HL_OK
+; -----------------------------------------------------------------------------
+
 ;
 ; =============================================================================
 ;	Convenience enemy helper routines (platform games)
@@ -496,12 +540,26 @@ MOVE_ENEMY:
 	ret
 ; -----------------------------------------------------------------------------
 
+; ; -----------------------------------------------------------------------------
+; ; Reads the tile flags above the enemy
+; ; param ix: pointer to the current enemy
+; ; ret a: tile flags
+; GET_ENEMY_TILE_FLAGS:
+; ; Enemy coordinates
+	; ld	a, [ix + enemy.y]
+	; add	ENEMY_BOX_Y_OFFSET
+	; ld	e, a
+	; ld	d, [ix + enemy.x]
+; ; Reads the tile index and then the tile flags
+	; call	GET_TILE_VALUE
+	; jp	GET_TILE_FLAGS
+; ; -----------------------------------------------------------------------------
+
 ; -----------------------------------------------------------------------------
 ; Reads the tile flags above the enemy
 ; param ix: pointer to the current enemy
 ; ret a: tile flags
 GET_ENEMY_TILE_FLAGS_ABOVE:
-	xor	a
 ; Enemy coordinates
 	ld	a, [ix + enemy.y]
 	add	ENEMY_BOX_Y_OFFSET -1

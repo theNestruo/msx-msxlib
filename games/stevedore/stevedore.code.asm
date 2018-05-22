@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 7 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
 	
 ; Demo mode
 	; DEMO_MODE:

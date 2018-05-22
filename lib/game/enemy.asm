@@ -63,7 +63,7 @@ RESET_ENEMIES:
 ; param de: logical coordinates (x, y)
 ; touches: a, hl, de, bc
 INIT_ENEMY:
-	push	hl ; preserves source
+	push	hl ; preserves source data
 ; Search for the first empty enemy slot
 	ld	hl, enemies
 	ld	bc, enemy.SIZE
@@ -76,19 +76,19 @@ INIT_ENEMY:
 	jr	.LOOP
 	
 .INIT:
+	ld	b, h ; preserves target start in bc
+	ld	c, l
 ; Stores the logical coordinates
 	ld	[hl], e ; .y
 	inc	hl
 	ld	[hl], d ; .x
 	inc	hl
 ; Stores the pattern, color and initial handler
-	ex	de, hl ; target in de
-	pop	hl ; restores source in hl
-	ldi	; .pattern
-	ldi	; .color
-	ldi	; .flags
-	ldi	; .state_l
-	ldi	; .state_h
+	ex	de, hl ; current target in de
+	pop	hl ; restores source data in hl
+	push	bc ; preserves target start
+	ld	bc, 5
+	ldir	; .pattern, .color, .flags, .state
 ; Resets the animation delay and the frame counter
 	xor	a
 	ld	[de], a ; .animation_delay
@@ -96,6 +96,11 @@ INIT_ENEMY:
 	ld	[de], a ; .frame_counter
 	inc	de
 	ld	[de], a ; .trigger_frame_counter
+; Saves the data for respawning
+	pop	hl ; restores target start in hl
+	inc	de ; .respawn_data
+	ld	bc, enemy.RESPAWN_SIZE
+	ldir
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -182,6 +187,7 @@ SET_NEW_STATE_HANDLER:
 ; Reads the address of the next state in hl
 	ld	l, [iy + ENEMY_STATE.ARG_0]
 	ld	h, [iy + ENEMY_STATE.ARG_1]
+.HL_OK:
 ; Sets the new state as the enemy state
 	ld	[ix + enemy.state_l], l
 	ld	[ix + enemy.state_h], h
@@ -237,21 +243,22 @@ PUT_ENEMY_SPRITE:
 	ret
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Puts the enemy sprite using an specific pattern
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; ret z (continue)
-; PUT_ENEMY_SPRITE_PATTERN:
-	; ld	e, [ix + enemy.y]
-	; ld	d, [ix + enemy.x]
-	; ld	c, [iy + ENEMY_STATE.ARGS]
-	; ld	b, [ix + enemy.color]
-	; call	PUT_SPRITE
-; ; ret z (continue)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Puts the enemy sprite using an specific pattern
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARG_0]: the specific pattern
+; ret a: 3 (continue with next state handler)
+PUT_ENEMY_SPRITE_PATTERN:
+	ld	e, [ix + enemy.y]
+	ld	d, [ix + enemy.x]
+	ld	c, [iy + ENEMY_STATE.ARG_0]
+	ld	b, [ix + enemy.color]
+	call	PUT_SPRITE
+; ret 3 (continue with next state handler)
+	ld	a, 3
+	ret
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Toggles the left flag of the enemy
@@ -485,11 +492,57 @@ TRIGGER_ENEMY_HANDLER:
 	ret
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+KILL_ENEMY_HANDLER:
+; Makes the enemy non-lethal
+	res	BIT_ENEMY_LETHAL, [ix + enemy.flags]
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+INIT_RESPAWN_ENEMY_HANDLER:
+	push	ix ; hl = ix
+	pop	hl
+	ld	d, h ; de = hl
+	ld	e, l
+	ld	a, enemy.respawn_data ; hl += .respawn_data
+	call	ADD_HL_A
+	ldi	; .y
+	ldi	; .x
+; Prepares the respawning pattern
+	ld	a, CFG_ENEMY_DEAD_PATTERN +4
+	ld	[ix + enemy.pattern], a
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+RESPAWN_ENEMY_HANDLER:
+	push	ix ; hl = ix
+	pop	hl
+	ld	d, h ; de = hl
+	ld	e, l
+	ld	a, enemy.respawn_data ; hl += .respawn_data
+	call	ADD_HL_A
+	ld	bc, enemy.RESPAWN_SIZE
+	ldir
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+; -----------------------------------------------------------------------------
+	
 ;
 ; =============================================================================
 ;	Enemy-tile helper routines
 ; =============================================================================
 ;
+
+GET_ENEMY_TILE_FLAGS:
+	xor	a
+	jp	GET_ENEMY_V_TILE_FLAGS
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles to the left of the enemy
