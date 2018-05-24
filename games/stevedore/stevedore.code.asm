@@ -459,11 +459,6 @@ ENDIF
 	call	CHECK_PLAYER_ENEMIES_COLLISIONS
 	call	CHECK_PLAYER_BULLETS_COLLISIONS
 	
-; Additional game logic: crushed (by a pushable, custom)
-	call	GET_PLAYER_TILE_FLAGS
-	bit	BIT_WORLD_SOLID, a
-	call	nz, SET_PLAYER_DYING
-	
 ; Extra input
 	call	.CTRL_STOP_CHECK
 	
@@ -1477,6 +1472,7 @@ ENEMY_SKELETON.IDLE_HANDLER:
 	pop	ix ; restores ix
 ; Makes the enemy lethal
 	set	BIT_ENEMY_LETHAL, [ix + enemy.flags]
+	set	BIT_ENEMY_SOLID, [ix + enemy.flags]
 ; ret 2 (continue with next state handler)
 	ld	a, 2
 	ret

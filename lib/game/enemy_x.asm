@@ -7,6 +7,14 @@
 ;
 
 ; -----------------------------------------------------------------------------
+; Enemy flags (as bit indexes) (platformer game)
+	BIT_ENEMY_SOLID:	equ 1 ; (can be killed by solid or death tiles)
+	
+; Enemy flags (as flags)
+	FLAG_ENEMY_SOLID:	equ (1 << BIT_ENEMY_SOLID) ; $02
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Stationary: The enemy does not move at all
 ENEMY_TYPE_STATIONARY:
 ; The enemy does not move
@@ -192,14 +200,7 @@ ENEMY_TYPE_PACER:
 ; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-ENEMY_TYPE_DEAD:
-; Kills the enemy
-	dw	KILL_ENEMY_HANDLER
-; (shows the sprite in this frame)
-	dw	PUT_ENEMY_SPRITE_PATTERN
-	db	CFG_ENEMY_DEAD_PATTERN
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
+ENEMY_TYPE_KILLED:
 ; Shows the dead pattern during a short time
 	dw	PUT_ENEMY_SPRITE_PATTERN
 	db	CFG_ENEMY_DEAD_PATTERN
@@ -426,14 +427,14 @@ WAVER_ENEMY_HANDLER:
 	ret
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-CHECK_DEAD_ENEMY_HANDLER:
-	call	GET_ENEMY_TILE_FLAGS
-	bit	BIT_WORLD_SOLID, a
-	jp	z, CONTINUE_ENEMY_HANDLER.NO_ARGS ; no
-	ld	hl, ENEMY_TYPE_DEAD
-	jp	SET_NEW_STATE_HANDLER.HL_OK
-; -----------------------------------------------------------------------------
+; ; -----------------------------------------------------------------------------
+; CHECK_DEAD_ENEMY_HANDLER:
+	; call	GET_ENEMY_TILE_FLAGS
+	; bit	BIT_WORLD_SOLID, a
+	; jp	z, CONTINUE_ENEMY_HANDLER.NO_ARGS ; no
+	; ld	hl, ENEMY_TYPE_DEAD
+	; jp	SET_NEW_STATE_HANDLER.HL_OK
+; ; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
@@ -539,21 +540,6 @@ MOVE_ENEMY:
 	inc	[ix + enemy.x]
 	ret
 ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; ; Reads the tile flags above the enemy
-; ; param ix: pointer to the current enemy
-; ; ret a: tile flags
-; GET_ENEMY_TILE_FLAGS:
-; ; Enemy coordinates
-	; ld	a, [ix + enemy.y]
-	; add	ENEMY_BOX_Y_OFFSET
-	; ld	e, a
-	; ld	d, [ix + enemy.x]
-; ; Reads the tile index and then the tile flags
-	; call	GET_TILE_VALUE
-	; jp	GET_TILE_FLAGS
-; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Reads the tile flags above the enemy

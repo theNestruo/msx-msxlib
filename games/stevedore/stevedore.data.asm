@@ -111,7 +111,7 @@ ENEMY_0:
 .BAT:
 	db	BAT_SPRITE_PATTERN
 	db	BAT_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
 	dw	ENEMY_TYPE_FLYER
 
 ; Spider: the spider falls onto the ground the the player is near
@@ -119,7 +119,7 @@ ENEMY_0:
 .SPIDER:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
 	dw	ENEMY_TYPE_FALLER.TRIGGERED
 
 ; JELLYFISH: the JELLYFISH floats in a sine wave pattern, shooting up
@@ -127,7 +127,7 @@ ENEMY_0:
 .JELLYFISH:
 	db	JELLYFISH_SPRITE_PATTERN
 	db	JELLYFISH_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL ; (not important)
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
 	dw	$ + 2
 ; The enemy floats in a sine wave pattern
 	dw	ENEMY_JELLYFISH.WAVER_HANDLER ; PUT_ENEMY_SPRITE + WAVER_ENEMY_HANDLER
@@ -146,13 +146,13 @@ ENEMY_0:
 .SNAKE:
 	db	SNAKE_SPRITE_PATTERN
 	db	SNAKE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
 	dw	$ + 2
 ; Walker (with pauses): the enemy walks ahead along the ground,
 ; then pauses, turning around, and continues
 .SNAKE_BEHAVIOUR:
 ; The enemy walks ahead along the ground
-	dw	CHECK_DEAD_ENEMY_HANDLER
+	; dw	CHECK_DEAD_ENEMY_HANDLER
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
@@ -161,7 +161,7 @@ ENEMY_0:
 	dw	SET_NEW_STATE_HANDLER
 	dw	$ + 2
 ; pauses, turning around
-	dw	CHECK_DEAD_ENEMY_HANDLER
+	; dw	CHECK_DEAD_ENEMY_HANDLER
 	dw	PUT_ENEMY_SPRITE
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
@@ -216,7 +216,7 @@ ENEMY_0:
 .PIRATE:
 	db	PIRATE_SPRITE_PATTERN
 	db	PIRATE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
 	dw	.SAVAGE_BEHAVIOUR
 
 ; Savage: the savage walks towards the player, pausing briefly
@@ -224,7 +224,7 @@ ENEMY_0:
 .SAVAGE:
 	db	SAVAGE_SPRITE_PATTERN
 	db	SAVAGE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
 	dw	$ + 2
 ; Follower: the enemy walks a medium distance along the ground,
 ; towards the player, then pauses briefly, and continues
@@ -536,23 +536,23 @@ SPRTBL_PACKED:
 	JELLYFISH_SPRITE_PATTERN:	equ $b8
 	JELLYFISH_SPRITE_COLOR:		equ 15
 	
-	BOX_SPRITE_PATTERN:		equ $c8
+	BOX_SPRITE_PATTERN:		equ $e8
 	BOX_SPRITE_COLOR:		equ 9
 	
-	ROCK_SPRITE_PATTERN:		equ $cc
+	ROCK_SPRITE_PATTERN:		equ $ec
 	ROCK_SPRITE_COLOR:		equ 14
 	ROCK_SPRITE_COLOR_WATER:	equ 5
 	ROCK_SPRITE_COLOR_LAVA:		equ 9
 
-	ARROW_RIGHT_SPRITE_PATTERN:	equ $d0
-	ARROW_LEFT_SPRITE_PATTERN:	equ $d4
+	ARROW_RIGHT_SPRITE_PATTERN:	equ $c8
+	ARROW_LEFT_SPRITE_PATTERN:	equ $cc
 	ARROW_SPRITE_COLOR:		equ 14
 
-	KNIFE_RIGHT_SPRITE_PATTERN:	equ $d8
-	KNIFE_LEFT_SPRITE_PATTERN:	equ $dc
+	KNIFE_RIGHT_SPRITE_PATTERN:	equ $d0
+	KNIFE_LEFT_SPRITE_PATTERN:	equ $d4
 	KNIFE_SPRITE_COLOR:		equ 14
 	
-	SPARK_SPRITE_PATTERN:		equ $e0
+	SPARK_SPRITE_PATTERN:		equ $d8
 	SPARK_SPRITE_COLOR:		equ 10
 ; -----------------------------------------------------------------------------
 

@@ -20,7 +20,7 @@
 	FLAG_ENEMY_PATTERN_LEFT:	equ (1 << BIT_ENEMY_PATTERN_LEFT) ; $08
 
 ; Enemy flags (as bit indexes)
-	BIT_ENEMY_LETHAL:	equ 0
+	BIT_ENEMY_LETHAL:	equ 0 ; Kills the player on collision
 	
 ; Enemy flags (as flags)
 	FLAG_ENEMY_LETHAL:	equ (1 << BIT_ENEMY_LETHAL) ; $01
@@ -117,6 +117,32 @@ UPDATE_ENEMIES:
 	cp	[ix + enemy.y]
 	jp	z, .SKIP_ENEMY ; yes
 ; no: update enemy
+
+IFEXIST BIT_ENEMY_SOLID
+	ld	b, b
+	jr	$ + 2
+; Is the enemy solid?
+	bit	BIT_ENEMY_SOLID, [ix + enemy.flags]
+	jr	z, .NOT_KILLED ; no
+; yes: Reads the tile flags at the enemy coordinates
+	call	GET_ENEMY_TILE_FLAGS
+; Has death bit?
+	bit	BIT_WORLD_DEATH, a
+	jr	nz, .KILL_ENEMY ; yes
+; Is solid? (the enemy has been crushed)	
+	bit	BIT_WORLD_SOLID, a
+	jr	z, .NOT_KILLED ; no
+	
+.KILL_ENEMY:
+; Makes the enemy non-lethal and non-solid
+	res	BIT_ENEMY_LETHAL, [ix + enemy.flags]
+	res	BIT_ENEMY_SOLID, [ix + enemy.flags]
+; Sets the enemy the behaviour when killed
+	ld	hl, ENEMY_TYPE_KILLED
+	call	SET_NEW_STATE_HANDLER.HL_OK
+	
+.NOT_KILLED:
+ENDIF ; IFEXIST BIT_WORLD_SOLID
 
 ; Dereferences the state pointer
 	ld	l, [ix + enemy.state_l]
@@ -540,9 +566,21 @@ RESPAWN_ENEMY_HANDLER:
 ; =============================================================================
 ;
 
+; -----------------------------------------------------------------------------
+; Reads the tile flags at the enemy coordinates
+; (one pixel above the enemy logical coordinates)
+; param ix: pointer to the current enemy
+; ret a: tile flags
 GET_ENEMY_TILE_FLAGS:
-	xor	a
-	jp	GET_ENEMY_V_TILE_FLAGS
+; Enemy coordinates
+	ld	a, [ix + enemy.y]
+	dec	a
+	ld	e, a
+	ld	d, [ix + enemy.x]
+; Reads the tile index and then the tile flags
+	call	GET_TILE_VALUE
+	jp	GET_TILE_FLAGS
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles to the left of the enemy

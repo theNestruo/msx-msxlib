@@ -5,8 +5,7 @@
 ;
 
 ; -----------------------------------------------------------------------------
-; Bit index for the default tile properties
-	BIT_WORLD_SOLID:	equ 0
+; Bit index for the tile properties (platformer game)
 	BIT_WORLD_FLOOR:	equ 1
 	BIT_WORLD_STAIRS:	equ 2
 	BIT_WORLD_DEATH:	equ 3
@@ -45,6 +44,9 @@ UPDATE_PLAYER:
 	call	GET_PLAYER_TILE_FLAGS
 ; Has death bit?
 	bit	BIT_WORLD_DEATH, a
+	jp	nz, SET_PLAYER_DYING ; yes
+; Is solid? (the player has been crushed)
+	bit	BIT_WORLD_SOLID, a
 	jp	nz, SET_PLAYER_DYING ; yes
 ; Has tile collision (single char) bit?
 IFEXIST ON_PLAYER_WALK_ON
