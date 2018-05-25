@@ -35,6 +35,7 @@ PUT_PLAYER_SPRITE:
 	ld	a, [player.state]
 	ld	hl, PLAYER_SPRATR_TABLE
 	call	GET_HL_A_BYTE
+.PATTERN:
 	ld	[player_spratr.pattern], a
 ; Moves the player sprites
 	ld	hl, player_spratr

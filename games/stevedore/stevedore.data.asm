@@ -176,7 +176,7 @@ ENEMY_0:
 .SKELETON:
 	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
 	db	SKELETON_SPRITE_COLOR
-	db	$00 ; (not lethal in the initial state)
+	db	$00 ; (not lethal nor solid in the initial state)
 	dw	$ + 2
 .SKELETON_BEHAVIOUR_IDLE:
 ; Slept until the star is picked up

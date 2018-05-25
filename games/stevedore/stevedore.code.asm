@@ -21,10 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 11 -1 ; DEBUG LINE
 	
 ; Demo mode
-	DEMO_MODE:
+	; DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -471,17 +471,6 @@ ENDIF
 	cp	PLAYER_STATE_FINISH
 	jr	z, STAGE_OVER ; stage over
 	jp	PLAYER_OVER ; player is dead
-	; cp	PLAYER_STATE_DEAD
-	; jr	z, PLAYER_OVER ; player is dead
-
-.THIS_IS_BAD:
-IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 8
-	call	SET_BDRCLR ; red: this is bad
-ENDIF
-	halt
-	call	BEEP
-	jr	.THIS_IS_BAD
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -558,7 +547,27 @@ GAME_OVER:
 ; -----------------------------------------------------------------------------
 ; In-game loop finish due stage over
 STAGE_OVER:
-; Fade out
+; Prepares the player disappearing animation
+	halt
+	call	SET_PLAYER_FLOOR
+	ld	b, -1
+	call	PREPARE_APPEARING_MASK
+; Player disappearing and fade out
+	call	PLAYER_DISAPPEARING_ANIMATION
+	
+	; ld	b, SPRITE_HEIGHT
+; .LOOP1:
+	; push	bc ; (preserves counter)
+	; halt
+	; call	LDIRVM_SPRATR
+	; call	UPDATE_DYNAMIC_CHARSET
+; ; Player appears
+	; ld	a, PLAYER_SPRITE_INTRO_PATTERN + 8
+	; call	PUT_PLAYER_SPRITE.PATTERN
+; ; Loop condition
+	; pop	bc ; (restores counter)
+	; djnz	.LOOP1
+
 	call	DISSCR_FADE_OUT
 
 ; Next stage logic
@@ -846,16 +855,19 @@ UPDATE_MENU_PLAYER:
 	ld	de, player
 	ldi
 	ldi
-; Updates the player sprite and prepares the mask for appearing animation
+; Updates the player sprite
 	call	PUT_PLAYER_SPRITE
+; Prepares the mask for appearing animation
+	ld	b, CFG_SPRITES_Y_OFFSET
+	; jp	PREPARE_APPEARING_MASK ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Prepares the SPRATR buffer for the player appearing/disappearing animations
+; param b: delta Y for the mask (CFG_SPRITES_Y_OFFSET for appearing, -1 for disappearing)
 PREPARE_APPEARING_MASK:
-PREPARE_DISAPPEARING_MASK:
 	ld	a, [player.y]
-	add	CFG_SPRITES_Y_OFFSET
+	add	b
 	ld	hl, spratr_buffer
 	ld	b, CFG_PLAYER_SPRITES_INDEX
 .LOOP:
@@ -866,6 +878,9 @@ PREPARE_DISAPPEARING_MASK:
 	ld	[hl], SPAT_EC ; color
 	inc	hl
 	djnz	.LOOP
+; Resets the volatile sprites
+	ld	hl, volatile_sprites
+	ld	[hl], SPAT_END
 	ret
 ; -----------------------------------------------------------------------------
 

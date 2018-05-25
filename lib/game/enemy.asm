@@ -119,19 +119,25 @@ UPDATE_ENEMIES:
 ; no: update enemy
 
 IFEXIST BIT_ENEMY_SOLID
-	ld	b, b
-	jr	$ + 2
-; Is the enemy solid?
-	bit	BIT_ENEMY_SOLID, [ix + enemy.flags]
-	jr	z, .NOT_KILLED ; no
-; yes: Reads the tile flags at the enemy coordinates
+; Reads the tile flags at the enemy coordinates
 	call	GET_ENEMY_TILE_FLAGS
-; Has death bit?
-	bit	BIT_WORLD_DEATH, a
-	jr	nz, .KILL_ENEMY ; yes
-; Is solid? (the enemy has been crushed)	
+
+; Is the tile solid?
 	bit	BIT_WORLD_SOLID, a
+	jr	z, .NOT_SOLID ; no
+; yes: Is the enemy solid? (the enemy has been crushed)
+	bit	BIT_ENEMY_SOLID, [ix + enemy.flags]
+	jr	nz, .KILL_ENEMY ; yes
+; no
+.NOT_SOLID:
+
+; Has the tile the death bit?
+	bit	BIT_WORLD_DEATH, a
 	jr	z, .NOT_KILLED ; no
+; Can the enemy be killed by death tiles?
+	bit	BIT_ENEMY_DEATH, [ix + enemy.flags]
+	jr	z, .NOT_KILLED ; no
+; yes
 	
 .KILL_ENEMY:
 ; Makes the enemy non-lethal and non-solid
@@ -252,6 +258,7 @@ SET_NEW_STATE_HANDLER:
 	ex	de, hl
 	ldir
 ; ret z (halt)
+	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 

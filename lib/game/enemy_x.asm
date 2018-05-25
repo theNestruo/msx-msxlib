@@ -8,10 +8,12 @@
 
 ; -----------------------------------------------------------------------------
 ; Enemy flags (as bit indexes) (platformer game)
-	BIT_ENEMY_SOLID:	equ 1 ; (can be killed by solid or death tiles)
+	BIT_ENEMY_SOLID:	equ 1 ; (can be killed by solid tiles)
+	BIT_ENEMY_DEATH:	equ 2 ; (can be killed by death tiles)
 	
 ; Enemy flags (as flags)
 	FLAG_ENEMY_SOLID:	equ (1 << BIT_ENEMY_SOLID) ; $02
+	FLAG_ENEMY_DEATH:	equ (1 << BIT_ENEMY_DEATH) ; $04
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
