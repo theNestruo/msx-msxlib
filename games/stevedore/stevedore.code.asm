@@ -21,10 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
 	
 ; Demo mode
-	; DEMO_MODE:
+	DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1448,34 +1448,47 @@ ENEMY_JELLYFISH.SHOOT_HANDLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Skeleton: the skeleton is slept until the star is picked up
-ENEMY_SKELETON.IDLE_HANDLER:
-; Has the star been picked up?
+; Skeleton: the skeleton is slept until the key is picked up
+ENEMY_SKELETON:
+
+.WAIT_KEY_HANDLER:
+; Has the key been picked up?
 	ld	hl, stage.flags
 	bit	BIT_STAGE_KEY, [hl]
-	jp	z, END_ENEMY_HANDLER ; no
+	jp	nz, CONTINUE_ENEMY_HANDLER.NO_ARGS
+; no: ret halt (0)
+	xor	a
+	ret
 
-; yes: locates the skeleton characters
+.WAKE_UP_HANDLER:
+; Reads the characters from the NAMTBL buffer
 	ld	e, [ix + enemy.y]
 	ld	d, [ix + enemy.x]
 	call	COORDS_TO_OFFSET ; hl = NAMTBL offset
 	ld	de, namtbl_buffer -SCR_WIDTH -1 ; (-1,-1)
 	add	hl, de ; hl = NAMTBL buffer pointer
-; Removes the characters in the next frame
+; Checks the skeleton characters
+	ld	a, SKELETON_FIRST_CHAR ; left char
+	cp	[hl]
+	jp	nz, END_ENEMY_HANDLER ; no
+	inc	a ; right char
+	inc	hl
+	cp	[hl]
+	jp	nz, END_ENEMY_HANDLER ; no
+; yes: Removes the characters in the next frame
 	push	ix ; preserves ix
 	xor	a
-	ld	[hl], a ; left char (NAMTBL buffer only)
-	inc	hl
-	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE ; right char
+	ld	[hl], a ; right char (buffer only)
 	dec	hl
-	call	VPOKE_NAMTBL_ADDRESS ; left char (NATMBL)
+	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE ; left char (buffer and VRAM)
+	inc	hl
+	call	VPOKE_NAMTBL_ADDRESS ; right char (VRAM only)
 	pop	ix ; restores ix
-; Makes the enemy lethal
+; Wakes up the enemy
 	set	BIT_ENEMY_LETHAL, [ix + enemy.flags]
 	set	BIT_ENEMY_SOLID, [ix + enemy.flags]
-; ret 2 (continue with next state handler)
-	ld	a, 2
-	ret
+; Shows the sprite and ret 2 (continue with next state handler)
+	jp	PUT_ENEMY_SPRITE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

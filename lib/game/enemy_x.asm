@@ -73,14 +73,12 @@ ENEMY_TYPE_FALLER:
 	dw	WAIT_ENEMY_HANDLER.X_COLLISION
 	db	PLAYER_ENEMY_X_SIZE + 6 ; 3 pixels before the actual collision
 	dw	WAIT_ENEMY_HANDLER.PLAYER_BELOW
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
+	dw	SET_NEW_STATE_HANDLER.NEXT
 ; then the enemy falls onto the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	FALLER_ENEMY_HANDLER
 	db	(1 << BIT_WORLD_SOLID)
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
+	dw	SET_NEW_STATE_HANDLER.NEXT
 ; then rises back up
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	RISER_ENEMY_HANDLER
@@ -200,31 +198,26 @@ ENEMY_TYPE_PACER:
 ; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Killed: the enemy has been killed. Shows the dying animation
+; and respawns the enemy after a pause
 ENEMY_TYPE_KILLED:
-; Shows the dead pattern during a short time
+; Shows the dying pattern
 	dw	PUT_ENEMY_SPRITE_PATTERN
-	db	CFG_ENEMY_DEAD_PATTERN
+	db	CFG_ENEMY_DYING_PATTERN
 	dw	WAIT_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_S ; short pause
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
-; Waits a little
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; Pause
 	dw	WAIT_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_L ; long wait
 	dw	INIT_RESPAWN_ENEMY_HANDLER
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
-; Shows a respawning animation
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; Shows the respawning animation
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	WAIT_ENEMY_HANDLER
 	db	CFG_ENEMY_PAUSE_L ; long wait
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
 ; Actually respawns the enemy
 	dw	RESPAWN_ENEMY_HANDLER
-; (shows the sprite in the first frame after respawning)
-	dw	PUT_ENEMY_SPRITE
-	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ;

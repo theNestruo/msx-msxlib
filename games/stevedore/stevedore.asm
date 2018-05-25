@@ -262,7 +262,7 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
 	
-	CFG_ENEMY_DEAD_PATTERN:		equ $dc
+	CFG_ENEMY_DYING_PATTERN:	equ $dc
 	CFG_ENEMY_RESPAWN_PATTERN:	equ $e0
 
 ; Default enemy types (platformer game)

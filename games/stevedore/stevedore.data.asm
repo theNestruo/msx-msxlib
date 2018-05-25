@@ -158,8 +158,7 @@ ENEMY_0:
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	WALKER_ENEMY_HANDLER.NOTIFY
 ; then
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
+	dw	SET_NEW_STATE_HANDLER.NEXT
 ; pauses, turning around
 	; dw	CHECK_DEAD_ENEMY_HANDLER
 	dw	PUT_ENEMY_SPRITE
@@ -181,12 +180,10 @@ ENEMY_0:
 	dw	$ + 2
 .SKELETON_BEHAVIOUR_IDLE:
 ; Slept until the star is picked up
-	dw	ENEMY_SKELETON.IDLE_HANDLER
-; (shows the sprite in the first frame after awakening)
-	dw	PUT_ENEMY_SPRITE
+	dw	ENEMY_SKELETON.WAIT_KEY_HANDLER
+	dw	ENEMY_SKELETON.WAKE_UP_HANDLER
 ; then becomes of type walker (follower with pause)
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
+	dw	SET_NEW_STATE_HANDLER.NEXT_AND_SAVE_RESPAWN
 ; Follower (with pauses):
 ; the enemy walks a medium distance along the ground,
 ; towards the player, then pauses, turning around, and continues
@@ -199,8 +196,7 @@ ENEMY_0:
 	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 ; then turns towards the player
 	dw	TURN_ENEMY.TOWARDS_PLAYER
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
+	dw	SET_NEW_STATE_HANDLER.NEXT
 ; walks ahead along the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
@@ -237,8 +233,7 @@ ENEMY_0:
 	db	CFG_ENEMY_PAUSE_M ; medium pause
 ; then turns towards the player
 	dw	TURN_ENEMY.TOWARDS_PLAYER
-	dw	SET_NEW_STATE_HANDLER
-	dw	$ + 2
+	dw	SET_NEW_STATE_HANDLER.NEXT
 ; walks ahead along the ground a medium distance
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)

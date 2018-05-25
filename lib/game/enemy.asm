@@ -213,6 +213,17 @@ SET_NEW_STATE_HANDLER:
 ; Reads the address of the next state in hl
 	ld	l, [iy + ENEMY_STATE.ARG_0]
 	ld	h, [iy + ENEMY_STATE.ARG_1]
+	jr	.HL_OK
+	
+; Sets the next state as the new state
+.NEXT:
+	push	iy
+	pop	hl
+	inc	hl
+	inc	hl
+	; jr	.HL_OK ; falls through
+	
+; Sets an specific address of the next state
 .HL_OK:
 ; Sets the new state as the enemy state
 	ld	[ix + enemy.state_l], l
@@ -224,6 +235,65 @@ SET_NEW_STATE_HANDLER:
 	ld	[ix + enemy.animation_delay], a
 	ld	[ix + enemy.frame_counter], a
 ; ret z (halt)
+	ret
+	
+; Sets the next state as the new state (and the respawning state)
+.NEXT_AND_SAVE_RESPAWN:
+; Sets the next state as the new state
+	call	SET_NEW_STATE_HANDLER.NEXT
+; Saves the current data as the respawning data
+	push	ix ; hl = ix
+	pop	hl
+	ld	d, h ; de = hl
+	ld	e, l
+	ld	a, enemy.respawn_data ; hl += .respawn_data
+	call	ADD_HL_A
+	ld	bc, enemy.RESPAWN_SIZE
+	ex	de, hl
+	ldir
+; ret z (halt)
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Kill state handler: kills the enemy
+KILL_ENEMY_HANDLER:
+; Makes the enemy non-lethal
+	res	BIT_ENEMY_LETHAL, [ix + enemy.flags]
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Respawning initialization state handler: prepares for the respawning animation
+INIT_RESPAWN_ENEMY_HANDLER:
+; Restores the coordinates from the respawning data
+	ld	c, [ix + enemy.respawn_data + enemy.y]
+	ld	b, [ix + enemy.respawn_data + enemy.x]
+	ld	a, CFG_ENEMY_RESPAWN_PATTERN
+	ld	[ix + enemy.y], c
+	ld	[ix + enemy.x], b
+	ld	[ix + enemy.pattern], a
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Respawn state handler: restores the respawning data as the current data
+RESPAWN_ENEMY_HANDLER:
+; Restores the respawning data as the current data
+	push	ix ; hl = ix
+	pop	hl
+	ld	d, h ; de = hl
+	ld	e, l
+	ld	a, enemy.respawn_data ; hl += .respawn_data
+	call	ADD_HL_A
+	ld	bc, enemy.RESPAWN_SIZE
+	ldir
+; ret 0 (halt)
+	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -515,48 +585,6 @@ TRIGGER_ENEMY_HANDLER:
 	ld	[ix + enemy.trigger_frame_counter], a
 ; ret 3 (continue with next state handler)
 	ld	a, 3
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-KILL_ENEMY_HANDLER:
-; Makes the enemy non-lethal
-	res	BIT_ENEMY_LETHAL, [ix + enemy.flags]
-; ret 2 (continue with next state handler)
-	ld	a, 2
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-INIT_RESPAWN_ENEMY_HANDLER:
-	push	ix ; hl = ix
-	pop	hl
-	ld	d, h ; de = hl
-	ld	e, l
-	ld	a, enemy.respawn_data ; hl += .respawn_data
-	call	ADD_HL_A
-	ldi	; .y
-	ldi	; .x
-; Prepares the respawning pattern
-	ld	a, CFG_ENEMY_DEAD_PATTERN +4
-	ld	[ix + enemy.pattern], a
-; ret 2 (continue with next state handler)
-	ld	a, 2
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-RESPAWN_ENEMY_HANDLER:
-	push	ix ; hl = ix
-	pop	hl
-	ld	d, h ; de = hl
-	ld	e, l
-	ld	a, enemy.respawn_data ; hl += .respawn_data
-	call	ADD_HL_A
-	ld	bc, enemy.RESPAWN_SIZE
-	ldir
-; ret 2 (continue with next state handler)
-	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
 	
