@@ -129,10 +129,10 @@ ENDIF
 	ld	bc, ram_end - ram_start  -1
 	ld	[hl], 0
 	ldir
-
+	
 ; PSG: silence
 	call	GICINI
-	
+
 ; Initializes the replayer
 IFEXIST REPLAYER.RESET
 	call	REPLAYER.RESET

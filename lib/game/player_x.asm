@@ -75,6 +75,13 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 ; Set the player to be on the floor in the next frame
+SET_PLAYER_FLOOR.LANDING:
+IFEXIST CFG_SOUND_PLAYER_LAND
+	ld	a, CFG_SOUND_PLAYER_LAND
+	ld	c, 15
+	call	ayFX_INIT
+ENDIF
+
 SET_PLAYER_FLOOR:
 ; Y adjust
 	ld	hl, player.y
@@ -208,6 +215,11 @@ SET_PLAYER_FALLING:
 ; -----------------------------------------------------------------------------
 ; Set the player to be jumping in the next frame
 SET_PLAYER_JUMPING:
+IFEXIST CFG_SOUND_PLAYER_JUMP
+	ld	a, CFG_SOUND_PLAYER_JUMP
+	ld	c, 8
+	call	ayFX_INIT
+ENDIF
 ; Sets the player state
 	ld	a, PLAYER_STATE_AIR
 	call	SET_PLAYER_STATE
@@ -237,7 +249,7 @@ UPDATE_PLAYER_AIR:
 	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
 	bit	BIT_WORLD_FLOOR, a
 	pop	bc ; restores dy in b (to keep f)
-	jp	nz, SET_PLAYER_FLOOR ; yes
+	jp	nz, SET_PLAYER_FLOOR.LANDING ; yes
 ; no
 	ld	a, b ; restores dy in a
 	jp	MOVE_PLAYER_V

@@ -7,7 +7,24 @@
 
 ; -----------------------------------------------------------------------------
 ; Initializes the replayer
-REPLAYER.RESET:	equ REPLAYER.STOP
+REPLAYER.RESET:	; equ REPLAYER.STOP
+IFEXIST CFG_REPLAYER_AYFX
+	call	REPLAYER.STOP
+	ld	hl, SOUND_BANK
+	jp	ayFX_SETUP
+ELSE
+	; REPLAYER.RESET: equ REPLAYER.STOP ; falls through
+ENDIF ; IFEXIST CFG_REPLAYER_AYFX
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Stops the replayer
+REPLAYER.STOP:
+; Sets "end of the song" marker and no loop
+	ld	a, $81
+	ld	[PT3_SETUP], a
+; Prepares next frame with silence
+	jp	PT3_MUTE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -56,16 +73,6 @@ ENDIF ; CFG_PT3_PACKED
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Stops the replayer
-REPLAYER.STOP:
-; Sets "end of the song" marker and no loop
-	ld	a, $81
-	ld	[PT3_SETUP], a
-; Prepares next frame with silence
-	jp	PT3_MUTE
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Processes a frame in the replayer
 REPLAYER.FRAME:
 ; Plays the actual frame
@@ -73,13 +80,24 @@ REPLAYER.FRAME:
 ; Checks if the end of the song has been reached
 	ld	hl, PT3_SETUP
 	bit	7, [hl]
-	jp	z, PT3_PLAY ; no: prepares next frame
-; yes: checks if loop is enabled
+IFEXIST CFG_REPLAYER_AYFX
+	jr	z, .DO_FRAME ; yes
+ELSE
+	jp	z, PT3_PLAY ; yes
+ENDIF ; IFEXIST CFG_REPLAYER_AYFX
+; yes: Checks if loop is enabled
 	bit	0, [hl]
 	jp	nz, REPLAYER.STOP ; no
 ; yes: reactivates the player and prepares next frame
 	res	7, [hl]
+; prepares next frame
+IFEXIST CFG_REPLAYER_AYFX
+.DO_FRAME:
+	call	PT3_PLAY
+	jp	ayFX_PLAY
+ELSE
 	jp	PT3_PLAY
+ENDIF ; IFEXIST CFG_REPLAYER_AYFX
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

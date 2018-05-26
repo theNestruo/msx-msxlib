@@ -114,7 +114,7 @@ CFG_CUSTOM_PALETTE:
 
 ; Define to use relative volume version (the default is fixed volume)
 	; CFG_AYFX_RELATIVE:
-
+	
 ; ayFX REPLAYER v1.31
 	include	"libext/ayFX-replayer/ayFX-ROM.tniasm.asm"
 ; -----------------------------------------------------------------------------

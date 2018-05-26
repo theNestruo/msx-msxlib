@@ -571,6 +571,17 @@ ENDIF
 	incbin	"games/stevedore/sfx/cave.pt3.hl.zx7"
 .SONG_5:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7" ; TODO
+	
+; ayFX sound bank
+SOUND_BANK:
+	incbin	"games/stevedore/sfx/test.afb"
+	
+	CFG_SOUND_PLAYER_JUMP:		equ 8 -1
+	CFG_SOUND_PLAYER_LAND:		equ 5 -1
+	CFG_SOUND_PLAYER_KILLED:	equ 0
+	CFG_SOUND_PLAYER_FINISH:	equ 0
+	CFG_SOUND_ENEMY_KILLED:		equ 0
+	CFG_SOUND_ENEMY_RESPAWN:	equ 0
 ; -----------------------------------------------------------------------------
 
 ; EOF

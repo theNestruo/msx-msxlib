@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 11 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
 	
 ; Demo mode
 	; DEMO_MODE:
@@ -858,16 +858,14 @@ UPDATE_MENU_PLAYER:
 ; Updates the player sprite
 	call	PUT_PLAYER_SPRITE
 ; Prepares the mask for appearing animation
-	ld	b, CFG_SPRITES_Y_OFFSET
 	; jp	PREPARE_APPEARING_MASK ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Prepares the SPRATR buffer for the player appearing/disappearing animations
-; param b: delta Y for the mask (CFG_SPRITES_Y_OFFSET for appearing, -1 for disappearing)
 PREPARE_APPEARING_MASK:
 	ld	a, [player.y]
-	add	b
+	add	CFG_SPRITES_Y_OFFSET
 	ld	hl, spratr_buffer
 	ld	b, CFG_PLAYER_SPRITES_INDEX
 .LOOP:
