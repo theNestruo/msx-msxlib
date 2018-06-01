@@ -13,16 +13,16 @@ globals:
 
 .chapters:
 	rb	1 ; (unlocked chapters)
-.hi_score:
-	rb	3 ; (6 BCD digits)
+.star_counter:
+	rb	1 ; (stars picked in chapters, as bitmap)
 
 ; Game vars (i.e.: vars from start to game over)
 game:
 
-.score:
-	rb	3 ; (6 BCD digits)
 .lives:
 	rb	1
+.fruit_counter:
+	rb	1 ; (fruits picked during the chapter)
 .stage:
 	rb	1
 .stage_bcd:

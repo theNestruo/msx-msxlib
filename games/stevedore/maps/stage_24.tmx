@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="1.0.2" orientation="orthogonal" renderorder="right-down" width="32" height="24" tilewidth="8" tileheight="8" nextobjectid="1">
+<map version="1.0" tiledversion="1.1.5" orientation="orthogonal" renderorder="right-down" width="32" height="24" tilewidth="8" tileheight="8" infinite="0" nextobjectid="1">
  <tileset firstgid="1" name="charset" tilewidth="8" tileheight="8" tilecount="256" columns="16">
   <image source="charset.png" width="128" height="128"/>
  </tileset>
  <layer name="Capa de Patrones 1" width="32" height="24">
   <data encoding="csv">
-1,1,1,1,1,1,1,119,120,1,1,1,1,1,1,1,1,1,1,1,1,1,1,119,120,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,135,136,1,1,1,1,1,1,1,1,1,1,1,1,1,1,135,136,1,1,1,1,1,1,1,
-1,1,1,1,1,1,107,108,139,140,43,44,1,1,1,37,38,1,1,1,43,44,139,140,107,108,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,120,1,1,1,1,1,1,1,1,1,1,1,1,1,1,119,120,1,1,1,1,1,1,1,
+1,85,80,1,69,80,64,1,136,1,1,1,1,1,1,1,1,1,1,1,1,1,1,135,136,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,139,140,43,44,1,1,1,37,38,1,1,1,43,44,139,140,107,108,1,1,1,1,1,1,
 1,1,1,1,1,1,123,124,21,1,1,1,1,1,1,1,1,1,1,1,1,1,2,21,123,124,1,1,1,1,1,1,
 1,1,1,1,1,1,133,38,1,1,50,1,1,1,1,1,1,1,1,1,1,1,2,1,43,140,1,1,1,1,1,1,
 1,1,1,1,1,1,101,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,117,1,1,1,1,1,1,

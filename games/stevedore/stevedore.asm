@@ -262,8 +262,12 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
 	
+; Killed/respawning patterns
 	CFG_ENEMY_DYING_PATTERN:	equ $dc
 	CFG_ENEMY_RESPAWN_PATTERN:	equ $e0
+	
+; Triggers will fire <n> pixels before the actual collision occurs
+	CFG_ENEMY_ADVANCE_COLLISION:	equ 3
 
 ; Default enemy types (platformer game)
 ; Convenience enemy state handlers (platformer game)
@@ -379,9 +383,12 @@ ENDIF
 
 	bytes_ram_MSXlib:	equ globals - ram_start
 	bytes_ram_game:		equ ram_end - globals
+	
+	bytes_rom_end:		equ PADDING
+	bytes_ram_end:		equ $
 
 	bytes_total_rom:	equ PADDING - ROM_START
-	bytes_total_ram:	equ ram_end - ram_start
+	bytes_total_ram:	equ $ - ram_start
 
 	bytes_free_rom:		equ PADDING.SIZE
 	bytes_free_ram:		equ $f380 - $

@@ -52,14 +52,13 @@ ENEMY_TYPE_WALKER:
 	db	(1 << BIT_WORLD_FLOOR)
 	dw	FLYER_ENEMY_HANDLER ; (flyer to fall when reaching edges)
 ; then turns around and continues
-	dw	TURN_ENEMY
 	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Faller: The enemy falls from the ceiling onto the ground.
 ENEMY_TYPE_FALLER:
-; Yes: The enemy falls onto the ground
+; The enemy falls onto the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	FALLER_ENEMY_HANDLER
 	db	(1 << BIT_WORLD_SOLID)
@@ -73,7 +72,7 @@ ENEMY_TYPE_FALLER:
 ; The enemy waits until the player overlaps x coordinate
 	dw	PUT_ENEMY_SPRITE
 	dw	WAIT_ENEMY_HANDLER.X_COLLISION
-	db	PLAYER_ENEMY_X_SIZE + 6 ; 3 pixels before the actual collision
+	db	PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
 	dw	WAIT_ENEMY_HANDLER.PLAYER_BELOW
 	dw	SET_NEW_STATE_HANDLER.NEXT
 ; then the enemy falls onto the ground
@@ -91,12 +90,55 @@ ENEMY_TYPE_FALLER:
 
 ; -----------------------------------------------------------------------------
 ; Riser: The enemy can increase its height.
-; ENEMY_TYPE_RISER:
+ENEMY_TYPE_RISER:
+; The enemy rises up to the ceiling
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	RISER_ENEMY_HANDLER
+	db	(1 << BIT_WORLD_SOLID)
+	dw	END_ENEMY_HANDLER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Riser (with trigger): The enemy increases its height
+; when the player x coordinate overlaps with the enemy's
+.TRIGGERED:
+; The enemy waits until the player overlaps x coordinate
+	dw	PUT_ENEMY_SPRITE
+	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	db	PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
+	dw	WAIT_ENEMY_HANDLER.PLAYER_ABOVE
+; then the enemy rises up to the ceiling
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	RISER_ENEMY_HANDLER
+	db	(1 << BIT_WORLD_SOLID)
+	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Jumper: The enemy bounces or jumps.
-; ENEMY_TYPE_JUMPER:
+ENEMY_TYPE_JUMPER:
+; The enemy bounces or jumps
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	JUMPER_ENEMY_HANDLER
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	END_ENEMY_HANDLER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Jumper (with trigger): The enemy bounces or jumps
+; when the player x coordinate overlaps with the enemy's
+.TRIGGERED:
+; The enemy waits until the player overlaps x coordinate
+	dw	PUT_ENEMY_SPRITE
+	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	db	PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; then the enemy bounces or jumps
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	JUMPER_ENEMY_HANDLER
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	SET_NEW_STATE_HANDLER
+	dw	.TRIGGERED ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -167,9 +209,8 @@ ENEMY_TYPE_PACER:
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
 	dw	WALKER_ENEMY_HANDLER.NOTIFY
-; then
 	dw	SET_NEW_STATE_HANDLER.NEXT
-; pauses, turning around
+; then pauses, turning around
 	dw	PUT_ENEMY_SPRITE
 	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
 	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
@@ -177,7 +218,7 @@ ENEMY_TYPE_PACER:
 	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 ; and continues
 	dw	SET_NEW_STATE_HANDLER
-	dw	ENEMY_TYPE_PACER.PAUSED ; (restart)
+	dw	.PAUSED ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -200,7 +241,7 @@ ENEMY_TYPE_PACER:
 	db	CFG_ENEMY_PAUSE_M ; medium distance
 ; and continues
 	dw	SET_NEW_STATE_HANDLER
-	dw	ENEMY_TYPE_PACER.FOLLOWER ; (restart)
+	dw	.FOLLOWER ; (restart)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -366,8 +407,7 @@ WALKER_ENEMY_HANDLER:
 FALLER_ENEMY_HANDLER:
 ; Has fallen onto the ground?
 	call	GET_ENEMY_TILE_FLAGS_UNDER
-	ld	b, [iy + ENEMY_STATE.ARG_0]
-	and	b
+	and	[iy + ENEMY_STATE.ARG_0]
 	jp	nz, CONTINUE_ENEMY_HANDLER.ONE_ARG ; yes
 	
 ; no: Computes falling speed	
@@ -392,8 +432,7 @@ FALLER_ENEMY_HANDLER:
 RISER_ENEMY_HANDLER:
 ; Has reached the ceiling?
 	call	GET_ENEMY_TILE_FLAGS_ABOVE
-	ld	b, [iy + ENEMY_STATE.ARG_0]
-	and	b
+	and	[iy + ENEMY_STATE.ARG_0]
 	jp	nz, CONTINUE_ENEMY_HANDLER.ONE_ARG ; yes
 ; no: moves up
 	dec	[ix + enemy.y]
@@ -426,27 +465,53 @@ RISER_ENEMY_HANDLER:
 ; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; ; Jumper: The enemy bounces or jumps.
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; param [iy + ENEMY_STATE.ARGS]: (ignored)
-; ; ret z/nz: if the state has finished
-; JUMPER_ENEMY_HANDLER:
-	; ld	a, [ix + enemy.frame_counter]
-	; cp	ENEMY_DY_TABLE.SIZE -1
-	; jr	z, .DY_MAX ; yes
-; ; increases frame counter
-	; inc	[ix + enemy.frame_counter]
-; .DY_MAX:
-	; ld	hl, ENEMY_DY_TABLE
-	; call	GET_HL_A_BYTE
+; Jumper: The enemy bounces or jumps.
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; param [iy + ENEMY_STATE.ARG_0]: (ignored)
+; ret z/nz: if the state has finished
+JUMPER_ENEMY_HANDLER:
+	ld	a, [ix + enemy.frame_counter]
+	cp	ENEMY_DY_TABLE.SIZE -1
+	jr	z, .DY_MAX ; yes
+; increases frame counter
+	inc	[ix + enemy.frame_counter]
+.DY_MAX:
+	ld	hl, ENEMY_DY_TABLE
+	call	GET_HL_A_BYTE
+	ld	b, a
 	
+	add	[ix + enemy.y]
+	ld	[ix + enemy.y], a
+	
+	ld	a, b
+	or	a
+	jp	m, END_ENEMY_HANDLER ; no
+
+; Has fallen onto the ground?
+	call	GET_ENEMY_TILE_FLAGS_UNDER
+	and	[iy + ENEMY_STATE.ARG_0]
+	jp	z, END_ENEMY_HANDLER ; no
+	
+; yes
+	xor	a
+	ld	[ix + enemy.frame_counter], a
+	
+; ret 3 (continue with next state handler)
+	ld	a, 3
+	ret
+
+	
+; ; no: Computes falling speed	
+	; ld	a, [ix + enemy.frame_counter]
+	; inc	[ix + enemy.frame_counter]
+	; add	ENEMY_DY_TABLE.FALL_OFFSET
+	; call	READ_FALLER_ENEMY_DY_VALUE
+; ; moves down
 	; add	[ix + enemy.y]
 	; ld	[ix + enemy.y], a
-	
-; ; ret nz (halt)
+; ; ret halt (0)
 	; xor	a
-	; inc	a
 	; ret
 ; -----------------------------------------------------------------------------
 
@@ -466,15 +531,6 @@ WAVER_ENEMY_HANDLER:
 	ld	a, 2
 	ret
 ; -----------------------------------------------------------------------------
-
-; ; -----------------------------------------------------------------------------
-; CHECK_DEAD_ENEMY_HANDLER:
-	; call	GET_ENEMY_TILE_FLAGS
-	; bit	BIT_WORLD_SOLID, a
-	; jp	z, CONTINUE_ENEMY_HANDLER.NO_ARGS ; no
-	; ld	hl, ENEMY_TYPE_DEAD
-	; jp	SET_NEW_STATE_HANDLER.HL_OK
-; ; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================

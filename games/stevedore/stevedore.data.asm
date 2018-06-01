@@ -63,14 +63,14 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-	db	5			; .chapters
-	db	$00, $00, $00		; .hi_score
+	db	1			; .chapters
+	db	$00			; .star_counter
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
-	db	$00, $00, $00		; .score
 	db	4			; .lives
+	db	0			; .fruit_counter
 	.SIZE:	equ $ - GAME_0
 
 ; Initial value of the stage-scoped vars
@@ -311,13 +311,13 @@ SPRTBL_PACKED:
 	PLAYER_SPRITE_INTRO_PATTERN:	equ $50
 
 	BAT_SPRITE_PATTERN:		equ $60
-	BAT_SPRITE_COLOR:		equ 4
+	BAT_SPRITE_COLOR_1:		equ 4
 	BAT_SPRITE_COLOR_2:		equ 6
 
 	SNAKE_SPRITE_PATTERN:		equ $70
-	SNAKE_SPRITE_COLOR:		equ 2
-	SNAKE_SPRITE_COLOR_2:		equ 2
-	SNAKE_SPRITE_COLOR_3:		equ 2
+	SNAKE_SPRITE_COLOR_1:		equ 2
+	SNAKE_SPRITE_COLOR_2:		equ 11
+	SNAKE_SPRITE_COLOR_3:		equ 8
 	
 	PIRATE_SPRITE_PATTERN:		equ $80
 	PIRATE_SPRITE_COLOR:		equ 14
@@ -379,8 +379,8 @@ ENDIF
 SOUND_BANK:
 	incbin	"games/stevedore/sfx/test.afb"
 	
-	CFG_SOUND_PLAYER_JUMP:		equ 8 -1
-	CFG_SOUND_PLAYER_LAND:		equ 5 -1
+	CFG_SOUND_PLAYER_JUMP:		equ 5 -1 ; 8 -1
+	CFG_SOUND_PLAYER_LAND:		equ 0
 	CFG_SOUND_PLAYER_KILLED:	equ 0
 	CFG_SOUND_PLAYER_FINISH:	equ 0
 	CFG_SOUND_ENEMY_KILLED:		equ 0

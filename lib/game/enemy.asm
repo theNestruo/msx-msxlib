@@ -141,8 +141,9 @@ IFEXIST BIT_ENEMY_SOLID
 	
 .KILL_ENEMY:
 ; Makes the enemy non-lethal and non-solid
-	res	BIT_ENEMY_LETHAL, [ix + enemy.flags]
-	res	BIT_ENEMY_SOLID, [ix + enemy.flags]
+	ld	a, $ff AND NOT (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH)
+	and	[ix + enemy.flags]
+	ld	[ix + enemy.flags], a
 ; Sets the enemy the behaviour when killed
 	ld	hl, ENEMY_TYPE_KILLED
 	call	SET_NEW_STATE_HANDLER.HL_OK

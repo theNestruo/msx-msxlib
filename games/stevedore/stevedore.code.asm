@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 21 -1 ; DEBUG LINE
 	
 ; Demo mode
 	; DEMO_MODE:
@@ -1133,28 +1133,6 @@ NEW_SKELETON:
 ; then becomes of type walker (follower with pause)
 	dw	SET_NEW_STATE_HANDLER.AND_SAVE_RESPAWN
 	dw	ENEMY_TYPE_PACER.FOLLOWER
-; ; Follower (with pauses):
-; ; the enemy walks a medium distance along the ground,
-; ; towards the player, then pauses, turning around, and continues
-; .SKELETON_BEHAVIOUR:
-; ; The enemy pauses, turning around
-	; dw	PUT_ENEMY_SPRITE
-	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	; dw	WAIT_ENEMY_HANDLER.TURNING
-	; db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
-; ; then turns towards the player
-	; dw	TURN_ENEMY.TOWARDS_PLAYER
-	; dw	SET_NEW_STATE_HANDLER.NEXT
-; ; walks ahead along the ground
-	; dw	PUT_ENEMY_SPRITE_ANIM
-	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	; dw	WALKER_ENEMY_HANDLER.RANGED
-	; db	CFG_ENEMY_PAUSE_M ; medium distance
-; ; and continues
-	; dw	SET_NEW_STATE_HANDLER
-	; dw	.SKELETON_BEHAVIOUR ; (restart)
 
 .WAIT_KEY_HANDLER:
 ; Has the key been picked up?
@@ -1190,8 +1168,9 @@ NEW_SKELETON:
 	call	VPOKE_NAMTBL_ADDRESS ; right char (VRAM only)
 	pop	ix ; restores ix
 ; Wakes up the enemy
-	set	BIT_ENEMY_LETHAL, [ix + enemy.flags]
-	set	BIT_ENEMY_SOLID, [ix + enemy.flags]
+	ld	a, FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	or	[ix + enemy.flags]
+	ld	[ix + enemy.flags], a
 ; Shows the sprite and ret 2 (continue with next state handler)
 	jp	PUT_ENEMY_SPRITE
 ; -----------------------------------------------------------------------------
@@ -1307,13 +1286,13 @@ NEW_BAT_1:
 ; The bat (1) flies, then turns around and continues
 .BAT_1_DATA:
 	db	BAT_SPRITE_PATTERN
-	db	BAT_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	db	BAT_SPRITE_COLOR_1
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
 	dw	ENEMY_TYPE_FLYER
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Initializes a new bat
+; Initializes a new bat (2)
 NEW_BAT_2:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
@@ -1324,7 +1303,7 @@ NEW_BAT_2:
 .BAT_2_DATA:
 	db	BAT_SPRITE_PATTERN
 	db	BAT_SPRITE_COLOR_2
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
 	dw	.BAT_2_BEHAVIOUR
 	
 .BAT_2_BEHAVIOUR:
@@ -1355,19 +1334,49 @@ NEW_BAT_2:
 ; -----------------------------------------------------------------------------
 ; Initializes a new snake (1)
 NEW_SNAKE_1:
-NEW_SNAKE_2:
-NEW_SNAKE_3:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SNAKE_DATA
+	ld	hl, .SNAKE_1_DATA
 	jp	INIT_ENEMY
 
 ; Snake (1): the snake walks, the pauses, turning around, and continues
-.SNAKE_DATA:
+.SNAKE_1_DATA:
 	db	SNAKE_SPRITE_PATTERN
-	db	SNAKE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	db	SNAKE_SPRITE_COLOR_1
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
 	dw	ENEMY_TYPE_PACER.PAUSED
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new snake (2)
+NEW_SNAKE_2:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SNAKE_2_DATA
+	jp	INIT_ENEMY
+
+; Snake (1): the snake walks, the pauses, turning around, and continues
+.SNAKE_2_DATA:
+	db	SNAKE_SPRITE_PATTERN
+	db	SNAKE_SPRITE_COLOR_2
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	dw	ENEMY_TYPE_WALKER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new snake (3)
+NEW_SNAKE_3:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SNAKE_3_DATA
+	jp	INIT_ENEMY
+
+; Snake (1): the snake walks, the pauses, turning around, and continues
+.SNAKE_3_DATA:
+	db	SNAKE_SPRITE_PATTERN
+	db	SNAKE_SPRITE_COLOR_3
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	dw	ENEMY_TYPE_JUMPER.TRIGGERED
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1382,7 +1391,7 @@ NEW_PIRATE:
 .PIRATE_DATA:
 	db	PIRATE_SPRITE_PATTERN
 	db	PIRATE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
 	dw	ENEMY_TYPE_PACER
 ; -----------------------------------------------------------------------------
 
@@ -1398,7 +1407,7 @@ NEW_SAVAGE:
 .SAVAGE_DATA:
 	db	SAVAGE_SPRITE_PATTERN
 	db	SAVAGE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
 	dw	ENEMY_TYPE_PACER.FOLLOWER
 ; -----------------------------------------------------------------------------
 
@@ -1414,7 +1423,7 @@ NEW_SPIDER:
 .SPIDER_DATA:
 	db	SPIDER_SPRITE_PATTERN
 	db	SPIDER_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
 	dw	ENEMY_TYPE_FALLER.TRIGGERED
 ; -----------------------------------------------------------------------------
 
