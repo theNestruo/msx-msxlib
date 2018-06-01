@@ -82,7 +82,8 @@ STAGE_0:
 	
 ; Initial (per stage) player vars
 PLAYER_0:
-	db	48, 128			; .y, .x ; (intro screen coords)
+	; db	48, 128			; .y, .x ; (intro screen coords)
+	db	SPAT_OB, 0		; .y, .x
 	db	0			; .animation_delay
 	db	PLAYER_STATE_FLOOR	; .state
 	db	0			; .dy_index
@@ -90,7 +91,7 @@ PLAYER_0:
 
 ; Initial (per stage) sprite attributes table
 SPRATR_0:
-; Reserved sprites before player sprites (see CFG_PLAYER_SPRITES_BEFORE)
+; Reserved sprites before player sprites (see CFG_PLAYER_SPRITES_INDEX)
 	db	SPAT_OB, 0, 0, 0
 	db	SPAT_OB, 0, 0, 0
 	db	SPAT_OB, 0, 0, 0
@@ -102,206 +103,6 @@ SPRATR_0:
 	db	SPAT_OB, 0, 0, PLAYER_SPRITE_COLOR_2
 ; SPAT end marker (No "volatile" sprites)
 	db	SPAT_END
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Initial enemy data
-ENEMY_0:
-
-; Bat: the bat flies, the turns around and continues
-	db	$00
-.BAT:
-	db	BAT_SPRITE_PATTERN
-	db	BAT_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
-	dw	ENEMY_TYPE_FLYER
-
-; Spider: the spider falls onto the ground the the player is near
-	db	$00
-.SPIDER:
-	db	SPIDER_SPRITE_PATTERN
-	db	SPIDER_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
-	dw	ENEMY_TYPE_FALLER.TRIGGERED
-
-; JELLYFISH: the JELLYFISH floats in a sine wave pattern, shooting up
-	db	$f3 ; (water)
-.JELLYFISH:
-	db	JELLYFISH_SPRITE_PATTERN
-	db	JELLYFISH_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
-	dw	$ + 2
-; The enemy floats in a sine wave pattern
-	dw	ENEMY_JELLYFISH.WAVER_HANDLER ; PUT_ENEMY_SPRITE + WAVER_ENEMY_HANDLER
-	dw	FLYER_ENEMY_HANDLER
-; Is the player in overlapping x coordinates?
-	dw	TRIGGER_ENEMY_HANDLER
-	dw	WAIT_ENEMY_HANDLER.X_COLLISION
-	db	PLAYER_BULLET_X_SIZE
-; Shoot
-	dw	TRIGGER_ENEMY_HANDLER.RESET
-	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
-	dw	ENEMY_JELLYFISH.SHOOT_HANDLER
-
-; Snake: the snake walks, the pauses, turning around, and continues
-	db	$00
-.SNAKE:
-	db	SNAKE_SPRITE_PATTERN
-	db	SNAKE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
-	dw	$ + 2
-; Walker (with pauses): the enemy walks ahead along the ground,
-; then pauses, turning around, and continues
-.SNAKE_BEHAVIOUR:
-; The enemy walks ahead along the ground
-	; dw	CHECK_DEAD_ENEMY_HANDLER
-	dw	PUT_ENEMY_SPRITE_ANIM
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER.NOTIFY
-; then
-	dw	SET_NEW_STATE_HANDLER.NEXT
-; pauses, turning around
-	; dw	CHECK_DEAD_ENEMY_HANDLER
-	dw	PUT_ENEMY_SPRITE
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WAIT_ENEMY_HANDLER.TURNING
-	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
-; and continues
-	dw	SET_NEW_STATE_HANDLER
-	dw	.SNAKE_BEHAVIOUR ; (restart)
-
-; Skeleton: the skeleton is slept until the star is picked up,
-; then, it becomes of type walker (follower with pause)
-	db	SKELETON_FIRST_CHAR +1
-.SKELETON:
-	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
-	db	SKELETON_SPRITE_COLOR
-	db	$00 ; (not lethal nor solid in the initial state)
-	dw	$ + 2
-.SKELETON_BEHAVIOUR_IDLE:
-; Slept until the star is picked up
-	dw	ENEMY_SKELETON.WAIT_KEY_HANDLER
-	dw	ENEMY_SKELETON.WAKE_UP_HANDLER
-; then becomes of type walker (follower with pause)
-	dw	SET_NEW_STATE_HANDLER.NEXT_AND_SAVE_RESPAWN
-; Follower (with pauses):
-; the enemy walks a medium distance along the ground,
-; towards the player, then pauses, turning around, and continues
-.SKELETON_BEHAVIOUR:
-; The enemy pauses, turning around
-	dw	PUT_ENEMY_SPRITE
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WAIT_ENEMY_HANDLER.TURNING
-	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
-; then turns towards the player
-	dw	TURN_ENEMY.TOWARDS_PLAYER
-	dw	SET_NEW_STATE_HANDLER.NEXT
-; walks ahead along the ground
-	dw	PUT_ENEMY_SPRITE_ANIM
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER.RANGED
-	db	CFG_ENEMY_PAUSE_M ; medium distance
-; and continues
-	dw	SET_NEW_STATE_HANDLER
-	dw	.SKELETON_BEHAVIOUR ; (restart)
-
-; Pirate: TODO
-	db	$00
-.PIRATE:
-	db	PIRATE_SPRITE_PATTERN
-	db	PIRATE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
-	dw	.SAVAGE_BEHAVIOUR
-
-; Savage: the savage walks towards the player, pausing briefly
-	db	$00
-.SAVAGE:
-	db	SAVAGE_SPRITE_PATTERN
-	db	SAVAGE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
-	dw	$ + 2
-; Follower: the enemy walks a medium distance along the ground,
-; towards the player, then pauses briefly, and continues
-.SAVAGE_BEHAVIOUR:
-; The enemy pauses briefly
-	dw	PUT_ENEMY_SPRITE
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WAIT_ENEMY_HANDLER
-	db	CFG_ENEMY_PAUSE_M ; medium pause
-; then turns towards the player
-	dw	TURN_ENEMY.TOWARDS_PLAYER
-	dw	SET_NEW_STATE_HANDLER.NEXT
-; walks ahead along the ground a medium distance
-	dw	PUT_ENEMY_SPRITE_ANIM
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER.RANGED
-	db	CFG_ENEMY_PAUSE_M ; medium distance
-; and continues
-	dw	SET_NEW_STATE_HANDLER
-	dw	.SAVAGE_BEHAVIOUR ; (restart)
-
-
-; Trap (pointing right): shoots when the player is in front of it
-	db	TRAP_LOWER_RIGHT_CHAR
-.TRAP_RIGHT:
-	db	ARROW_RIGHT_SPRITE_PATTERN
-	db	ARROW_SPRITE_COLOR
-	db	$00 ; (not lethal)
-	dw	$ + 2
-; Is the player in overlapping y coordinates...
-	dw	TRIGGER_ENEMY_HANDLER
-	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
-	db	PLAYER_BULLET_Y_SIZE
-; ... and to the right?
-	dw	WAIT_ENEMY_HANDLER.PLAYER_RIGHT
-; Shoot right
-	dw	TRIGGER_ENEMY_HANDLER.RESET
-	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
-	dw	ENEMY_TRAP.SHOOT_RIGHT_HANDLER
-	
-; Trap (pointing left): shoots when the player is in front of it
-	db	TRAP_LOWER_LEFT_CHAR
-.TRAP_LEFT:
-	db	ARROW_LEFT_SPRITE_PATTERN
-	db	ARROW_SPRITE_COLOR
-	db	$00 ; (not lethal)
-	dw	$ + 2
-; Is the player in overlapping y coordinates...
-	dw	TRIGGER_ENEMY_HANDLER
-	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
-	db	PLAYER_BULLET_Y_SIZE
-; ... and to the left?
-	dw	WAIT_ENEMY_HANDLER.PLAYER_LEFT
-; Shoot left
-	dw	TRIGGER_ENEMY_HANDLER.RESET
-	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
-	dw	ENEMY_TRAP.SHOOT_LEFT_HANDLER
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Initial bullet data
-BULLET_0:
-
-.ARROW_RIGHT:
-	db	ARROW_RIGHT_SPRITE_PATTERN
-	db	ARROW_SPRITE_COLOR
-	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
-	
-.ARROW_LEFT:
-	db	ARROW_LEFT_SPRITE_PATTERN
-	db	ARROW_SPRITE_COLOR
-	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
-	
-.SPARK_UP:
-	db	SPARK_SPRITE_PATTERN
-	db	SPARK_SPRITE_COLOR
-	db	BULLET_DIR_UP OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -511,7 +312,7 @@ SPRTBL_PACKED:
 
 	BAT_SPRITE_PATTERN:		equ $60
 	BAT_SPRITE_COLOR:		equ 4
-	BAT_SPRITE_COLOR_2:		equ 4
+	BAT_SPRITE_COLOR_2:		equ 6
 
 	SNAKE_SPRITE_PATTERN:		equ $70
 	SNAKE_SPRITE_COLOR:		equ 2

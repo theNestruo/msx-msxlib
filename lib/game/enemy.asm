@@ -243,11 +243,14 @@ SET_NEW_STATE_HANDLER:
 ; ret z (halt)
 	ret
 	
-; Sets the next state as the new state (and the respawning state)
-.NEXT_AND_SAVE_RESPAWN:
-; Sets the next state as the new state
-	call	SET_NEW_STATE_HANDLER.NEXT
+; Sets the new state as the new state (and the respawning state)
+.AND_SAVE_RESPAWN:
+; Sets the new state
+	call	SET_NEW_STATE_HANDLER
+	; jr	.SAVE_RESPAWN ; falls through
+
 ; Saves the current data as the respawning data
+.SAVE_RESPAWN:
 	push	ix ; hl = ix
 	pop	hl
 	ld	d, h ; de = hl
@@ -260,6 +263,11 @@ SET_NEW_STATE_HANDLER:
 ; ret z (halt)
 	xor	a
 	ret
+
+; Sets the next state as the new state (and the respawning state)
+.NEXT_AND_SAVE_RESPAWN:
+	call	.NEXT
+	jr	.SAVE_RESPAWN
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

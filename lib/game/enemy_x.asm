@@ -89,25 +89,25 @@ ENEMY_TYPE_FALLER:
 	dw	.TRIGGERED ; (restart)
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Riser: The enemy can increase its height.
-; ; ENEMY_TYPE_RISER:
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Riser: The enemy can increase its height.
+; ENEMY_TYPE_RISER:
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Jumper: The enemy bounces or jumps.
-; ; ENEMY_TYPE_JUMPER:
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Jumper: The enemy bounces or jumps.
+; ENEMY_TYPE_JUMPER:
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Ducker - The enemy can reduce its height (including, melting into the floor).
-; ; Example: Super Mario's Piranha Plants
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Ducker - The enemy can reduce its height (including, melting into the floor).
+; Example: Super Mario's Piranha Plants
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Sticky - The enemy sticks to walls and ceilings.
-; ; Example: Super Mario 2's Spark
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Sticky - The enemy sticks to walls and ceilings.
+; Example: Super Mario 2's Spark
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Waver: The enemy floats in a sine wave pattern.
@@ -131,18 +131,18 @@ ENEMY_TYPE_WAVER_FLYER:
 	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Rotator - The enemy rotates around a fixed point.
-; ; Sometimes, the fixed point moves, and can move according to any movement attribute in this list.
-; ; Also, the rotation direction may change.
-; ; Example: Super Mario 3's Rotodisc,
-; ; These jetpack enemeis from Sunsoft's Batman (notice that the point which they rotate around is the player)
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Rotator - The enemy rotates around a fixed point.
+; Sometimes, the fixed point moves, and can move according to any movement attribute in this list.
+; Also, the rotation direction may change.
+; Example: Super Mario 3's Rotodisc,
+; These jetpack enemeis from Sunsoft's Batman (notice that the point which they rotate around is the player)
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Swinger - The enemy swings from a fixed point.
-; ; Example: Castlevania's swinging blades
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Swinger - The enemy swings from a fixed point.
+; Example: Castlevania's swinging blades
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Pacer: The enemy changes direction in response to a trigger
@@ -158,46 +158,91 @@ ENEMY_TYPE_PACER:
 	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Roamer - The enemy changes direction completely randomly.
-; ; Example: Legend of Zelda's Octoroks
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Pacer (with pauses): When reaching the edge of a platform,
+; the enemy pauses, turning around, then changes direction and continues
+.PAUSED:
+; The enemy walks ahead
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER.NOTIFY
+; then
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; pauses, turning around
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER.TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	ENEMY_TYPE_PACER.PAUSED ; (restart)
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Liner - The enemy moves directly to a spot on the screen.
-; ; Forgot to record the enemies I saw doing this, but usually they move from one spot to another in straight lines,
-; ; sometimes randomly, other times, trying to 'slice' through the player.
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Follower: The enemy follows the player (Often used in top-down games).
+.FOLLOWER:
+; The enemy pauses briefly
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_M ; medium pause
+; then turns towards the player
+	dw	TURN_ENEMY.TOWARDS_PLAYER
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; walks ahead along the ground a medium distance
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER.RANGED
+	db	CFG_ENEMY_PAUSE_M ; medium distance
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	ENEMY_TYPE_PACER.FOLLOWER ; (restart)
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Teleporter - The enemy can teleport from one location to another.
-; ; Example: Zelda's Wizrobes
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Roamer - The enemy changes direction completely randomly.
+; Example: Legend of Zelda's Octoroks
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Dasher - The enemy dashes in a direction, faster than its normal movement speed.
-; ; Example: Zelda's Rope Snakes
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Liner - The enemy moves directly to a spot on the screen.
+; Forgot to record the enemies I saw doing this, but usually they move from one spot to another in straight lines,
+; sometimes randomly, other times, trying to 'slice' through the player.
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Ponger - The enemy ignores gravity and physics, and bounces off walls in straight lines.
-; ; Example: Zelda 2's "Bubbles"
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Teleporter - The enemy can teleport from one location to another.
+; Example: Zelda's Wizrobes
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Geobound - The enemy is physically stuck to the geometry of the level, sometimes appears as level geometry.
-; ; Examples: Megaman's Spikes, Super Mario's Piranha Plants, CastleVania's White Dragon
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Dasher - The enemy dashes in a direction, faster than its normal movement speed.
+; Example: Zelda's Rope Snakes
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Tethered - The enemy is tethered to the level's geometry by a chain or a rope.
-; ; Example: Super Mario's Chain Chomps
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Ponger - The enemy ignores gravity and physics, and bounces off walls in straight lines.
+; Example: Zelda 2's "Bubbles"
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Swooper - A floating enemy that swoops down, often returning to its original position, but not always.
-; ; Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Geobound - The enemy is physically stuck to the geometry of the level, sometimes appears as level geometry.
+; Examples: Megaman's Spikes, Super Mario's Piranha Plants, CastleVania's White Dragon
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Tethered - The enemy is tethered to the level's geometry by a chain or a rope.
+; Example: Super Mario's Chain Chomps
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Swooper - A floating enemy that swoops down, often returning to its original position, but not always.
+; Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Killed: the enemy has been killed. Shows the dying animation

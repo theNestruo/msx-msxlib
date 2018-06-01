@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
 	
 ; Demo mode
 	; DEMO_MODE:
@@ -1055,43 +1055,238 @@ POST_PROCESS_STAGE_ELEMENT:
 	
 ; Is it a box?
 	cp	BOX_FIRST_CHAR
-	jr	z, .NEW_BOX
+	jr	z, NEW_BOX
 ; Is it a rock?
 	cp	ROCK_FIRST_CHAR
-	jr	z, .NEW_ROCK
+	jr	z, NEW_ROCK
 ; Is it a skeleton?
 	cp	SKELETON_FIRST_CHAR +1
-	jr	z, .NEW_SKELETON
-; Is it a trap?
+	jr	z, NEW_SKELETON
+; Is it a left trap?
 	cp	TRAP_LOWER_LEFT_CHAR
-	jp	z, .NEW_LEFT_TRAP
+	jp	z, NEW_LEFT_TRAP
+; Is it a right trap?
 	cp	TRAP_LOWER_RIGHT_CHAR
-	jp	z, .NEW_RIGHT_TRAP
-; Is it '0', '1', '2', ...
+	jp	z, NEW_RIGHT_TRAP
+; Is it the start point?
 	sub	'0'
-	jr	z, .SET_START_POINT ; '0'
+	jp	z, SET_START_POINT ; '0'
+; Is it an enemy?
 	dec	a
-	jr	z, .NEW_BAT_1 ; '1'
+	jp	z, NEW_BAT_1 ; '1'
 	dec	a
-	jr	z, .NEW_BAT_2 ; '2'
+	jp	z, NEW_BAT_2 ; '2'
 	dec	a
-	jr	z, .NEW_SNAKE_1 ; '3'
+	jp	z, NEW_SNAKE_1 ; '3'
 	dec	a
-	jr	z, .NEW_SNAKE_2 ; '4'
+	jp	z, NEW_SNAKE_2 ; '4'
 	dec	a
-	jr	z, .NEW_SNAKE_3 ; '5'
+	jp	z, NEW_SNAKE_3 ; '5'
 	dec	a
-	jr	z, .NEW_PIRATE ; '6'
+	jp	z, NEW_PIRATE ; '6'
 	dec	a
-	jr	z, .NEW_SAVAGE ; '7'
+	jp	z, NEW_SAVAGE ; '7'
 	dec	a
-	jr	z, .NEW_SPIDER ; '8'
+	jp	z, NEW_SPIDER ; '8'
 	dec	a
-	jr	z, .NEW_JELLYFISH ; '9'
+	jp	z, NEW_JELLYFISH ; '9'
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a box spriteable
+NEW_BOX:
+	call	INIT_SPRITEABLE
+	ld	[ix + _SPRITEABLE_PATTERN], BOX_SPRITE_PATTERN
+	ld	[ix + _SPRITEABLE_COLOR], BOX_SPRITE_COLOR
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a rock spriteable
+NEW_ROCK:
+	call	INIT_SPRITEABLE
+	ld	[ix + _SPRITEABLE_PATTERN], ROCK_SPRITE_PATTERN
+	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new skeleton
+NEW_SKELETON:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SKELETON_DATA
+	jp	INIT_ENEMY
+
+; Skeleton: the skeleton is slept until the star is picked up,
+; then, it becomes of type walker (follower with pause)
+.SKELETON_DATA:
+	db	SKELETON_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_LEFT
+	db	SKELETON_SPRITE_COLOR
+	db	$00 ; (not lethal nor solid in the initial state)
+	dw	.SKELETON_BEHAVIOUR_IDLE
+	
+.SKELETON_BEHAVIOUR_IDLE:
+; Slept until the star is picked up
+	dw	.WAIT_KEY_HANDLER
+	dw	.WAKE_UP_HANDLER
+; then becomes of type walker (follower with pause)
+	dw	SET_NEW_STATE_HANDLER.AND_SAVE_RESPAWN
+	dw	ENEMY_TYPE_PACER.FOLLOWER
+; ; Follower (with pauses):
+; ; the enemy walks a medium distance along the ground,
+; ; towards the player, then pauses, turning around, and continues
+; .SKELETON_BEHAVIOUR:
+; ; The enemy pauses, turning around
+	; dw	PUT_ENEMY_SPRITE
+	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	; dw	WAIT_ENEMY_HANDLER.TURNING
+	; db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
+; ; then turns towards the player
+	; dw	TURN_ENEMY.TOWARDS_PLAYER
+	; dw	SET_NEW_STATE_HANDLER.NEXT
+; ; walks ahead along the ground
+	; dw	PUT_ENEMY_SPRITE_ANIM
+	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	; dw	WALKER_ENEMY_HANDLER.RANGED
+	; db	CFG_ENEMY_PAUSE_M ; medium distance
+; ; and continues
+	; dw	SET_NEW_STATE_HANDLER
+	; dw	.SKELETON_BEHAVIOUR ; (restart)
+
+.WAIT_KEY_HANDLER:
+; Has the key been picked up?
+	ld	hl, stage.flags
+	bit	BIT_STAGE_KEY, [hl]
+	jp	nz, CONTINUE_ENEMY_HANDLER.NO_ARGS
+; no: ret halt (0)
+	xor	a
+	ret
+
+.WAKE_UP_HANDLER:
+; Reads the characters from the NAMTBL buffer
+	ld	e, [ix + enemy.y]
+	ld	d, [ix + enemy.x]
+	call	COORDS_TO_OFFSET ; hl = NAMTBL offset
+	ld	de, namtbl_buffer -SCR_WIDTH -1 ; (-1,-1)
+	add	hl, de ; hl = NAMTBL buffer pointer
+; Checks the skeleton characters
+	ld	a, SKELETON_FIRST_CHAR ; left char
+	cp	[hl]
+	jp	nz, END_ENEMY_HANDLER ; no
+	inc	a ; right char
+	inc	hl
+	cp	[hl]
+	jp	nz, END_ENEMY_HANDLER ; no
+; yes: Removes the characters in the next frame
+	push	ix ; preserves ix
+	xor	a
+	ld	[hl], a ; right char (buffer only)
+	dec	hl
+	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE ; left char (buffer and VRAM)
+	inc	hl
+	call	VPOKE_NAMTBL_ADDRESS ; right char (VRAM only)
+	pop	ix ; restores ix
+; Wakes up the enemy
+	set	BIT_ENEMY_LETHAL, [ix + enemy.flags]
+	set	BIT_ENEMY_SOLID, [ix + enemy.flags]
+; Shows the sprite and ret 2 (continue with next state handler)
+	jp	PUT_ENEMY_SPRITE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new left trap
+NEW_LEFT_TRAP:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+; (ensures the bullets start outside the tile)
+	ld	a, d
+	sub	5
+	ld	d, a
+	ld	hl, .LEFT_TRAP_DATA
+	jp	INIT_ENEMY
+	
+; Trap (pointing left): shoots when the player is in front of it
+.LEFT_TRAP_DATA:
+	db	ARROW_LEFT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	db	$00 ; (not lethal)
+	dw	.LEFT_TRAP_BEHAVIOUR
+	
+.LEFT_TRAP_BEHAVIOUR:
+; Is the player in overlapping y coordinates...
+	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
+	db	PLAYER_BULLET_Y_SIZE
+; ... and to the left?
+	dw	WAIT_ENEMY_HANDLER.PLAYER_LEFT
+; Shoot left
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	dw	.SHOOT_LEFT_HANDLER
+
+; Enemy handler that shoots a bullet to the left
+.SHOOT_LEFT_HANDLER:
+	ld	hl, .ARROW_LEFT_DATA
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
 	ret
 	
-.SET_START_POINT:
+.ARROW_LEFT_DATA:
+	db	ARROW_LEFT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new right trap
+NEW_RIGHT_TRAP:
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+; (ensures the bullets start outside the tile)
+	ld	a, d
+	add	4
+	ld	d, a
+	ld	hl, .RIGHT_TRAP_DATA
+	jp	INIT_ENEMY
+
+; Trap (pointing right): shoots when the player is in front of it
+.RIGHT_TRAP_DATA:
+	db	ARROW_RIGHT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	db	$00 ; (not lethal)
+	dw	.RIGHT_TRAP_BEHAVIOUR
+	
+.RIGHT_TRAP_BEHAVIOUR:
+; Is the player in overlapping y coordinates...
+	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
+	db	PLAYER_BULLET_Y_SIZE
+; ... and to the right?
+	dw	WAIT_ENEMY_HANDLER.PLAYER_RIGHT
+; Shoot right
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	dw	.SHOOT_RIGHT_HANDLER
+
+; Enemy handler that shoots a bullet to the right
+.SHOOT_RIGHT_HANDLER:
+	ld	hl, .ARROW_RIGHT_DATA
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
+	ret
+	
+.ARROW_RIGHT_DATA:
+	db	ARROW_RIGHT_SPRITE_PATTERN
+	db	ARROW_SPRITE_COLOR
+	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Initializes player coordinates
+SET_START_POINT:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
 	ld	hl, player.y
@@ -1099,89 +1294,196 @@ POST_PROCESS_STAGE_ELEMENT:
 	inc	hl ; hl = player.x
 	ld	[hl], d
 	ret
+; -----------------------------------------------------------------------------
 
-.NEW_BOX:
-; Initializes a box spriteable
-	call	INIT_SPRITEABLE
-	ld	[ix + _SPRITEABLE_PATTERN], BOX_SPRITE_PATTERN
-	ld	[ix + _SPRITEABLE_COLOR], BOX_SPRITE_COLOR
-	ret
-
-.NEW_ROCK:
-; Initializes a rock spriteable
-	call	INIT_SPRITEABLE
-	ld	[ix + _SPRITEABLE_PATTERN], ROCK_SPRITE_PATTERN
-	ld	[ix + _SPRITEABLE_COLOR], ROCK_SPRITE_COLOR
-	ret
+; -----------------------------------------------------------------------------
+; Initializes a new bat (1)
+NEW_BAT_1:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .BAT_1_DATA
+	jp	INIT_ENEMY
 	
-.NEW_SKELETON:
-; Initializes a new skeleton
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.SKELETON
-	jp	INIT_ENEMY
+; The bat (1) flies, then turns around and continues
+.BAT_1_DATA:
+	db	BAT_SPRITE_PATTERN
+	db	BAT_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	dw	ENEMY_TYPE_FLYER
+; -----------------------------------------------------------------------------
 
-.NEW_BAT_1:
-.NEW_BAT_2:
+; -----------------------------------------------------------------------------
 ; Initializes a new bat
+NEW_BAT_2:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.BAT
+	ld	hl, .BAT_2_DATA
+	jp	INIT_ENEMY
+	
+; Bat: the bat flies, the turns around and continues
+.BAT_2_DATA:
+	db	BAT_SPRITE_PATTERN
+	db	BAT_SPRITE_COLOR_2
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	dw	.BAT_2_BEHAVIOUR
+	
+.BAT_2_BEHAVIOUR:
+; The enemy flies
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FLYER_ENEMY_HANDLER
+; Is the player in overlapping x coordinates...
+	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	db	PLAYER_ENEMY_X_SIZE + 6 ; 3 pixels before the actual collision
+; ...and below?
+	dw	WAIT_ENEMY_HANDLER.PLAYER_BELOW
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; then the enemy flies, falling onto the ground
+	dw	PUT_ENEMY_SPRITE
+	dw	FLYER_ENEMY_HANDLER
+	dw	FALLER_ENEMY_HANDLER
+	db	(1 << BIT_WORLD_SOLID)
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; then flies, rising back up
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FLYER_ENEMY_HANDLER
+	dw	RISER_ENEMY_HANDLER
+	db	(1 << BIT_WORLD_SOLID)
+	dw	SET_NEW_STATE_HANDLER
+	dw	.BAT_2_BEHAVIOUR ; (restart)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new snake (1)
+NEW_SNAKE_1:
+NEW_SNAKE_2:
+NEW_SNAKE_3:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SNAKE_DATA
 	jp	INIT_ENEMY
 
-.NEW_SPIDER:
+; Snake (1): the snake walks, the pauses, turning around, and continues
+.SNAKE_DATA:
+	db	SNAKE_SPRITE_PATTERN
+	db	SNAKE_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	dw	ENEMY_TYPE_PACER.PAUSED
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new pirate
+NEW_PIRATE:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .PIRATE_DATA
+	jp	INIT_ENEMY
+
+; Pirate: TODO
+.PIRATE_DATA:
+	db	PIRATE_SPRITE_PATTERN
+	db	PIRATE_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	dw	ENEMY_TYPE_PACER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new savage
+NEW_SAVAGE:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .SAVAGE_DATA
+	jp	INIT_ENEMY
+	
+; Savage: the savage walks towards the player, pausing briefly
+.SAVAGE_DATA:
+	db	SAVAGE_SPRITE_PATTERN
+	db	SAVAGE_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	dw	ENEMY_TYPE_PACER.FOLLOWER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Initializes a new spider
+NEW_SPIDER:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.SPIDER
+	ld	hl, .SPIDER_DATA
 	jp	INIT_ENEMY
 
-.NEW_JELLYFISH:
-; Initializes a new JELLYFISH
+; Spider: the spider falls onto the ground the the player is near
+.SPIDER_DATA:
+	db	SPIDER_SPRITE_PATTERN
+	db	SPIDER_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	dw	ENEMY_TYPE_FALLER.TRIGGERED
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new jellyfish
+NEW_JELLYFISH:
 	ld	[hl], $f3 ; (water)
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.JELLYFISH
+	ld	hl, .JELLYFISH_DATA
 	jp	INIT_ENEMY
 
-.NEW_SNAKE_1:
-.NEW_SNAKE_2:
-.NEW_SNAKE_3:
-; Initializes a new snake
-	ld	[hl], 0
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.SNAKE
-	jp	INIT_ENEMY
+; Jellyfish: the jellyfish floats in a sine wave pattern, shooting up
+.JELLYFISH_DATA:
+	db	JELLYFISH_SPRITE_PATTERN
+	db	JELLYFISH_SPRITE_COLOR
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID
+	dw	.JELLYFISH_BEHAVIOUR
+	
+.JELLYFISH_BEHAVIOUR:
+; The enemy floats in a sine wave pattern
+	dw	.WAVER_HANDLER ; PUT_ENEMY_SPRITE + WAVER_ENEMY_HANDLER
+	dw	FLYER_ENEMY_HANDLER
+; Is the player in overlapping x coordinates?
+	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.X_COLLISION
+	db	PLAYER_BULLET_X_SIZE
+; Shoot
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	dw	.SHOOT_UP_HANDLER
 
-.NEW_PIRATE:
-; Initializes a new pirate
-	ld	[hl], 0
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.PIRATE
-	jp	INIT_ENEMY
+; JELLYFISH: the JELLYFISH floats in a sine wave pattern
+.WAVER_HANDLER:
+; Is the wave pattern ascending?
+	inc	[ix + enemy.frame_counter]
+	ld	a, [ix + enemy.frame_counter]
+	bit	5, a
+	jr	z, .ASCENDING ; yes
+; no: descending
+	ld	c, JELLYFISH_SPRITE_PATTERN
+	jr	.PATTERN_OK
+.ASCENDING:
+	ld	c, JELLYFISH_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_ANIM
+.PATTERN_OK:
+; Puts the sprite
+	ld	e, [ix + enemy.y]
+	ld	d, [ix + enemy.x]
+	ld	b, [ix + enemy.color]
+	call	PUT_SPRITE
+; Reads and applies the dy
+	call	READ_WAVER_ENEMY_DY_VALUE
+	add	[ix + enemy.y]
+	ld	[ix + enemy.y], a
+; ret 2 (continue with next state handler)
+	ld	a, 2
+	ret
+
+; JELLYFISH: the JELLYFISH shoots oil up
+.SHOOT_UP_HANDLER:
+	ld	hl, .SPARK_UP_DATA
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
+	ret
 	
-.NEW_SAVAGE:
-; Initializes a new savage
-	ld	[hl], 0
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, ENEMY_0.SAVAGE
-	jp	INIT_ENEMY
-	
-.NEW_LEFT_TRAP:
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-; (ensures the bullets start outside the tile)
-	ld	a, d
-	sub	5
-	ld	d, a
-	ld	hl, ENEMY_0.TRAP_LEFT
-	jp	INIT_ENEMY
-	
-.NEW_RIGHT_TRAP:
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-; (ensures the bullets start outside the tile)
-	ld	a, d
-	add	4
-	ld	d, a
-	ld	hl, ENEMY_0.TRAP_RIGHT
-	jp	INIT_ENEMY
+.SPARK_UP_DATA:
+	db	SPARK_SPRITE_PATTERN
+	db	SPARK_SPRITE_COLOR
+	db	BULLET_DIR_UP OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1420,106 +1722,6 @@ UPDATE_FRAMES_PUSHING:
  ; no: resetea el contador
 	xor	a
 	ld	[player.pushing], a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; JELLYFISH: the JELLYFISH floats in a sine wave pattern
-ENEMY_JELLYFISH.WAVER_HANDLER:
-; Is the wave pattern ascending?
-	inc	[ix + enemy.frame_counter]
-	ld	a, [ix + enemy.frame_counter]
-	bit	5, a
-	jr	z, .ASCENDING ; yes
-; no: descending
-	ld	c, JELLYFISH_SPRITE_PATTERN
-	jr	.PATTERN_OK
-.ASCENDING:
-	ld	c, JELLYFISH_SPRITE_PATTERN OR FLAG_ENEMY_PATTERN_ANIM
-.PATTERN_OK:
-
-; Puts the sprite
-	ld	e, [ix + enemy.y]
-	ld	d, [ix + enemy.x]
-	ld	b, [ix + enemy.color]
-	call	PUT_SPRITE
-
-; Reads and applies the dy
-	call	READ_WAVER_ENEMY_DY_VALUE
-	add	[ix + enemy.y]
-	ld	[ix + enemy.y], a
-; ret 2 (continue with next state handler)
-	ld	a, 2
-	ret
-
-; JELLYFISH: the JELLYFISH shoots oil up
-ENEMY_JELLYFISH.SHOOT_HANDLER:
-	ld	hl, BULLET_0.SPARK_UP
-	call	INIT_BULLET_FROM_ENEMY
-; ret 0 (halt)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Skeleton: the skeleton is slept until the key is picked up
-ENEMY_SKELETON:
-
-.WAIT_KEY_HANDLER:
-; Has the key been picked up?
-	ld	hl, stage.flags
-	bit	BIT_STAGE_KEY, [hl]
-	jp	nz, CONTINUE_ENEMY_HANDLER.NO_ARGS
-; no: ret halt (0)
-	xor	a
-	ret
-
-.WAKE_UP_HANDLER:
-; Reads the characters from the NAMTBL buffer
-	ld	e, [ix + enemy.y]
-	ld	d, [ix + enemy.x]
-	call	COORDS_TO_OFFSET ; hl = NAMTBL offset
-	ld	de, namtbl_buffer -SCR_WIDTH -1 ; (-1,-1)
-	add	hl, de ; hl = NAMTBL buffer pointer
-; Checks the skeleton characters
-	ld	a, SKELETON_FIRST_CHAR ; left char
-	cp	[hl]
-	jp	nz, END_ENEMY_HANDLER ; no
-	inc	a ; right char
-	inc	hl
-	cp	[hl]
-	jp	nz, END_ENEMY_HANDLER ; no
-; yes: Removes the characters in the next frame
-	push	ix ; preserves ix
-	xor	a
-	ld	[hl], a ; right char (buffer only)
-	dec	hl
-	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE ; left char (buffer and VRAM)
-	inc	hl
-	call	VPOKE_NAMTBL_ADDRESS ; right char (VRAM only)
-	pop	ix ; restores ix
-; Wakes up the enemy
-	set	BIT_ENEMY_LETHAL, [ix + enemy.flags]
-	set	BIT_ENEMY_SOLID, [ix + enemy.flags]
-; Shows the sprite and ret 2 (continue with next state handler)
-	jp	PUT_ENEMY_SPRITE
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-ENEMY_TRAP:
-	
-.SHOOT_RIGHT_HANDLER:
-	ld	hl, BULLET_0.ARROW_RIGHT
-	call	INIT_BULLET_FROM_ENEMY
-; ret 0 (halt)
-	xor	a
-	ret
-
-.SHOOT_LEFT_HANDLER:
-	ld	hl, BULLET_0.ARROW_LEFT
-	call	INIT_BULLET_FROM_ENEMY
-; ret 0 (halt)
-	xor	a
 	ret
 ; -----------------------------------------------------------------------------
 
