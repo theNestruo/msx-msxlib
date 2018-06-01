@@ -21,7 +21,7 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 14 -1 ; DEBUG LINE
 	
 ; Demo mode
 	; DEMO_MODE:
@@ -548,26 +548,10 @@ GAME_OVER:
 ; In-game loop finish due stage over
 STAGE_OVER:
 ; Prepares the player disappearing animation
-	halt
 	call	SET_PLAYER_FLOOR
-	ld	b, -1
-	call	PREPARE_APPEARING_MASK
+	call	PREPARE_MASK.DISAPPEARING
 ; Player disappearing and fade out
 	call	PLAYER_DISAPPEARING_ANIMATION
-	
-	; ld	b, SPRITE_HEIGHT
-; .LOOP1:
-	; push	bc ; (preserves counter)
-	; halt
-	; call	LDIRVM_SPRATR
-	; call	UPDATE_DYNAMIC_CHARSET
-; ; Player appears
-	; ld	a, PLAYER_SPRITE_INTRO_PATTERN + 8
-	; call	PUT_PLAYER_SPRITE.PATTERN
-; ; Loop condition
-	; pop	bc ; (restores counter)
-	; djnz	.LOOP1
-
 	call	DISSCR_FADE_OUT
 
 ; Next stage logic
@@ -858,24 +842,29 @@ UPDATE_MENU_PLAYER:
 ; Updates the player sprite
 	call	PUT_PLAYER_SPRITE
 ; Prepares the mask for appearing animation
-	; jp	PREPARE_APPEARING_MASK ; falls through
+	; jp	PREPARE_MASK.APPEARING ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Prepares the SPRATR buffer for the player appearing/disappearing animations
-PREPARE_APPEARING_MASK:
+PREPARE_MASK:
+.APPEARING:
+	ld	b, SPRITE_HEIGHT / 2
+	jr	.B_OK
+.DISAPPEARING:
+	ld	b, SPRITE_HEIGHT
+.B_OK:
 	ld	a, [player.y]
 	add	CFG_SPRITES_Y_OFFSET
-	ld	hl, spratr_buffer
-	ld	b, CFG_PLAYER_SPRITES_INDEX
-.LOOP:
-	ld	[hl], a ; y
-	inc	hl
-	inc	hl ; x
-	inc	hl ; pattern
-	ld	[hl], SPAT_EC ; color
-	inc	hl
-	djnz	.LOOP
+	sub	b
+	ld	[spratr_buffer], a
+	ld	[spratr_buffer +4], a
+	add	b
+	ld	[spratr_buffer +8], a
+	ld	[spratr_buffer +12], a
+	add	b
+	ld	[spratr_buffer +16], a
+	ld	[spratr_buffer +20], a
 ; Resets the volatile sprites
 	ld	hl, volatile_sprites
 	ld	[hl], SPAT_END
@@ -897,15 +886,21 @@ PRINT_SELECTED_CHAPTER_NAME:
 ; -----------------------------------------------------------------------------
 ; Animation of player appearing
 PLAYER_APPEARING_ANIMATION:
-	ld	b, SPRITE_HEIGHT
+	ld	b, SPRITE_HEIGHT / 2
 .LOOP:
 	push	bc ; (preserves counter)
 	halt
 	call	LDIRVM_SPRATR
 	call	UPDATE_DYNAMIC_CHARSET
 ; Player appears
-	ld	a, -1
-	call	MOVE_PLAYER_V
+	ld	hl, spratr_buffer
+	dec	[hl]
+	ld	hl, spratr_buffer +4
+	dec	[hl]
+	ld	hl, spratr_buffer +16
+	inc	[hl]
+	ld	hl, spratr_buffer +20
+	inc	[hl]
 	call	UPDATE_PLAYER_ANIMATION
 	call	PUT_PLAYER_SPRITE
 ; Loop condition
@@ -917,15 +912,21 @@ PLAYER_APPEARING_ANIMATION:
 ; -----------------------------------------------------------------------------
 ; Animation of player disappearing
 PLAYER_DISAPPEARING_ANIMATION:
-	ld	b, SPRITE_HEIGHT
+	ld	b, SPRITE_HEIGHT / 2
 .LOOP:
 	push	bc ; (preserves counter)
 	halt
 	call	LDIRVM_SPRATR
 	call	UPDATE_DYNAMIC_CHARSET
 ; Player disappears
-	ld	a, 1
-	call	MOVE_PLAYER_V
+	ld	hl, spratr_buffer
+	inc	[hl]
+	ld	hl, spratr_buffer +4
+	inc	[hl]
+	ld	hl, spratr_buffer +16
+	dec	[hl]
+	ld	hl, spratr_buffer +20
+	dec	[hl]
 	call	UPDATE_PLAYER_ANIMATION
 	call	PUT_PLAYER_SPRITE
 ; Loop condition

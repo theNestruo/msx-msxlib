@@ -7,11 +7,11 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-TXT_COPYRIGHT:
-	db	"STEVEDORE", $00
-	db	"@ 2018 THENESTRUO = WONDER", $00
-	db	"PRIVATE BETA: DO NOT PUBLISH", $00
-	db	$00
+; TXT_COPYRIGHT:
+	; db	"STEVEDORE", $00
+	; db	"@ 2018 THENESTRUO = WONDER", $00
+	; db	"PRIVATE BETA: DO NOT PUBLISH", $00
+	; db	$00
 	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -91,6 +91,8 @@ PLAYER_0:
 ; Initial (per stage) sprite attributes table
 SPRATR_0:
 ; Reserved sprites before player sprites (see CFG_PLAYER_SPRITES_BEFORE)
+	db	SPAT_OB, 0, 0, 0
+	db	SPAT_OB, 0, 0, 0
 	db	SPAT_OB, 0, 0, 0
 	db	SPAT_OB, 0, 0, 0
 	db	SPAT_OB, 0, 0, 0
@@ -333,8 +335,8 @@ STAGE_SELECT:
 ; .namtbl_buffer_origin
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 14
 ; .player_0_table
-	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
-	db	128 +SPRITE_HEIGHT, 128 ; Lighthouse
+	db	176, 128 ; Warehouse (tutorial)
+	db	128, 128 ; Lighthouse
 	db	0, 0
 	db	0, 0
 	db	0, 0
@@ -342,36 +344,36 @@ STAGE_SELECT:
 	.MENU_0_SIZE:	equ $ - .MENU_0_TABLE
 ; 2nd chapter open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 11
-	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
-	db	128 +SPRITE_HEIGHT, 104 ; Lighthouse
-	db	128 +SPRITE_HEIGHT, 152 ; Ship
+	db	176, 128 ; Warehouse (tutorial)
+	db	128, 104 ; Lighthouse
+	db	128, 152 ; Ship
 	db	0, 0
 	db	0, 0
 	db	0, 0
 ; 3rd chapter open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 8
-	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
-	db	128 +SPRITE_HEIGHT,  80 ; Lighthouse
-	db	128 +SPRITE_HEIGHT, 128 ; Ship
-	db	128 +SPRITE_HEIGHT, 176 ; Jungle
+	db	176, 128 ; Warehouse (tutorial)
+	db	128,  80 ; Lighthouse
+	db	128, 128 ; Ship
+	db	128, 176 ; Jungle
 	db	0, 0
 	db	0, 0
 ; 4th chapter open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 5
-	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
-	db	128 +SPRITE_HEIGHT,  56 ; Lighthouse
-	db	128 +SPRITE_HEIGHT, 104 ; Ship
-	db	128 +SPRITE_HEIGHT, 152 ; Jungle
-	db	128 +SPRITE_HEIGHT, 200 ; Volcano
+	db	176, 128 ; Warehouse (tutorial)
+	db	128,  56 ; Lighthouse
+	db	128, 104 ; Ship
+	db	128, 152 ; Jungle
+	db	128, 200 ; Volcano
 	db	0, 0
 ; All chapters open
 	dw	namtbl_buffer + 11 * SCR_WIDTH + 2
-	db	176 +SPRITE_HEIGHT, 128 ; Warehouse (tutorial)
-	db	128 +SPRITE_HEIGHT,  32 ; Lighthouse
-	db	128 +SPRITE_HEIGHT,  80 ; Ship
-	db	128 +SPRITE_HEIGHT, 128 ; Jungle
-	db	128 +SPRITE_HEIGHT, 176 ; Volcano
-	db	128 +SPRITE_HEIGHT, 224 ; Temple
+	db	176, 128 ; Warehouse (tutorial)
+	db	128,  32 ; Lighthouse
+	db	128,  80 ; Ship
+	db	128, 128 ; Jungle
+	db	128, 176 ; Volcano
+	db	128, 224 ; Temple
 
 .GAME_0_TABLE:
 	;	.stage,	.stage_bcd

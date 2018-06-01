@@ -50,10 +50,10 @@
 
 ; Number of sprites reserved at the beginning of the SPRATR buffer
 ; (i.e.: first sprite number for the "volatile" sprites)
-	CFG_SPRITES_RESERVED:	equ 6
+	CFG_SPRITES_RESERVED:	equ CFG_PLAYER_SPRITES_INDEX + CFG_PLAYER_SPRITES ; 8
 	
 ; Define if the LDIRVM the SPRATR buffer should use flickering
-	CFG_SPRITES_FLICKER:
+	; CFG_SPRITES_FLICKER:
 	
 ; Number of sprites that won't enter the flickering loop
 ; (i.e.: number of sprites that will use the most priority planes)
@@ -161,7 +161,7 @@ TILE_FLAGS_TABLE:
 
 ; Number of sprites reserved before the player sprites
 ; (i.e.: first sprite number for the player sprites)
-	CFG_PLAYER_SPRITES_INDEX:	equ 4
+	CFG_PLAYER_SPRITES_INDEX:	equ 6
 
 ; Number of player sprites (i.e.: number of colors)
 	CFG_PLAYER_SPRITES:		equ 2
