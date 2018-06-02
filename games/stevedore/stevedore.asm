@@ -53,11 +53,11 @@
 	CFG_SPRITES_RESERVED:	equ CFG_PLAYER_SPRITES_INDEX + CFG_PLAYER_SPRITES ; 8
 	
 ; Define if the LDIRVM the SPRATR buffer should use flickering
-	; CFG_SPRITES_FLICKER:
+	CFG_SPRITES_FLICKER:
 	
 ; Number of sprites that won't enter the flickering loop
 ; (i.e.: number of sprites that will use the most priority planes)
-	CFG_SPRITES_NO_FLICKER:	equ 5
+	CFG_SPRITES_NO_FLICKER:	equ CFG_PLAYER_SPRITES_INDEX + 1 ; 7
 	
 ; If defined, in/out fades sweep from center instead of sweeping from left to right
 	CFG_FADE_TYPE_DOUBLE:
@@ -202,6 +202,7 @@ PLAYER_DY_TABLE:
 	.FALL_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
 	db	2, 2, 2			; (26,-8) / (9,12)
+	db	4
 	.SIZE:		equ $ - PLAYER_DY_TABLE
 
 ; Terminal falling speed (pixels/frame)

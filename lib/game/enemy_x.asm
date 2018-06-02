@@ -56,6 +56,29 @@ ENEMY_TYPE_WALKER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Follower: The enemy follows the player (Often used in top-down games).
+.FOLLOWER:
+; The enemy pauses briefly
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER
+	db	CFG_ENEMY_PAUSE_M ; medium pause
+; then turns towards the player
+	dw	TURN_ENEMY.TOWARDS_PLAYER
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; walks ahead along the ground a medium distance
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	FLYER_ENEMY_HANDLER.RANGED
+	db	CFG_ENEMY_PAUSE_M ; medium distance
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	.FOLLOWER ; (restart)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Faller: The enemy falls from the ceiling onto the ground.
 ENEMY_TYPE_FALLER:
 ; The enemy falls onto the ground
@@ -348,6 +371,23 @@ FLYER_ENEMY_HANDLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Flyer state handler: The enemy flies (or floats) a number of pixels or
+; until a wall is hit
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state (ignored)
+; param [iy + ENEMY_STATE.ARGS]: distance (frames/pixels) (0 = forever)
+; ret a: continue (3) if a wall has been hit, halt (0) otherwise
+.RANGED:
+; Checks wall
+	call	CAN_ENEMY_FLY
+	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG ; no
+; yes: moves the enemy
+	call	MOVE_ENEMY
+; increases frame counter, compares with argument, and ret 3/0
+	jp	WAIT_ENEMY_HANDLER
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Walker state handler: the enemy walks ahead along the ground,
 ; turning around when the wall is hit or at the end of the platform
 ; param ix: pointer to the current enemy
@@ -382,8 +422,8 @@ WALKER_ENEMY_HANDLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Walker state handler: the enemy walks ahead a number of pixels along the ground,
-; until a wall is hit, the end of the platform is reached
+; Walker state handler: the enemy walks ahead a number of pixels along the ground
+; or until a wall is hit, the end of the platform is reached
 ; param ix: pointer to the current enemy
 ; param iy: pointer to the current enemy state (ignored)
 ; param [iy + ENEMY_STATE.ARGS]: distance (frames/pixels) (0 = forever)
@@ -408,11 +448,18 @@ FALLER_ENEMY_HANDLER:
 ; Has fallen onto the ground?
 	call	GET_ENEMY_TILE_FLAGS_UNDER
 	and	[iy + ENEMY_STATE.ARG_0]
-	jp	nz, CONTINUE_ENEMY_HANDLER.ONE_ARG ; yes
-	
-; no: Computes falling speed	
-	ld	a, [ix + enemy.frame_counter]
-	inc	[ix + enemy.frame_counter]
+	jp	z, .FALL ; no
+; yes: resets Delta-Y (dY) table index
+	xor	a
+	ld	[ix + enemy.dy_index], 0
+; ret continue (3)
+	ld	a, 3
+	ret
+
+.FALL:
+; Computes falling speed	
+	ld	a, [ix + enemy.dy_index]
+	inc	[ix + enemy.dy_index]
 	add	ENEMY_DY_TABLE.FALL_OFFSET
 	call	READ_FALLER_ENEMY_DY_VALUE
 ; moves down
@@ -471,11 +518,11 @@ RISER_ENEMY_HANDLER:
 ; param [iy + ENEMY_STATE.ARG_0]: (ignored)
 ; ret z/nz: if the state has finished
 JUMPER_ENEMY_HANDLER:
-	ld	a, [ix + enemy.frame_counter]
+	ld	a, [ix + enemy.dy_index]
 	cp	ENEMY_DY_TABLE.SIZE -1
 	jr	z, .DY_MAX ; yes
 ; increases frame counter
-	inc	[ix + enemy.frame_counter]
+	inc	[ix + enemy.dy_index]
 .DY_MAX:
 	ld	hl, ENEMY_DY_TABLE
 	call	GET_HL_A_BYTE
@@ -495,24 +542,11 @@ JUMPER_ENEMY_HANDLER:
 	
 ; yes
 	xor	a
-	ld	[ix + enemy.frame_counter], a
+	ld	[ix + enemy.dy_index], a
 	
 ; ret 3 (continue with next state handler)
 	ld	a, 3
 	ret
-
-	
-; ; no: Computes falling speed	
-	; ld	a, [ix + enemy.frame_counter]
-	; inc	[ix + enemy.frame_counter]
-	; add	ENEMY_DY_TABLE.FALL_OFFSET
-	; call	READ_FALLER_ENEMY_DY_VALUE
-; ; moves down
-	; add	[ix + enemy.y]
-	; ld	[ix + enemy.y], a
-; ; ret halt (0)
-	; xor	a
-	; ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -522,8 +556,8 @@ JUMPER_ENEMY_HANDLER:
 ; ret a: always continue (2)
 WAVER_ENEMY_HANDLER:
 ; Reads the dy
-	inc	[ix + enemy.frame_counter]
 	call	READ_WAVER_ENEMY_DY_VALUE
+	inc	[ix + enemy.dy_index]
 ; Applies the dy
 	add	[ix + enemy.y]
 	ld	[ix + enemy.y], a
@@ -691,7 +725,6 @@ GET_ENEMY_TILE_FLAGS_UNDER:
 ; -----------------------------------------------------------------------------
 ; param a
 READ_FALLER_ENEMY_DY_VALUE:
-	; ld	a, [player.dy_index]
 	cp	ENEMY_DY_TABLE.SIZE
 	jr	c, .FROM_TABLE
 	ld	a, CFG_ENEMY_GRAVITY
@@ -706,7 +739,7 @@ READ_FALLER_ENEMY_DY_VALUE:
 ; param ix: pointer to the current enemy
 ; ret a: the dy (-1, 0 or 1)
 READ_WAVER_ENEMY_DY_VALUE:
-	ld	a, [ix + enemy.frame_counter]
+	ld	a, [ix + enemy.dy_index]
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------

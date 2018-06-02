@@ -20,10 +20,12 @@ bullet:
 ; Bullet speed and direction
 	.type:		equ $ - bullet
 	rb	1
+	
 	.SIZE:		equ $ - bullet
 
 ; (rest of the array)
 	rb	(CFG_BULLET_COUNT -1) * .SIZE
+	
 	bullets.SIZE:	equ $ - bullets
 
 ENDIF

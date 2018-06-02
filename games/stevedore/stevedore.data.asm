@@ -7,11 +7,11 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-; TXT_COPYRIGHT:
-	; db	"STEVEDORE", $00
-	; db	"@ 2018 THENESTRUO = WONDER", $00
-	; db	"PRIVATE BETA: DO NOT PUBLISH", $00
-	; db	$00
+TXT_COPYRIGHT:
+	db	"STEVEDORE", $00
+	db	"@ 2018 THENESTRUO = WONDER", $00
+	db	"PRIVATE BETA: DO NOT PUBLISH", $00
+	db	$00
 	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -190,7 +190,7 @@ STAGE_SELECT:
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
 IFEXIST DEMO_MODE
-	dw	.STAGE_01, .STAGE_03, .STAGE_06, .STAGE_11, .STAGE_14
+	dw	.STAGE_01, .STAGE_06, .STAGE_11, .STAGE_16, .STAGE_14
 ELSE
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
 ENDIF ; IFEXIST DEMO_MODE
@@ -379,12 +379,12 @@ ENDIF
 SOUND_BANK:
 	incbin	"games/stevedore/sfx/test.afb"
 	
-	CFG_SOUND_PLAYER_JUMP:		equ 5 -1 ; 8 -1
-	CFG_SOUND_PLAYER_LAND:		equ 0
-	CFG_SOUND_PLAYER_KILLED:	equ 0
-	CFG_SOUND_PLAYER_FINISH:	equ 0
-	CFG_SOUND_ENEMY_KILLED:		equ 0
-	CFG_SOUND_ENEMY_RESPAWN:	equ 0
+	; CFG_SOUND_PLAYER_JUMP:	equ 5 -1 ; 8 -1
+	; CFG_SOUND_PLAYER_LAND:	equ 0
+	; CFG_SOUND_PLAYER_KILLED:	equ 0
+	; CFG_SOUND_PLAYER_FINISH:	equ 0
+	; CFG_SOUND_ENEMY_KILLED:	equ 0
+	; CFG_SOUND_ENEMY_RESPAWN:	equ 0
 ; -----------------------------------------------------------------------------
 
 ; EOF

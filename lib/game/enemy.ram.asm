@@ -34,6 +34,9 @@ enemy:
 ; Current trigger frame counter
 	.trigger_frame_counter: equ $ - enemy
 	rb	1
+; Delta-Y (dY) table index (when jumping and falling)
+	.dy_index:	equ $ - enemy
+	rb	1
 ; Backup data for respawning the enemy
 	.RESPAWN_SIZE:	equ .animation_delay ; (from .xy to .state)
 	.respawn_data:	equ $ - enemy
@@ -43,6 +46,7 @@ enemy:
 
 ; (rest of the array)
 	rb	(CFG_ENEMY_COUNT -1) * .SIZE
+	
 	enemies.SIZE:	equ $ - enemies
 
 ENDIF

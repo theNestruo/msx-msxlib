@@ -21,10 +21,10 @@
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 21 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 16 -1 ; DEBUG LINE
 	
 ; Demo mode
-	; DEMO_MODE:
+	DEMO_MODE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -500,11 +500,11 @@ PLAYER_OVER:
 ; Fade out
 	call	DISSCR_FADE_OUT
 
-; Is SEL key pressed?
+; Is STOP key still pressed?
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	6, [hl]
-	jp	z, MAIN_MENU ; yes: go to main menu
+	bit	4, [hl]
+	jp	z, GAME_OVER ; yes: go to main menu
 	
 ; Is it a tutorial stage?
 	ld	a, [game.stage]
@@ -537,7 +537,7 @@ GAME_OVER:
 	call	PRINT_CENTERED_TEXT
 	
 ; Fade in
-	call	LDIRVM_NAMTBL_FADE_INOUT
+	call	ENASCR_FADE_IN ; LDIRVM_NAMTBL_FADE_INOUT ???
 	call	WAIT_TRIGGER_FOUR_SECONDS
 	call	DISSCR_FADE_OUT
 	
@@ -1132,7 +1132,7 @@ NEW_SKELETON:
 	dw	.WAKE_UP_HANDLER
 ; then becomes of type walker (follower with pause)
 	dw	SET_NEW_STATE_HANDLER.AND_SAVE_RESPAWN
-	dw	ENEMY_TYPE_PACER.FOLLOWER
+	dw	ENEMY_TYPE_WALKER.FOLLOWER
 
 .WAIT_KEY_HANDLER:
 ; Has the key been picked up?
@@ -1458,8 +1458,8 @@ NEW_JELLYFISH:
 ; JELLYFISH: the JELLYFISH floats in a sine wave pattern
 .WAVER_HANDLER:
 ; Is the wave pattern ascending?
-	inc	[ix + enemy.frame_counter]
-	ld	a, [ix + enemy.frame_counter]
+	ld	a, [ix + enemy.dy_index]
+	inc	[ix + enemy.dy_index]
 	bit	5, a
 	jr	z, .ASCENDING ; yes
 ; no: descending

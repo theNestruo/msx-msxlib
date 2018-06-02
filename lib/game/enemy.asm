@@ -96,6 +96,8 @@ INIT_ENEMY:
 	ld	[de], a ; .frame_counter
 	inc	de
 	ld	[de], a ; .trigger_frame_counter
+	inc	de
+	ld	[de], a ; .dy_index
 ; Saves the data for respawning
 	pop	hl ; restores target start in hl
 	inc	de ; .respawn_data
@@ -237,10 +239,13 @@ SET_NEW_STATE_HANDLER:
 	ld	[ix + enemy.state_h], h
 ; Resets the animation flag
 	res	BIT_ENEMY_PATTERN_ANIM, [ix + enemy.pattern]
+.RESET_FRAME_COUNTERS:
 ; Resets the animation delay and the frame counter
 	xor	a
 	ld	[ix + enemy.animation_delay], a
 	ld	[ix + enemy.frame_counter], a
+	ld	[ix + enemy.trigger_frame_counter], a
+	ld	[ix + enemy.dy_index], a
 ; ret z (halt)
 	ret
 	
@@ -258,8 +263,8 @@ SET_NEW_STATE_HANDLER:
 	ld	e, l
 	ld	a, enemy.respawn_data ; hl += .respawn_data
 	call	ADD_HL_A
-	ld	bc, enemy.RESPAWN_SIZE
 	ex	de, hl
+	ld	bc, enemy.RESPAWN_SIZE 
 	ldir
 ; ret z (halt)
 	xor	a
@@ -306,11 +311,10 @@ RESPAWN_ENEMY_HANDLER:
 	ld	e, l
 	ld	a, enemy.respawn_data ; hl += .respawn_data
 	call	ADD_HL_A
-	ld	bc, enemy.RESPAWN_SIZE
+	ld	bc, enemy.RESPAWN_SIZE 
 	ldir
-; ret 0 (halt)
-	xor	a
-	ret
+; Resets the animation delay and the frame counter and ret halt (0)
+	jr	SET_NEW_STATE_HANDLER.RESET_FRAME_COUNTERS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -435,8 +439,8 @@ TURN_ENEMY:
 ; ret a: continue (3) if the wait has finished, halt (0) otherwise
 WAIT_ENEMY_HANDLER:
 ; increases frame counter and compares with argument
-	inc	[ix + enemy.frame_counter]
 	ld	a, [ix + enemy.frame_counter]
+	inc	[ix + enemy.frame_counter]
 	cp	[iy + ENEMY_STATE.ARG_0]
 ; ret 3/0
 	jp	z, CONTINUE_ENEMY_HANDLER.ONE_ARG
