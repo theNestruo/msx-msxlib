@@ -13,16 +13,18 @@ globals:
 
 .chapters:
 	rb	1 ; (unlocked chapters)
-.star_counter:
-	rb	1 ; (stars picked in chapters, as bitmap)
+.flags:
+	rb	1 ; 00054321: if the star was picked in each chapter
 
 ; Game vars (i.e.: vars from start to game over)
 game:
 
 .lives:
 	rb	1
-.fruit_counter:
-	rb	1 ; (fruits picked during the chapter)
+.item_counter:
+	rb	1 ; 000s0fff: star and fruits picked up during the chapter
+.chapter:
+	rb	1 ; convenience variable to store the current chapter
 .stage:
 	rb	1
 .stage_bcd:

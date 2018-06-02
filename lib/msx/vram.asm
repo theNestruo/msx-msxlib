@@ -474,15 +474,7 @@ LDIRVM_NAMTBL_COLUMN:
 ; param a: string index
 ; ret hl: source of the a-th string
 GET_TEXT:
-	ld	d, a
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Reads a string from a 0-terminated string array
-; param hl: source of the first string
-; param d: string index
-; ret hl: source of the d-th string
-.USING_D:
+	ld	d, a ; string index in d
 	xor	a ; (looks for $00)
 ; Checks the border case (d == 0)
 	cp	d

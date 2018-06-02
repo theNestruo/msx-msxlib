@@ -19,12 +19,12 @@
 ; The flags the define the state of the stage
 	BIT_STAGE_KEY:		equ 0 ; Key picked up
 	BIT_STAGE_STAR:		equ 1 ; Star picked up
+	BIT_STAGE_FRUIT:	equ 2 ; Fruit picked up
+	
+	BIT_CHAPTER_STAR:	equ 5 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 17 -1 ; DEBUG LINE
-	
-; Demo mode
-	; DEMO_MODE:
+	; DEBUG_STAGE:		equ 17 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -44,7 +44,7 @@ MAIN_INIT:
 	ld	de, globals
 	ld	bc, GLOBALS_0.SIZE
 	ldir
-
+	
 IFEXIST DEBUG_STAGE
 ; Is ESC key pressed?
 	halt
@@ -152,7 +152,7 @@ INTRO:
 ; Intro sequence #3: the darkness
 
 ; Sets the player crashed (sprite only)
-	ld	a, PLAYER_SPRITE_INTRO_PATTERN
+	ld	a, PLAYER_SPRITE_KO_PATTERN
 	ld	[player_spratr.pattern], a
 	add	4
 	ld	[player_spratr.pattern +4], a
@@ -343,15 +343,25 @@ NEW_GAME:
 	ld	de, game
 	ld	bc, GAME_0.SIZE
 	ldir
-; Initializes stage and stage_bcd
+; Initializes chapter, stage and stage_bcd
 	ld	a, [menu.selected_chapter] ; a = 0..5
+	ld	[game.chapter], a
 	add	a ; a = 0,2,..10
 	ld	hl, STAGE_SELECT.GAME_0_TABLE
 	call	ADD_HL_A
 	ldi	; .stage
 	ldi	; .stage_bcd
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; New chatper
+NEW_CHAPTER:
+; Resets the item counter of the chapter
+	xor	a
+	ld	[game.item_counter], a
+	
 ; Loads chapter song, looped
-	ld	a, [menu.selected_chapter] ; a = 0..5
+	ld	a, [game.chapter]
 	call	REPLAYER.PLAY
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -567,16 +577,31 @@ STAGE_OVER:
 	ld	a, [hl] ; game.stage
 	cp	LAST_TUTORIAL_STAGE
 	jp	z, TUTORIAL_OVER ; tutorial finished
-	cp	FIRST_TUTORIAL_STAGE
+	cp	FIRST_TUTORIAL_STAGE +1
 	jp	nc, NEW_STAGE ; yes: go to next stage
 	
+; Is the fruit picked?
+	ld	hl, game.item_counter
+	ld	a, [stage.flags]
+	bit	BIT_STAGE_FRUIT, a
+	jr	nz, .NO_FRUIT ; no
+; yes: counts the fruit
+	inc	[hl]
+.NO_FRUIT:
+
+; Is the star picked?
+	bit	BIT_STAGE_STAR, a
+	jr	nz, .NO_STAR ; no
+; yes: marks the star as picked up
+	set	BIT_CHAPTER_STAR, [hl]
+.NO_STAR:
+	
 ; Is the end of a chapter?
-	ld	d, 1 ; (initializes chapter counter)
+	ld	a, [game.stage]
 .LOOP:
 	sub	STAGES_PER_CHAPTER
 	jr	z, CHAPTER_OVER ; yes: go to "chapter over" screen
 	jp	c, NEW_STAGE ; no: go to next stage
-	inc	d ; (increases chapter counter)
 	jr	.LOOP
 ; -----------------------------------------------------------------------------
 
@@ -584,102 +609,124 @@ STAGE_OVER:
 ; Special chapter over for the tutorial stages
 TUTORIAL_OVER:
 ; Initializes the screen
-	ld	d, 0 ; (tutorial chapter)
 	call	CHAPTER_OVER.INIT
-	
-; Animation loop
-.LOOP:
-	halt
-	call	LDIRVM_SPRATR
-; Moves the player right
-	call	MOVE_PLAYER_RIGHT
-	call	UPDATE_PLAYER_ANIMATION
-	call	PUT_PLAYER_SPRITE
-; Has the player reached the right side of the screen?
-	ld	a, [player.x]
-	cp	256 -8
-	jr	nz, .LOOP ; no
-	
-; yes: Go to main menu
+; Animation loop (all the screen)
+	ld	b, 256 -8
+	call	CHAPTER_OVER.ANIMATION_LOOP
+; Go to main menu
 	call	DISSCR_FADE_OUT
 	jp	MAIN_MENU
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Chapter over (after a group of stages) "congratulations" screen
-; param d: finished chapter index (1..5)
 CHAPTER_OVER:
+; Has the player picked up the star?
+	ld	a, [game.item_counter]
+	bit	BIT_CHAPTER_STAR, a
+	jr	nz, .NO_STAR ; no
+
+; yes: Saves the star in the global flags
+	ld	a, [game.chapter]
+	ld	b, a
+; Computes the bit as: 1 << b
+	ld	a, 1
+.LOOP:
+	add	a, a
+	djnz	.LOOP
+	srl	a ; so chapter 1 has bit 0, chapter 2 bit 1, etc.
+; Saves the bit in the global flags
+	ld	hl, globals.flags
+	or	[hl]
+	ld	[hl], a
+.NO_STAR:
+
 ; Is the last chapter?
-	ld	a, d
+	ld	a, [game.chapter]
 	cp	5
 	jp	z, ENDING ; yes: goto ending
-; no: Unlocks the next chapter in the main menu
-	push	de ; (preserves chapter counter)
-IFEXIST DEMO_MODE
-ELSE
-	inc	a ; 2..5
-	ld	[globals.chapters], a
-ENDIF
-.CHAPTERS_OK:
-; Initializes the screen
-	call	.INIT
-	
-; Animation loop
-.LEFT_LOOP:
-	halt
-	call	LDIRVM_SPRATR
-; Moves the player right
-	call	MOVE_PLAYER_RIGHT
-	call	UPDATE_PLAYER_ANIMATION
-	call	PUT_PLAYER_SPRITE
-; Has the player reached the half of the screen?
-	ld	a, [player.x]
-	cp	128
-	jr	nz, .LEFT_LOOP ; no
 
-IFEXIST DEMO_MODE
-	; TODO check fruits, etc.
+; Initializes the screen and re-initializes the sprites
+	call	.INIT
+	ld	hl, SPRATR_0
+	ld	de, spratr_buffer
+	ld	bc, SPRATR_SIZE
+	ldir
 	
-; yes: Sets the player crashed (sprite only)
-	ld	a, PLAYER_SPRITE_INTRO_PATTERN
+; Animation loop (left)
+	ld	b, 128 -4 ; (half char to the left)
+	call	.ANIMATION_LOOP
+	
+; Has the player picked up the five fruits?
+	ld	a, [game.item_counter]
+	and	$0f
+	cp	STAGES_PER_CHAPTER
+	jr	nz, .GIVE_PASSWORD ; yes
+; no: Sets the player crashed (sprite only)
+	ld	a, PLAYER_SPRITE_KO_PATTERN
+	jr	.SPRITE_OK
+.GIVE_PASSWORD:
+; Gives the player a password
+	ld	hl, globals
+	call	ENCODE_PASSWORD
+; "PASSWORD:"
+	ld	hl, TXT_PASSWORD
+	ld	de, namtbl_buffer + 18 * SCR_WIDTH + TXT_PASSWORD.CENTER
+	call	PRINT_TEXT
+; " password"
+	inc	de ; " "
+	ld	hl, password
+	ld	bc, PASSWORD_SIZE
+	ldir
+; Actually shows the password
+	halt
+; Did the player also picked up the star?
+	ld	a, [game.item_counter]
+	bit	BIT_CHAPTER_STAR, a
+	jr	z, .SET_PLAYER_HAPPY ; yes
+; no: no special animation
+	xor	a
+	jr	.SPRITE_OK
+
+.SET_PLAYER_HAPPY:
+; Sets the player happy (sprite only)
+	ld	a, PLAYER_SPRITE_HAPPY_PATTERN
+.SPRITE_OK:
+; Changes the player sprite
 	ld	[player_spratr.pattern], a
 	add	4
 	ld	[player_spratr.pattern +4], a
-	call	LDIRVM_SPRATR
-
-; Dramatic pause	
-	call	WAIT_FOUR_SECONDS
-	
-; "DEMO OVER"
-	ld	hl, TXT_DEMO_OVER
-	ld	de, namtbl_buffer + 17 * SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-	
+; Shows the password or message and the sprite
 	halt
 	call	LDIRVM_NAMTBL
-	call	WAIT_TRIGGER_FOUR_SECONDS
+	call	LDIRVM_SPRATR
+; Waits the player
+	call	WAIT_TRIGGER
+	
+; Animation loop (right)
+	ld	b, 256 -8
+	call	.ANIMATION_LOOP
+
+; Fade out	
 	call	DISSCR_FADE_OUT
 	
-	jp	MAIN_MENU
-	
-ELSE ; IFEXIST DEMO_MODE
-	; TODO walk right half
-	
-; Go to next stage
-	call	DISSCR_FADE_OUT
-; Loads chapter song, looped
-	pop	af ; (restores chapter counter in a)
+; Go to next chapter
+	ld	a, [game.chapter]
 	inc	a
-	call	REPLAYER.PLAY
-; Go to next stage
-	jp	NEW_STAGE
-ENDIF ; IFEXIST DEMO_MODE ELSE
+	ld	[game.chapter], a
+; Unlocks the chapter in the menu screen
+	ld	hl, globals.chapters
+; Is greater than the currently unlocked chapter?
+	cp	[hl]
+	jr	c, .CHAPTERS_OK ; no
+; yes: unlocks the chapter
+	ld	[globals.chapters], a
+.CHAPTERS_OK:
+
+	jp	NEW_CHAPTER
 	
 ; Chapter over screen initilization
-; param d: chapter index (1..5, 0 meaning "tutorial")
 .INIT:
-	push	de ; (preserves chapter counter)
-	
 ; Stops the replayer
 	call	REPLAYER.STOP
 	
@@ -689,21 +736,27 @@ ENDIF ; IFEXIST DEMO_MODE ELSE
 	
 ; "SORRY, STEVEDORE"
 	ld	hl, TXT_CHAPTER_OVER
-	ld	de, namtbl_buffer + 6 * SCR_WIDTH
+	ld	de, namtbl_buffer + 5 * SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
 
 ; "BUT THE LIGHTHOUSE KEEPER"
 	inc	hl ; (next text)
-	ld	de, namtbl_buffer + 8 * SCR_WIDTH
+	ld	de, namtbl_buffer + 7 * SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
 
 ; Searchs for the correct text
 	inc	hl ; (points to the first text)
-	pop	de ; (restores chapter counter)
-	call	GET_TEXT.USING_D
+	ld	a, [game.chapter]
+	call	GET_TEXT
 ; "IS IN ANOTHER BUILDING!" and similar texts
-	ld	de, namtbl_buffer + 10 * SCR_WIDTH
+	ld	de, namtbl_buffer + 9 * SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
+
+; Floor
+	ld	hl, INTRO_DATA.FLOOR_CHARS
+	ld	de, namtbl_buffer + 16 *SCR_WIDTH + 11
+	ld	bc, 9 ; 9 bytes
+	ldir
 
 ; Fade in
 	call	ENASCR_FADE_IN
@@ -721,6 +774,24 @@ ENDIF ; IFEXIST DEMO_MODE ELSE
 	db	0			; .animation_delay
 	db	PLAYER_STATE_FLOOR	; .state
 	db	0			; .dy_index
+		
+; Chapter over animation loop
+; param b: target coordinate
+.ANIMATION_LOOP:
+	push	bc ; preserves target coordinate
+	halt
+	call	LDIRVM_SPRATR
+; Moves the player right
+	call	MOVE_PLAYER_RIGHT
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+; Has the player reached the target coordinate?
+	ld	a, [player.x]
+	pop	bc ; restores target coordinate
+	cp	b
+	ret	z ; yes
+; no
+	jr	.ANIMATION_LOOP
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1745,39 +1816,32 @@ UPDATE_FRAMES_PUSHING:
 ON_PLAYER_WALK_ON:
 ; Reads the tile index and NAMTBL offset and buffer pointer
 	call	GET_PLAYER_TILE_VALUE
-	push	hl ; preserves NAMTBL buffer pointer
-; Executes item action
-	sub	CHAR_FIRST_ITEM
-	ld	hl, .ITEM_JUMP_TABLE
-	call	JP_TABLE
+	push	af ; preserves tile index
 ; Removes the item in the NAMTBL buffer and VRAM
 	xor	a
-	pop	hl ; restores NAMTBL buffer pointer
-	jp	UPDATE_NAMTBL_BUFFER_AND_VPOKE
-
-.ITEM_JUMP_TABLE:
-	dw	.KEY	; key
-	dw	.STAR	; star
-	dw	.BONUS	; coin
-	dw	.BONUS	; fruit: cherry
-	dw	.BONUS	; fruit: strawberry
-	dw	.BONUS	; fruit: apple
-	dw	.BONUS	; JELLYFISH
-
-; key
-.KEY:
+	call	UPDATE_NAMTBL_BUFFER_AND_VPOKE
+; Executes item action
 	ld	hl, stage.flags
+	pop	af ; restores tile index
+	
+; Is it the key?
+	sub	CHAR_FIRST_ITEM
+	jr	nz, .NO_KEY ; no
+; yes: open the doors
 	set	BIT_STAGE_KEY, [hl]
 	jp	SET_DOORS_CHARSET.OPEN
-
-; star
-.STAR:
-	ld	hl, stage.flags
+.NO_KEY:
+	
+; Is it the star?
+	dec	a
+	jr	nz, .NO_STAR ; no
+; yes
 	set	BIT_STAGE_STAR, [hl]
 	ret
+.NO_STAR:
 
-; coins, fruits, JELLYFISH
-.BONUS:
+; It is a fruit
+	set	BIT_STAGE_FRUIT, [hl]
 	ret
 ; -----------------------------------------------------------------------------
 

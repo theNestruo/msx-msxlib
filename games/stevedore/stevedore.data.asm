@@ -54,23 +54,25 @@ TXT_CHAPTER_OVER:
 	db	"FELL INTO A CAVE?",		$00
 	db	"WAS CAPTURED BY PANTOJOS?",	$00
 	
-IFEXIST DEMO_MODE
-TXT_DEMO_OVER:
-	db	"DEMO OVER", $00
-ENDIF
+TXT_PASSWORD:
+	db	"PASSWORD:" ; PASSWORD_SIZE
+	.SIZE:		equ ($ + 1 + PASSWORD_SIZE) - TXT_PASSWORD ; "... password"
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	db	$00
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
 	db	1			; .chapters
-	db	$00			; .star_counter
+	db	$00			; .flags
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
 	db	4			; .lives
-	db	0			; .fruit_counter
+	db	0			; .item_counter
+	db	0			; .chapter
 	.SIZE:	equ $ - GAME_0
 
 ; Initial value of the stage-scoped vars
@@ -308,7 +310,8 @@ SPRTBL_PACKED:
 	PLAYER_SPRITE_COLOR_1:		equ 15
 	PLAYER_SPRITE_COLOR_2:		equ 9
 	
-	PLAYER_SPRITE_INTRO_PATTERN:	equ $50
+	PLAYER_SPRITE_KO_PATTERN:	equ $50
+	PLAYER_SPRITE_HAPPY_PATTERN:	equ $58
 
 	BAT_SPRITE_PATTERN:		equ $60
 	BAT_SPRITE_COLOR_1:		equ 4
