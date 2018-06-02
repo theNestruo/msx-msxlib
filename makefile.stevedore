@@ -58,7 +58,8 @@ DATAS=\
 	$(GAME_PATH)\sfx\warehouse.pt3.hl.$(PACK_EXTENSION) \
 	$(GAME_PATH)\sfx\ship.pt3.hl.$(PACK_EXTENSION) \
 	$(GAME_PATH)\sfx\jungle.pt3.hl.$(PACK_EXTENSION) \
-	$(GAME_PATH)\sfx\cave.pt3.hl.$(PACK_EXTENSION)
+	$(GAME_PATH)\sfx\cave.pt3.hl.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sfx\test.afb
 	
 
 DATAS_INTERMEDIATE=\
@@ -175,7 +176,9 @@ SRCS_MSXLIB=\
 	lib\game\enemy_x.asm \
 	lib\game\enemy.ram.asm \
 	lib\game\bullet.asm \
-	lib\game\bullet.ram.asm
+	lib\game\bullet.ram.asm \
+	lib\etc\password.asm \
+	lib\etc\password.ram.asm
 
 SRCS_LIBEXT=\
 	libext\ayFX-replayer\ayFX-ROM.tniasm.ASM \

@@ -20,7 +20,7 @@ ram_start:
 ; NAMBTL and SPRATR buffers
 	include	"lib\msx\vram.ram.asm"
 	
-; Replayer vars and buffers: WYZPlayer v0.47c-based implementation
+; Replayer vars and buffers
 	include "lib\msx\replayer.ram.asm"
 ; -----------------------------------------------------------------------------
 
@@ -33,6 +33,11 @@ ram_start:
 	
 ; Bullet array
 	include	"lib\game\bullet.ram.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Password encoding/decoding vars
+	include "lib\etc\password.ram.asm"
 ; -----------------------------------------------------------------------------
 
 ; EOF
