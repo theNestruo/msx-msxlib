@@ -34,9 +34,11 @@ RESET_BULLETS:
 ; -----------------------------------------------------------------------------
 ; Initializes a new from the enemy coordinates in the first empty bullet slot
 ; param hl: pointer to the new bullet data (pattern, color, speed and direction)
+; param bc: (x, y) offset of the bullet coordinates from the enemy coordinates
 ; touches: a, hl, de, bc
 INIT_BULLET_FROM_ENEMY:
 	push	hl ; preserves source
+	push	bc ; preserves offset
 ; Search for the first empty enemy slot
 	ld	hl, bullets
 	ld	bc, bullet.SIZE
@@ -53,21 +55,19 @@ INIT_BULLET_FROM_ENEMY:
 	push	ix ; hl = ix, de = empy bullet slot
 	pop	de
 	ex	de, hl
+	pop	bc ; restores offsets
 ; .y
-IFDEF CFG_ENEMY_TO_BULLET_Y_OFFSET
-IF CFG_ENEMY_TO_BULLET_Y_OFFSET = 0
-	ldi
-ELSE
-	ld	a, [hl]
+	ld	a, [hl] ; [de++] = [hl++] + c (y offset)
 	inc	hl
-	add	CFG_ENEMY_TO_BULLET_Y_OFFSET
+	add	c
 	ld	[de], a
 	inc	de
-ENDIF
-ELSE
-	ldi
-ENDIF
-	ldi	; .x
+; .x
+	ld	a, [hl] ; [de++] = [hl++] + b (x offset)
+	inc	hl
+	add	b
+	ld	[de], a
+	inc	de
 ; Stores the pattern, color and type (speed and direction)
 	pop	hl ; restores source in hl
 	ldi	; .pattern

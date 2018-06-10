@@ -24,7 +24,7 @@
 	BIT_CHAPTER_STAR:	equ 5 ; Star picked up
 
 ; Debug
-	; DEBUG_STAGE:		equ 17 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 12 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -90,7 +90,7 @@ IFEXIST TXT_COPYRIGHT
 	call	DISSCR_FADE_OUT
 ENDIF ; IFDEF TXT_COPYRIGHT
 	
-; Is SEL key pressed?
+; Is SELECT key pressed?
 	halt
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
@@ -322,6 +322,14 @@ MAIN_MENU_LOOP:
 	ld	a, [input.edge]
 	bit	BIT_TRIGGER_A, a
 	jr	nz, .OK
+; Are CTRL + K key pressed?
+	ld	hl, NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	bit	1, [hl]
+	jr	nz, .NO_PASSWORD ; no
+	ld	hl, NEWKEY + 4	; R Q P O N M L K
+	bit	0, [hl]
+	jp	z, ENTER_PASSWORD ; yes
+.NO_PASSWORD:
 ; Else, updates selection
 	call	MAIN_MENU_INPUT
 	jr	MAIN_MENU_LOOP
@@ -799,6 +807,42 @@ ENDING:
 	jr	$
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+ENTER_PASSWORD:
+; Clears the main menu screen
+	call	RESET_PASSWORD
+	
+; Clears the main menu screen
+	xor	a
+	ld	hl, namtbl_buffer + 6 *SCR_WIDTH
+	ld	[hl], a
+	ld	de, namtbl_buffer + 6 *SCR_WIDTH +1
+	ld	bc, 17 *SCR_WIDTH -1 ; 22 - 6
+	ldir
+; Removes sprites
+	call	CLS_SPRATR
+	
+; Prints "INPUT PASSWORD:"
+	ld	hl, TXT_INPUT_PASSWORD
+	ld	de, namtbl_buffer + 6 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+; Prints default password
+	ld	hl, password
+	ld	de, namtbl_buffer + 8 *SCR_WIDTH + (SCR_WIDTH - PASSWORD_SIZE)/2
+	ld	bc, PASSWORD_SIZE
+	ldir
+	
+; Fade in-out
+	halt
+	call	LDIRVM_SPRATR
+	call	LDIRVM_NAMTBL_FADE_INOUT
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+ENTER_PASSWORD_LOOP:
+
+	jr	ENTER_PASSWORD_LOOP
+; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================
@@ -1250,10 +1294,6 @@ NEW_SKELETON:
 ; Initializes a new left trap
 NEW_LEFT_TRAP:
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-; (ensures the bullets start outside the tile)
-	ld	a, d
-	sub	5
-	ld	d, a
 	ld	hl, .LEFT_TRAP_DATA
 	jp	INIT_ENEMY
 	
@@ -1265,12 +1305,11 @@ NEW_LEFT_TRAP:
 	dw	.LEFT_TRAP_BEHAVIOUR
 	
 .LEFT_TRAP_BEHAVIOUR:
-; Is the player in overlapping y coordinates...
+; Is the player to the left and in overlapping y coordinates?
 	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.PLAYER_LEFT
 	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
 	db	PLAYER_BULLET_Y_SIZE
-; ... and to the left?
-	dw	WAIT_ENEMY_HANDLER.PLAYER_LEFT
 ; Shoot left
 	dw	TRIGGER_ENEMY_HANDLER.RESET
 	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
@@ -1279,6 +1318,8 @@ NEW_LEFT_TRAP:
 ; Enemy handler that shoots a bullet to the left
 .SHOOT_LEFT_HANDLER:
 	ld	hl, .ARROW_LEFT_DATA
+	ld	b, -1 ; (ensures the bullets start outside the tile)
+	ld	c, -8
 	call	INIT_BULLET_FROM_ENEMY
 ; ret 0 (halt)
 	xor	a
@@ -1294,10 +1335,6 @@ NEW_LEFT_TRAP:
 ; Initializes a new right trap
 NEW_RIGHT_TRAP:
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-; (ensures the bullets start outside the tile)
-	ld	a, d
-	add	4
-	ld	d, a
 	ld	hl, .RIGHT_TRAP_DATA
 	jp	INIT_ENEMY
 
@@ -1309,12 +1346,11 @@ NEW_RIGHT_TRAP:
 	dw	.RIGHT_TRAP_BEHAVIOUR
 	
 .RIGHT_TRAP_BEHAVIOUR:
-; Is the player in overlapping y coordinates...
+; Is the player to the right and in overlapping y coordinates?
 	dw	TRIGGER_ENEMY_HANDLER
+	dw	WAIT_ENEMY_HANDLER.PLAYER_RIGHT
 	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
 	db	PLAYER_BULLET_Y_SIZE
-; ... and to the right?
-	dw	WAIT_ENEMY_HANDLER.PLAYER_RIGHT
 ; Shoot right
 	dw	TRIGGER_ENEMY_HANDLER.RESET
 	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
@@ -1323,6 +1359,8 @@ NEW_RIGHT_TRAP:
 ; Enemy handler that shoots a bullet to the right
 .SHOOT_RIGHT_HANDLER:
 	ld	hl, .ARROW_RIGHT_DATA
+	ld	b, 0
+	ld	c, -8
 	call	INIT_BULLET_FROM_ENEMY
 ; ret 0 (halt)
 	xor	a
@@ -1463,7 +1501,70 @@ NEW_PIRATE:
 	db	PIRATE_SPRITE_PATTERN
 	db	PIRATE_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
-	dw	ENEMY_TYPE_PACER
+	dw	.PIRATE_BEHAVIOUR
+	
+.PIRATE_BEHAVIOUR:
+; The enemy walks ahead
+	dw	GOSUB_ENEMY_HANDLER
+	dw	.PIRATE_BEHAVIOUR_SUB
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER.NOTIFY
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; then pauses, turning around
+	dw	GOSUB_ENEMY_HANDLER
+	dw	.PIRATE_BEHAVIOUR_SUB
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER.TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	.PIRATE_BEHAVIOUR ; (restart)
+	
+.PIRATE_BEHAVIOUR_SUB:
+	dw	TRIGGER_ENEMY_HANDLER
+; Is the player ahead of the enemy and in overlapping x coordinates?
+	dw	WAIT_ENEMY_HANDLER.PLAYER_AHEAD
+	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
+	db	PLAYER_BULLET_Y_SIZE
+; Shoot
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	dw	.SHOOT_AHEAD_HANDLER
+	
+; Enemy handler that shoots a knife ahead (left or right)
+.SHOOT_AHEAD_HANDLER:
+; Is the enemy looking to the left?
+	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	jr	z, .SHOOT_RIGHT ; no
+; yes: Shoots to the left
+	ld	hl, .KNIFE_LEFT_DATA
+	jr	.SHOOT
+; Shoots to the right
+.SHOOT_RIGHT:
+	ld	hl, .KNIFE_RIGHT_DATA
+	; jr	.SHOOT ; falls through
+; Initializes the bullet
+.SHOOT:
+	ld	b, 0
+	ld	c, -4
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
+	ret
+	
+.KNIFE_LEFT_DATA:
+	db	KNIFE_LEFT_SPRITE_PATTERN
+	db	KNIFE_SPRITE_COLOR
+	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
+	
+.KNIFE_RIGHT_DATA:
+	db	KNIFE_RIGHT_SPRITE_PATTERN
+	db	KNIFE_SPRITE_COLOR
+	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1555,6 +1656,8 @@ NEW_JELLYFISH:
 ; JELLYFISH: the JELLYFISH shoots oil up
 .SHOOT_UP_HANDLER:
 	ld	hl, .SPARK_UP_DATA
+	ld	b, 0
+	ld	c, -12
 	call	INIT_BULLET_FROM_ENEMY
 ; ret 0 (halt)
 	xor	a

@@ -7,11 +7,11 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-TXT_COPYRIGHT:
-	db	"STEVEDORE", $00
-	db	"@ 2018 THENESTRUO = WONDER", $00
-	db	"PRIVATE BETA: DO NOT PUBLISH", $00
-	db	$00
+; TXT_COPYRIGHT:
+	; db	"STEVEDORE", $00
+	; db	"@ 2018 THENESTRUO = WONDER", $00
+	; db	"PRIVATE BETA: DO NOT PUBLISH", $00
+	; db	$00
 	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -53,12 +53,16 @@ TXT_CHAPTER_OVER:
 	db	"SHIPWRECKED?",			$00
 	db	"FELL INTO A CAVE?",		$00
 	db	"WAS CAPTURED BY PANTOJOS?",	$00
+
+TXT_INPUT_PASSWORD:
+	db	"INPUT "
 	
 TXT_PASSWORD:
-	db	"PASSWORD:" ; PASSWORD_SIZE
+	db	"PASSWORD:" ;  + " " + PASSWORD_SIZE
 	.SIZE:		equ ($ + 1 + PASSWORD_SIZE) - TXT_PASSWORD ; "... password"
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 	db	$00
+
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

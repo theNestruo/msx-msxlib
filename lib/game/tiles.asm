@@ -145,17 +145,9 @@ GET_TILE_FLAGS:
 ; ret a: OR-ed tile flags
 ; touches: hl, bc, de
 GET_V_TILE_FLAGS:
-; Calculates how many pixels to check
-	ld	a, e
-	and	$07	; pixels = y mod 8 (sub tile)
-	add	b	;	... +height
-	dec	a	;	... -1
 ; Calculates how many tiles to check
-	srl	a ; tiles = pixels / 8
-	srl	a
-	srl	a
-	inc	a ;	... +1
-	ld	b, a ; number of tiles in b
+	ld	a, e ; from top
+	call	HOW_MANY_TILES
 ; First tile
 	call	GET_TILE_VALUE ; also: NAMTBL buffer pointer in hl
 ; Only one tile?
@@ -169,6 +161,26 @@ GET_V_TILE_FLAGS:
 .LOOP:
 	ld	c, a ; current flags in c
 	push	bc ; preserves counter and current flags
+; Reads the next tile
+	call	.GET_NEXT_TILE_FLAGS
+; ; Moves pointer one tile down
+	; ld	a, SCR_WIDTH
+	; add	e ; de += a => de += 32
+	; ld	e, a
+	; adc	d
+	; sub	e
+	; ld	d, a
+; ; Reads other tile
+	; ld	a, [de]
+	; call	GET_TILE_FLAGS
+	pop	bc ; restores counter and previous flags
+; OR tile flags
+	or	c
+; Next tile
+	djnz	.LOOP
+	ret
+	
+.GET_NEXT_TILE_FLAGS:
 ; Moves pointer one tile down
 	ld	a, SCR_WIDTH
 	add	e ; de += a => de += 32
@@ -178,13 +190,7 @@ GET_V_TILE_FLAGS:
 	ld	d, a
 ; Reads other tile
 	ld	a, [de]
-	call	GET_TILE_FLAGS
-	pop	bc ; restores counter and previous flags
-; OR tile flags
-	or	c
-; Next tile
-	djnz	.LOOP
-	ret
+	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -194,8 +200,74 @@ GET_V_TILE_FLAGS:
 ; ret a: OR-ed tile flags
 ; touches: hl, bc, de
 GET_H_TILE_FLAGS:
+.OR:
+; Calculates how many tiles to check and reads the first tile
+	call	.FIRST
+; Only one tile?
+	dec	b
+	jp	z, GET_TILE_FLAGS ; yes
+; no: reads first tile flags
+	ex	de, hl ; NAMTBL buffer pointer in de
+	call	GET_TILE_FLAGS
+; Reads each other tile and ORs the tile flags
+.OR_LOOP:
+	ld	c, a ; current flags in c
+	call	.NEXT
+	or	c
+	djnz	.OR_LOOP
+	ret
+
+; Returns the AND-ed flags of an horizontal serie of tiles
+; param de: left pixel coordinates (x, y)
+; param b: width in pixels
+; ret a: AND-ed tile flags
+; touches: hl, bc, de
+.AND:
+; Calculates how many tiles to check and reads the first tile
+	call	.FIRST
+; Only one tile?
+	dec	b
+	jp	z, GET_TILE_FLAGS ; yes
+; no: reads first tile flags
+	ex	de, hl ; NAMTBL buffer pointer in de
+	call	GET_TILE_FLAGS
+; Reads each other tile and ORs the tile flags
+.AND_LOOP:
+	ld	c, a ; current flags in c
+	call	.NEXT
+	and	c
+	djnz	.AND_LOOP
+	ret
+
+; ret a: first tile value
+; ret b: number of tiles to check
+; ret hl: NAMTBL buffer pointer
+.FIRST:
+; Calculates how many tiles to check
+	ld	a, d ; forom left
+	call	HOW_MANY_TILES
+; First tile
+	jp	GET_TILE_VALUE ; also: NAMTBL buffer pointer in hl
+
+; ret a: next tile flags
+.NEXT:
+	push	bc ; preserves counter and current flags
+; Moves pointer one tile right
+	inc	de
+; Reads other tile
+	ld	a, [de]
+	call	GET_TILE_FLAGS
+	pop	bc ; restores counter and previous flags
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Calculates how many pixels to check
-	ld	a, d
+; param a: left/top pixel coordinate
+; param b: width/height in pixels
+; ret b: number of tiles to check
+HOW_MANY_TILES:
+; Calculates how many pixels to check
 	and	$07	; pixels = x mod 8 (sub tile)
 	add	b	;     ... +height
 	dec	a	;     ... -1
@@ -205,30 +277,8 @@ GET_H_TILE_FLAGS:
 	srl	a
 	inc	a ;	... +1
 	ld	b, a ; number of tiles in b
-; First tile
-	call	GET_TILE_VALUE ; also: NAMTBL buffer pointer in hl
-; Only one tile?
-	dec	b
-	jp	z, GET_TILE_FLAGS ; yes
-	
-; no: reads first tile flags
-	ex	de, hl ; NAMTBL buffer pointer in de
-	call	GET_TILE_FLAGS
-; For each other tile
-.LOOP:
-	ld	c, a ; current flags in c
-	push	bc ; preserves counter and current flags
-; Moves pointer one tile right
-	inc	de
-; Reads other tile
-	ld	a, [de]
-	call	GET_TILE_FLAGS
-	pop	bc ; restores counter and previous flags
-; OR tile flags
-	or	c
-; Next tile
-	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------
+
 
 ; EOF

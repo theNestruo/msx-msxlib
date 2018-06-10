@@ -287,10 +287,6 @@ PLAYER_DY_TABLE:
 	CFG_BULLET_WIDTH:		equ 4
 	CFG_BULLET_HEIGHT:		equ 4
 
-; Offsets to create a new bullet from an emey position (pixels)
-	CFG_ENEMY_TO_BULLET_X_OFFSET:	equ 0
-	CFG_ENEMY_TO_BULLET_Y_OFFSET:	equ -8
-
 ; Bullet related routines (generic)
 ; Bullet-tile helper routines
 	include	"lib/game/bullet.asm"

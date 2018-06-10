@@ -55,7 +55,7 @@ IFEXIST ON_PLAYER_WALK_ON
 ENDIF
 	
 IFEXIST ON_PLAYER_WIDE_ON
-; Reads the OR-ed flags of the tiles at the player coordinates
+; Reads the AND-ed flags of the tiles at the player coordinates
 	call	GET_PLAYER_TILE_FLAGS_WIDE
 ; Has wide tile collision (player width) bit?
 	bit	BIT_WORLD_WIDE_ON, a
@@ -122,7 +122,7 @@ UPDATE_PLAYER_FLOOR:
 	
 .CHECK_UPSTAIRS:
 ; Trying to get on stairs upstairs
-	call	GET_PLAYER_TILE_FLAGS
+	call	GET_PLAYER_TILE_FLAGS_WIDE
 	jr	.CHECK_STAIRS
 	
 .CHECK_DOWNSTAIRS:
@@ -157,7 +157,7 @@ UPDATE_PLAYER_STAIRS:
 ; Moves horizontally (no animation)
 	call	MOVE_PLAYER_LR
 ; Moved out of the stairs? (sides)
-	call	GET_PLAYER_TILE_FLAGS
+	call	GET_PLAYER_TILE_FLAGS_WIDE
 	bit	BIT_WORLD_STAIRS, a
 	jr	z, .OFF ; yes
 	

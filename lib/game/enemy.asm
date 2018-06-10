@@ -112,12 +112,12 @@ UPDATE_ENEMIES:
 ; For each enemy in the array
 	ld	ix, enemies
 	ld	b, CFG_ENEMY_COUNT
-.ENEMY_LOOP:
+.LOOP:
 	push	bc ; preserves counter in b
 ; Is the enemy slot empty?
 	xor	a ; (marker value: y = 0)
 	cp	[ix + enemy.y]
-	jp	z, .SKIP_ENEMY ; yes
+	jp	z, .NEXT ; yes
 ; no: update enemy
 
 IFEXIST BIT_ENEMY_SOLID
@@ -153,35 +153,44 @@ IFEXIST BIT_ENEMY_SOLID
 .NOT_KILLED:
 ENDIF ; IFEXIST BIT_WORLD_SOLID
 
+; Processes the state handlers of the current enemy
+	call	PROCESS_ENEMY_HANDLERS
+
+; Continues with the next enemy
+.NEXT:
+	ld	bc, enemy.SIZE
+	add	ix, bc
+	pop	bc ; restores counter
+	djnz	.LOOP
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Processes the state handlers of the current enemy
+; param ix: pointer to the current enemy
+PROCESS_ENEMY_HANDLERS:
 ; Dereferences the state pointer
 	ld	l, [ix + enemy.state_l]
 	ld	h, [ix + enemy.state_h]
 	push	hl ; iy = hl
 	pop	iy
-.HANDLER_LOOP:
+.LOOP:
 ; Invokes the current state handler
 	ld	l, [iy + ENEMY_STATE.HANDLER_L]
 	ld	h, [iy + ENEMY_STATE.HANDLER_H]
 	call	JP_HL ; emulates "call [hl]"
 ; Has the handler finished?
 	or	a
-	jr	z, .SKIP_ENEMY ; yes: the enemy update process has finished
-; Skips to the next state handler
+	ret	z ; yes: the enemy update process has finished
+; no: Continues with the next state handler
 	ld	c, a ; ld bc, a
 	rla
 	sbc	a, a
 	ld	b, a
 	add	iy, bc ; iy += bc
-	jp	.HANDLER_LOOP
-	
-.SKIP_ENEMY:
-; Skips to the next enemy
-	ld	bc, enemy.SIZE
-	add	ix, bc
-	pop	bc ; restores counter
-	djnz	.ENEMY_LOOP
-	ret
+	jr	.LOOP
 ; -----------------------------------------------------------------------------
+
 
 ;
 ; =============================================================================
@@ -208,6 +217,25 @@ CONTINUE_ENEMY_HANDLER:
 	ret
 .ONE_ARG:
 	ld	a, 3
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+GOSUB_ENEMY_HANDLER:
+	ld	b, b
+	jr	$ + 2
+	
+	push	iy ; preserves the current enemy state
+; no: Continues with the next state handler
+	ld	c, [iy + ENEMY_STATE.ARG_0]
+	ld	b, [iy + ENEMY_STATE.ARG_1]
+	push	bc
+	pop	iy
+	; add	iy, bc ; iy += bc
+	call	PROCESS_ENEMY_HANDLERS.LOOP
+	pop	iy ; restores the current enemy state
+; ret continue (3)
+	ld	a, 4
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -485,6 +513,78 @@ WAIT_ENEMY_HANDLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is ahead of the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is ahead of the enemy, halt (0) otherwise
+.PLAYER_AHEAD:
+	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	jr	z, .PLAYER_RIGHT
+	; jr	.PLAYER_LEFT ; falls through
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is left of the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is left of the enemy, halt (0) otherwise
+.PLAYER_LEFT:
+; Is the player to the left?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; no: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is right of the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is right of the enemy, halt (0) otherwise
+.PLAYER_RIGHT:
+; Is the player to the right?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jp	nc, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; no: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is above the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is above the enemy, halt (0) otherwise
+.PLAYER_ABOVE:
+; Is the player above?
+	ld	a, [player.y]
+	cp	[ix + enemy.y]
+	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; no: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is below the enemy
+; param ix: pointer to the current enemy
+; param iy: pointer to the current enemy state
+; ret a: continue (2) if the player is below the enemy, halt (0) otherwise
+.PLAYER_BELOW:
+; Is the player below?
+	ld	a, [player.y]
+	cp	[ix + enemy.y]
+	jp	nc, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
+; no: halt (ret 0)
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
+
+
+; -----------------------------------------------------------------------------
 ; Wait X collision state handler:
 ; waits until the player and the enemy are in overlapping x coordinates
 ; param ix: pointer to the current enemy
@@ -512,66 +612,6 @@ WAIT_ENEMY_HANDLER:
 	call	CHECK_PLAYER_COLLISION.Y
 	jp	c, CONTINUE_ENEMY_HANDLER.ONE_ARG ; ret 3 (continue)
 ; ret 0 (halt)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is left of the enemy
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret a: continue (2) if the player is left of the enemy, halt (0) otherwise
-.PLAYER_LEFT:
-; Is the player to the left?
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
-; yes: halt (ret 0)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is right of the enemy
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret a: continue (2) if the player is right of the enemy, halt (0) otherwise
-.PLAYER_RIGHT:
-; Is the player to the right?
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jp	nc, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
-; yes: halt (ret 0)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is above the enemy
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret a: continue (2) if the player is above the enemy, halt (0) otherwise
-.PLAYER_ABOVE:
-; Is the player above?
-	ld	a, [player.y]
-	cp	[ix + enemy.y]
-	jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
-; yes: halt (ret 0)
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is below the enemy
-; param ix: pointer to the current enemy
-; param iy: pointer to the current enemy state
-; ret a: continue (2) if the player is below the enemy, halt (0) otherwise
-.PLAYER_BELOW:
-; Is the player below?
-	ld	a, [player.y]
-	cp	[ix + enemy.y]
-	jp	nc, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
-; yes: halt (ret 0)
 	xor	a
 	ret
 ; -----------------------------------------------------------------------------

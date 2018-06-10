@@ -251,14 +251,6 @@ GET_PLAYER_TILE_FLAGS_ABOVE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles at the player coordinates
-; (one pixel above the player logical coordinates, full width)
-GET_PLAYER_TILE_FLAGS_WIDE:
-	ld	a, -1
-	jr	GET_PLAYER_H_TILE_FLAGS
-; -----------------------------------------------------------------------------
-	
-; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles under the player
 ; when aligned to a tile boundary
 ; ret a: OR-ed tile flags
@@ -310,6 +302,34 @@ GET_PLAYER_H_TILE_FLAGS:
 ; Player width
 	ld	b, CFG_PLAYER_WIDTH
 	jp	GET_H_TILE_FLAGS
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the AND-ed flags of the tiles at the player coordinates
+; (one pixel above the player logical coordinates, full width)
+GET_PLAYER_TILE_FLAGS_WIDE:
+	ld	a, -1
+	; jr	GET_PLAYER_H_TILE_FLAGS.AND ; falls through
+; ------VVVV----falls through--------------------------------------------------
+	
+; -----------------------------------------------------------------------------
+; Returns the AND-ed flags of an horizontal serie of tiles
+; relative to the player position
+; param a: y-offset from the player logical coordinates
+; ret a: AND-ed tile flags
+GET_PLAYER_H_TILE_FLAGS.AND:
+; Player coordinates
+	ld	de, [player.xy]
+; y += dy
+	add	e
+	ld	e, a
+; x += PLAYER_X_OFFSET
+	ld	a, PLAYER_BOX_X_OFFSET
+	add	d
+	ld	d, a
+; Player width
+	ld	b, CFG_PLAYER_WIDTH
+	jp	GET_H_TILE_FLAGS.AND
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

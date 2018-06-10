@@ -164,7 +164,29 @@
 	BAKCLR:	equ $f3ea ; Background colour
 	BDRCLR:	equ $f3eb ; Border colour
 	OLDKEY:	equ $fbda ; Previous state of the keyboard matrix (11b)
+	; OLDKEY	; 7 6 5 4 3 2 1 0
+	; OLDKEY +1	; ; ] [ \ = - 9 8
+	; OLDKEY +2	; B A pound / . , ` '
+	; OLDKEY +3	; J I H G F E D C
+	; OLDKEY +4	; R Q P O N M L K
+	; OLDKEY +5	; Z Y X W V U T S
+	; OLDKEY +6	; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	; OLDKEY +7	; CR SEL BS STOP TAB ESC F5 F4
+	; OLDKEY +8	; RIGHT DOWN UP LEFT DEL INS HOME SPACE
+	; OLDKEY +9	; 4 3 2 1 0 none none none
+	; OLDKEY +10	; . , - 9 8 7 6 5
 	NEWKEY:	equ $fbe5 ; Current state of the keyboard matrix (11b)
+	; NEWKEY	; 7 6 5 4 3 2 1 0
+	; NEWKEY +1	; ; ] [ \ = - 9 8
+	; NEWKEY +2	; B A pound / . , ` '
+	; NEWKEY +3	; J I H G F E D C
+	; NEWKEY +4	; R Q P O N M L K
+	; NEWKEY +5	; Z Y X W V U T S
+	; NEWKEY +6	; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	; NEWKEY +7	; CR SEL BS STOP TAB ESC F5 F4
+	; NEWKEY +8	; RIGHT DOWN UP LEFT DEL INS HOME SPACE
+	; NEWKEY +9	; 4 3 2 1 0 none none none
+	; NEWKEY +10	; . , - 9 8 7 6 5
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
 	INTFLG:	equ $fc9b ; STOP flag (0 = none, 3 = CTRL+STOP, 4 = STOP)
 	JIFFY:	equ $fc9e ; Software clock; each VDP interrupt gets increased by 1

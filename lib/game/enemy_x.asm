@@ -94,9 +94,9 @@ ENEMY_TYPE_FALLER:
 .TRIGGERED:
 ; The enemy waits until the player overlaps x coordinate
 	dw	PUT_ENEMY_SPRITE
+	dw	WAIT_ENEMY_HANDLER.PLAYER_BELOW
 	dw	WAIT_ENEMY_HANDLER.X_COLLISION
 	db	PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
-	dw	WAIT_ENEMY_HANDLER.PLAYER_BELOW
 	dw	SET_NEW_STATE_HANDLER.NEXT
 ; then the enemy falls onto the ground
 	dw	PUT_ENEMY_SPRITE_ANIM
@@ -127,9 +127,9 @@ ENEMY_TYPE_RISER:
 .TRIGGERED:
 ; The enemy waits until the player overlaps x coordinate
 	dw	PUT_ENEMY_SPRITE
+	dw	WAIT_ENEMY_HANDLER.PLAYER_ABOVE
 	dw	WAIT_ENEMY_HANDLER.X_COLLISION
 	db	PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
-	dw	WAIT_ENEMY_HANDLER.PLAYER_ABOVE
 ; then the enemy rises up to the ceiling
 	dw	PUT_ENEMY_SPRITE_ANIM
 	dw	RISER_ENEMY_HANDLER
@@ -219,7 +219,6 @@ ENEMY_TYPE_PACER:
 	db	(1 << BIT_WORLD_FLOOR)
 	dw	WALKER_ENEMY_HANDLER
 ; then turns around and continues
-	dw	TURN_ENEMY
 	dw	END_ENEMY_HANDLER
 ; -----------------------------------------------------------------------------
 
