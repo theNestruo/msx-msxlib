@@ -14,7 +14,7 @@ globals:
 .chapters:
 	rb	1 ; (unlocked chapters)
 .flags:
-	rb	1 ; 00054321: if the star was picked in each chapter
+	rb	1 ; if the star was picked in chapter 00054321 (bitmap)
 
 ; Game vars (i.e.: vars from start to game over)
 game:
@@ -59,6 +59,9 @@ menu:
 	rb	2 ; Warehouse (tutorial)
 ; The actual selection
 .selected_chapter:
+	rb	1
+	
+input.trigger_b_framecounter:
 	rb	1
 ; -----------------------------------------------------------------------------
 

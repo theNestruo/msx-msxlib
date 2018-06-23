@@ -8,6 +8,9 @@
 ; -----------------------------------------------------------------------------
 ; Number of frames required to actually push an object
 	FRAMES_TO_PUSH:		equ 12
+	
+; Number of frames to detect trigger B hold
+	FRAMES_TO_TRIGGER_B:	equ 150 ; (~3 seconds)
 
 ; Number of stages per chapter
 	STAGES_PER_CHAPTER:	equ 5
@@ -24,7 +27,7 @@
 	BIT_CHAPTER_STAR:	equ 5 ; Star picked up
 
 ; Debug
-	DEBUG_STAGE:		equ 12 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 22 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -46,11 +49,6 @@ MAIN_INIT:
 	ldir
 	
 IFEXIST DEBUG_STAGE
-; Is ESC key pressed?
-	halt
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	2, [hl]
-	jr	z, .DONT_USE_DEBUG_STAGE ; yes: do not go to debug stage
 ; Loads debug stage
 	ld	a, DEBUG_STAGE
 	ld	[game.stage], a
@@ -58,7 +56,6 @@ IFEXIST DEBUG_STAGE
 	call	ENASCR_NO_FADE
 ; Directly to game loop
 	jp	GAME_LOOP
-.DONT_USE_DEBUG_STAGE:
 ENDIF
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -91,9 +88,7 @@ IFEXIST TXT_COPYRIGHT
 ENDIF ; IFDEF TXT_COPYRIGHT
 	
 ; Is SELECT key pressed?
-	halt
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	6, [hl]
+	call	CHECK_SELECT_KEY
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -323,13 +318,8 @@ MAIN_MENU_LOOP:
 	bit	BIT_TRIGGER_A, a
 	jr	nz, .OK
 ; Are CTRL + K key pressed?
-	ld	hl, NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
-	bit	1, [hl]
-	jr	nz, .NO_PASSWORD ; no
-	ld	hl, NEWKEY + 4	; R Q P O N M L K
-	bit	0, [hl]
+	call	CHECK_CTRL_K_KEYS
 	jp	z, ENTER_PASSWORD ; yes
-.NO_PASSWORD:
 ; Else, updates selection
 	call	MAIN_MENU_INPUT
 	jr	MAIN_MENU_LOOP
@@ -478,7 +468,8 @@ ENDIF
 	call	CHECK_PLAYER_BULLETS_COLLISIONS
 	
 ; Extra input
-	call	.CTRL_STOP_CHECK
+	call	BREAKX
+	call	c, .ON_CTRL_STOP ; yes
 	
 ; Check exit condition
 	ld	a, [player.state]
@@ -492,11 +483,7 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-.CTRL_STOP_CHECK:
-; Check CTRL+STOP
-	call	BREAKX
-	ret	nc ; no CTRL+STOP
-	
+.ON_CTRL_STOP:
 ; Has the player already finished?
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
@@ -519,9 +506,7 @@ PLAYER_OVER:
 	call	DISSCR_FADE_OUT
 
 ; Is STOP key still pressed?
-	halt
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	4, [hl]
+	call	CHECK_STOP_KEY
 	jp	z, GAME_OVER ; yes: go to main menu
 	
 ; Is it a tutorial stage?
@@ -826,9 +811,24 @@ ENTER_PASSWORD:
 	ld	hl, TXT_INPUT_PASSWORD
 	ld	de, namtbl_buffer + 6 *SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
+
+; DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE
+	inc	hl
+	ld	de, namtbl_buffer + 9 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	inc	hl
+	ld	de, namtbl_buffer + 11 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	inc	hl
+	ld	de, namtbl_buffer + 13 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	inc	hl
+	ld	de, namtbl_buffer + 15 *SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	
 ; Prints default password
 	ld	hl, password
-	ld	de, namtbl_buffer + 8 *SCR_WIDTH + (SCR_WIDTH - PASSWORD_SIZE)/2
+	ld	de, namtbl_buffer + 18 *SCR_WIDTH + (SCR_WIDTH - PASSWORD_SIZE)/2
 	ld	bc, PASSWORD_SIZE
 	ldir
 	
@@ -842,6 +842,82 @@ ENTER_PASSWORD:
 ENTER_PASSWORD_LOOP:
 
 	jr	ENTER_PASSWORD_LOOP
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; ret z: yes
+; ret nz: no
+CHECK_SELECT_KEY:
+; Is SELECT key pressed?
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	6, [hl]
+; ret z/nz
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; ret z: yes
+; ret nz: no
+CHECK_CTRL_K_KEYS:
+; Are CTRL + K key pressed?
+	ld	hl, NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	bit	1, [hl]
+	jr	nz, CHECK_TRIGGER_B_HOLD ; no: also checks trigger B hold
+	ld	hl, NEWKEY + 4	; R Q P O N M L K
+	bit	0, [hl]
+	ret	z ; yes: ret z
+; no: also checks trigger B hold
+	jr	CHECK_TRIGGER_B_HOLD
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; ret z: yes
+; ret nz: no
+CHECK_STOP_KEY:
+; Is STOP key pressed?
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	4, [hl]
+	ret	z ; yes: ret z
+; no: also checks trigger B hold
+	jr	CHECK_TRIGGER_B_HOLD
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; ret z: yes
+; ret nz: no
+CHECK_CTRL_STOP_KEYS:
+; Are CTRL and STOP keys pressed?
+	call	BREAKX
+	jp	c, RET_ZERO ; yes: ret z
+; no: also checks trigger B hold
+	; jp	CHECK_TRIGGER_B_HOLD ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; ret z: yes
+; ret nz: no
+CHECK_TRIGGER_B_HOLD:
+; Is trigger B hold?
+	ld	a, [input.level]
+	bit	BIT_TRIGGER_B, a
+	ld	hl, input.trigger_b_framecounter
+	jr	nz, .COUNT ; yes
+; no: resets the framecounter
+	ld	[hl], 0
+; ret nz
+	or	-1
+	ret
+	
+.COUNT:
+; Has been hold for enough frames??
+	ld	a, [hl]
+	cp	FRAMES_TO_TRIGGER_B
+	ret	z ; yes: ret z
+; no: increases the framecounter
+	inc	[hl]
+; ret nz
+	or	-1
+	ret
 ; -----------------------------------------------------------------------------
 
 ;
@@ -1205,6 +1281,10 @@ POST_PROCESS_STAGE_ELEMENT:
 	jp	z, NEW_SPIDER ; '8'
 	dec	a
 	jp	z, NEW_JELLYFISH ; '9'
+	dec	a
+	jp	z, NEW_URCHIN_1 ; ':'
+	dec	a
+	jp	z, NEW_URCHIN_2 ; ';'
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -1667,6 +1747,23 @@ NEW_JELLYFISH:
 	db	SPARK_SPRITE_PATTERN
 	db	SPARK_SPRITE_COLOR
 	db	BULLET_DIR_UP OR 4 ; (4 pixels / frame)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Initializes a new urchin (1)
+NEW_URCHIN_1:
+NEW_URCHIN_2:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .URCHIN_1_DATA
+	jp	INIT_ENEMY
+
+; Urchin:
+.URCHIN_1_DATA:
+	db	URCHIN_SPRITE_PATTERN
+	db	URCHIN_SPRITE_COLOR_1
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	dw	ENEMY_TYPE_FALLER.TRIGGERED
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

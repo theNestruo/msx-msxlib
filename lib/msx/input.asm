@@ -10,7 +10,7 @@
 	BIT_STICK_DOWN:		equ 2
 	BIT_STICK_LEFT:		equ 3
 	BIT_TRIGGER_A:		equ 4
-	; BIT_TRIGGER_B:	equ 5 ; (not implemented yet)
+	BIT_TRIGGER_B:		equ 5
 
 ; Bit map values table
 INPUT_BITMAP_STICK_TABLE:
@@ -40,20 +40,29 @@ READ_INPUT:
 	ld	hl, INPUT_BITMAP_STICK_TABLE
 	call	ADD_HL_A
 	ld	a, [hl]
-	ld	[input.level], a
-; Reads trigger value	
+	ld	hl, input.level
+	ld	[hl], a
+; Reads trigger A value	
 	call	GET_TRIGGER
 	or	a
-	jr	z, .ELSE ; not pressed
+	jr	z, .ELSE_A ; not pressed
 ; Pressed: sets the bit value
-	ld	hl, input.level
+	; ld	hl, input.level ; unnecessary
 	set	BIT_TRIGGER_A, [hl]
-.ELSE:
+.ELSE_A:
+; Reads trigger B value
+	call	GET_TRIGGER.B
+	or	a
+	jr	z, .ELSE_B ; not pressed
+; Pressed: sets the bit value
+	; ld	hl, input.level ; unnecessary
+	set	BIT_TRIGGER_B, [hl]
+.ELSE_B:
 	
 ; Computes edge value from level value
 	pop	af ; (restores previous level)
 	cpl	; a = !previous
-	ld	hl, input.level
+	; ld	hl, input.level ; unnecessary
 	ld	b, [hl] ; b = current
 	and	b ; a = !previous & current
 	inc	hl ; hl = input.edge
@@ -80,14 +89,25 @@ GET_STICK:
 ; Reads both keyboard and joystick 1 trigger
 ; ret a: GTTRIG read value
 GET_TRIGGER:
+.A:
 ; Reads keyboard
-	xor	a
+	xor	a ; 0 -> SPACE KEY
 	call	GTTRIG
 ; Had value?
 	or	a
 	ret	nz ; yes
 ; No: reads joystick
-	inc	a ; a = 1
+	inc	a ; a = 1 -> JOY 1, TRIGGER A
+	jp	GTTRIG
+.B:
+IFDEF CFG_INPUT_TRIGGER_B_ROW
+; Reads keyboard
+	ld	a, [NEWKEY + CFG_INPUT_TRIGGER_B_ROW]
+	and	(1 << CFG_INPUT_TRIGGER_B_BIT)
+	jp	z, RET_NOT_ZERO
+ENDIF ; IFDEF CFG_INPUT_TRIGGER_B_ROW
+; Reads joystick
+	ld	a, 3 ; 3 -> JOY 1, TRIGGER B
 	jp	GTTRIG
 ; -----------------------------------------------------------------------------
 

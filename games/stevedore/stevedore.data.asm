@@ -62,7 +62,10 @@ TXT_PASSWORD:
 	.SIZE:		equ ($ + 1 + PASSWORD_SIZE) - TXT_PASSWORD ; "... password"
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 	db	$00
-
+._0:	db	"0 1 2 3", $00
+._1:	db	"4 5 6 7", $00
+._2:	db	"8 9 A B", $00
+._3:	db	"C D E F", $00
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -340,6 +343,10 @@ SPRTBL_PACKED:
 	
 	JELLYFISH_SPRITE_PATTERN:	equ $b8
 	JELLYFISH_SPRITE_COLOR:		equ 15
+	
+	URCHIN_SPRITE_PATTERN:		equ $c0
+	URCHIN_SPRITE_COLOR_1:		equ 14
+	URCHIN_SPRITE_COLOR_2:		equ 15
 	
 	BOX_SPRITE_PATTERN:		equ $e8
 	BOX_SPRITE_COLOR:		equ 9
