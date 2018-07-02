@@ -88,6 +88,31 @@ ENDIF ; CFG_INIT_16KB_RAM
 	call	CHGCPU
 .CPU_OK:
 
+; Splash screens before further initialization
+IFEXIST SPLASH_SCREENS_PACKED_TABLE
+; Reads the number of splash screens to show
+	ld	hl, SPLASH_SCREENS_PACKED_TABLE
+	ld	b, [hl]
+	inc	hl
+	
+; For each splash screen
+.SPLASH_LOOP:
+	push	bc ; preserves counter
+	push	hl ; preserves pointer
+; Unpacks the actual splash screen 
+	call	LD_HL_HL
+	ld	de, $e000
+	call	UNPACK
+; Invokes the splash screen routine
+	call	$e000
+; Goes for the next splash screen
+	pop	hl ; restores pointer
+	inc	hl
+	inc	hl
+	pop	bc ; restores counter
+	djnz	.SPLASH_LOOP
+ENDIF ; IFEXIST SPLASH_SCREENS_PACKED_TABLE
+
 ; VDP: color 15,1,1
 	ld	a, 15
 	ld	[FORCLR], a

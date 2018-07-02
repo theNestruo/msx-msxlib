@@ -7,11 +7,15 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-; TXT_COPYRIGHT:
-	; db	"STEVEDORE", $00
-	; db	"@ 2018 THENESTRUO = WONDER", $00
-	; db	"PRIVATE BETA: DO NOT PUBLISH", $00
-	; db	$00
+TXT_COPYRIGHT:
+	db	"STEVEDORE", $00
+	db	" ", $00
+	db	"PROMO VERSION", $00
+	db	"FOR RETROEUSKAL 2018 ONLY", $00
+	db	"DO NOT PUBLISH ??", $00
+	db	" ", $00
+	db	"@ 2018  THENESTRUO = WONDER", $00
+	db	$00
 	
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -62,10 +66,6 @@ TXT_PASSWORD:
 	.SIZE:		equ ($ + 1 + PASSWORD_SIZE) - TXT_PASSWORD ; "... password"
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
 	db	$00
-._0:	db	"0 1 2 3", $00
-._1:	db	"4 5 6 7", $00
-._2:	db	"8 9 A B", $00
-._3:	db	"C D E F", $00
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ GLOBALS_0:
 	
 ; Initial value of the game-scope vars
 GAME_0:
-	db	4			; .lives
+	db	3			; .lives
 	db	0			; .item_counter
 	db	0			; .chapter
 	.SIZE:	equ $ - GAME_0
@@ -198,20 +198,23 @@ STAGE_SELECT:
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
-IFEXIST DEMO_MODE
-	dw	.STAGE_01, .STAGE_06, .STAGE_11, .STAGE_16, .STAGE_14
-ELSE
-	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
-ENDIF ; IFEXIST DEMO_MODE
-	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
-	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
-	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
-	dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
+	; dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
+	; dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
+	; dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
+	; dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
+	; dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
+	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
+	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
+	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
+	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
+	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
 ; Intro
 	dw	.INTRO_STAGE
 ; Warehouse (tutorial)
-	dw	.TUTORIAL_01, .TUTORIAL_02, .TUTORIAL_03, .TUTORIAL_04, .TUTORIAL_05
+	; dw	.TUTORIAL_01, .TUTORIAL_02, .TUTORIAL_03, .TUTORIAL_04, .TUTORIAL_05
+	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
 
+.EMPTY:		incbin	"games/stevedore/maps/empty.tmx.bin.zx7"
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"
 
@@ -399,6 +402,22 @@ SOUND_BANK:
 	; CFG_SOUND_PLAYER_FINISH:	equ 0
 	; CFG_SOUND_ENEMY_KILLED:	equ 0
 	; CFG_SOUND_ENEMY_RESPAWN:	equ 0
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+IFDEF CFG_DEMO_MODE
+IF CFG_DEMO_MODE = 1 ; 1 = RETROEUSKAL 2018 promo version
+
+; Splash screens
+SPLASH_SCREENS_PACKED_TABLE:
+	db	1
+	dw	.RETROEUSKAL
+
+.RETROEUSKAL:
+	incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
+	
+ENDIF ; IF CFG_DEMO_MODE = RETROEUSKAL 2018 promo version
+ENDIF ; IFDEF CFG_DEMO_MODE
 ; -----------------------------------------------------------------------------
 
 ; EOF

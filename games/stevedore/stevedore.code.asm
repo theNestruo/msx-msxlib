@@ -27,6 +27,10 @@
 	BIT_CHAPTER_STAR:	equ 5 ; Star picked up
 
 ; Debug
+	CFG_DEMO_MODE:		equ 1
+	; ; undefined = release version
+	; ; 1 = RETROEUSKAL 2018 promo version
+	
 	; DEBUG_STAGE:		equ 22 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
@@ -48,6 +52,8 @@ MAIN_INIT:
 	ld	bc, GLOBALS_0.SIZE
 	ldir
 	
+IFDEF CFG_DEMO_MODE
+ELSE
 IFEXIST DEBUG_STAGE
 ; Loads debug stage
 	ld	a, DEBUG_STAGE
@@ -56,7 +62,8 @@ IFEXIST DEBUG_STAGE
 	call	ENASCR_NO_FADE
 ; Directly to game loop
 	jp	GAME_LOOP
-ENDIF
+ENDIF ; IFEXIST DEBUG_STAGE
+ENDIF ; IFDEF CFG_DEMO_MODE
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -67,7 +74,7 @@ IFEXIST TXT_COPYRIGHT
 	call	CLS_NAMTBL
 	call	CLS_SPRATR
 	ld	hl, TXT_COPYRIGHT
-	ld	de, namtbl_buffer + 16 *SCR_WIDTH
+	ld	de, namtbl_buffer + 8 *SCR_WIDTH
 .LOOP:
 	push	de ; preserves destination
 	call	PRINT_CENTERED_TEXT
@@ -317,9 +324,12 @@ MAIN_MENU_LOOP:
 	ld	a, [input.edge]
 	bit	BIT_TRIGGER_A, a
 	jr	nz, .OK
+IFDEF CFG_DEMO_MODE
+ELSE
 ; Are CTRL + K key pressed?
 	call	CHECK_CTRL_K_KEYS
 	jp	z, ENTER_PASSWORD ; yes
+ENDIF ; IFDEF CFG_DEMO_MODE
 ; Else, updates selection
 	call	MAIN_MENU_INPUT
 	jr	MAIN_MENU_LOOP
@@ -792,6 +802,9 @@ ENDING:
 	jr	$
 ; -----------------------------------------------------------------------------
 
+IFDEF CFG_DEMO_MODE
+ELSE
+
 ; -----------------------------------------------------------------------------
 ENTER_PASSWORD:
 ; Clears the main menu screen
@@ -812,23 +825,9 @@ ENTER_PASSWORD:
 	ld	de, namtbl_buffer + 6 *SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
 
-; DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE DEBUG LINE
-	inc	hl
-	ld	de, namtbl_buffer + 9 *SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-	inc	hl
-	ld	de, namtbl_buffer + 11 *SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-	inc	hl
-	ld	de, namtbl_buffer + 13 *SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-	inc	hl
-	ld	de, namtbl_buffer + 15 *SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-	
 ; Prints default password
 	ld	hl, password
-	ld	de, namtbl_buffer + 18 *SCR_WIDTH + (SCR_WIDTH - PASSWORD_SIZE)/2
+	ld	de, namtbl_buffer + 8 *SCR_WIDTH + (SCR_WIDTH - PASSWORD_SIZE)/2
 	ld	bc, PASSWORD_SIZE
 	ldir
 	
@@ -843,6 +842,8 @@ ENTER_PASSWORD_LOOP:
 
 	jr	ENTER_PASSWORD_LOOP
 ; -----------------------------------------------------------------------------
+
+ENDIF ; IFDEF CFG_DEMO_MODE
 
 ; -----------------------------------------------------------------------------
 ; ret z: yes
