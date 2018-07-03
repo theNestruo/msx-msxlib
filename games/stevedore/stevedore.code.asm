@@ -27,7 +27,7 @@
 	BIT_CHAPTER_STAR:	equ 5 ; Star picked up
 
 ; Debug
-	CFG_DEMO_MODE:		equ 1
+	; CFG_DEMO_MODE:		equ 1
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
@@ -92,7 +92,7 @@ IFEXIST TXT_COPYRIGHT
 	call	ENASCR_FADE_IN
 	call	WAIT_TRIGGER_FOUR_SECONDS
 	call	DISSCR_FADE_OUT
-ENDIF ; IFDEF TXT_COPYRIGHT
+ENDIF ; IFEXIST TXT_COPYRIGHT
 	
 ; Is SELECT key pressed?
 	call	CHECK_SELECT_KEY
@@ -196,12 +196,8 @@ INTRO:
 	call	LOAD_AND_INIT_CURRENT_STAGE
 	
 ; Pauses until trigger
-.TRIGGER_LOOP_2:
-	halt
-	call	READ_INPUT
-	and	1 << BIT_TRIGGER_A
-	jr	z, .TRIGGER_LOOP_2
-
+	call	WAIT_TRIGGER
+	
 ; Awakens the player, synchronization (halt) and blit buffer to VRAM
 	call	PUT_PLAYER_SPRITE
 	halt
@@ -286,7 +282,7 @@ MAIN_MENU:
 	djnz	.PRINT_BLOCK_LOOP
 ; Prints the tutorial option
 	ld	hl, STAGE_SELECT.FLOOR_CHARS
-	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 13
+	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 12
 	ld	bc, 6 ; 6 bytes
 	ldir
 ; Initializes the sprite attribute table (SPRATR) and the player
@@ -611,19 +607,56 @@ STAGE_OVER:
 ; -----------------------------------------------------------------------------
 ; Special chapter over for the tutorial stages
 TUTORIAL_OVER:
-; Initializes the screen
-	call	CHAPTER_OVER.INIT
-; Animation loop (all the screen)
-	ld	b, 256 -8
-	call	CHAPTER_OVER.ANIMATION_LOOP
+; Stops the replayer
+	call	REPLAYER.STOP
+	
+; Prepares the "chapter over" screen
+	call	CLS_NAMTBL
+	call	RESET_SPRITES
+	call	CHAPTER_OVER.PRINT_TEXT
+; Floor
+	ld	hl, STAGE_SELECT.FLOOR_CHARS
+	ld	de, namtbl_buffer + 15 *SCR_WIDTH + 12
+	ld	bc, 8 ; 8 bytes
+	ldir
+	
+; Re-initializes the sprite attribute table (SPRATR) and initializes the player
+	ld	hl, SPRATR_0
+	ld	de, spratr_buffer
+	ld	bc, SPRATR_SIZE
+	ldir
+	ld	hl, .PLAYER_0
+	ld	de, player
+	ld	bc, PLAYER_0.SIZE
+	ldir
+	call	PUT_PLAYER_SPRITE
+	
+; Fade in, waits, fade out
+	call	ENASCR_FADE_IN
+	call	PREPARE_MASK.APPEARING
+	call	PLAYER_APPEARING_ANIMATION
+	call	WAIT_FOUR_SECONDS_ANIMATION
+	call	PLAYER_DISAPPEARING_ANIMATION
+	call	WAIT_ONE_SECOND
+	call	DISSCR_FADE_OUT			
+	
 ; Go to main menu
-	call	DISSCR_FADE_OUT
 	jp	MAIN_MENU
+	
+; Initial player vars
+.PLAYER_0:
+	db	120, 128		; .y, .x
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Chapter over (after a group of stages) "congratulations" screen
 CHAPTER_OVER:
+; Stops the replayer
+	call	REPLAYER.STOP
+	
 ; Has the player picked up the star?
 	ld	a, [game.item_counter]
 	bit	BIT_CHAPTER_STAR, a
@@ -649,17 +682,29 @@ CHAPTER_OVER:
 	cp	5
 	jp	z, ENDING ; yes: goto ending
 
-; Initializes the screen and re-initializes the sprites
-	call	.INIT
+; Prepares the "chapter over" screen
+	call	CLS_NAMTBL
+	call	RESET_SPRITES
+	call	.PRINT_TEXT
+	call	.PRINT_BLOCKS
+	
+; Re-initializes the sprite attribute table (SPRATR) and initializes the player
 	ld	hl, SPRATR_0
 	ld	de, spratr_buffer
 	ld	bc, SPRATR_SIZE
 	ldir
+	ld	hl, .PLAYER_0
+	ld	de, player
+	ld	bc, PLAYER_0.SIZE
+	ldir
+	call	PUT_PLAYER_SPRITE
 	
-; Animation loop (left)
-	ld	b, 128 -4 ; (half char to the left)
-	call	.ANIMATION_LOOP
-	
+; Fade in, waits
+	call	ENASCR_FADE_IN
+	call	PREPARE_MASK.APPEARING
+	call	PLAYER_APPEARING_ANIMATION
+	call	WAIT_TWO_SECONDS_ANIMATION
+
 ; Has the player picked up the five fruits?
 	ld	a, [game.item_counter]
 	and	$0f
@@ -674,7 +719,7 @@ CHAPTER_OVER:
 	call	ENCODE_PASSWORD
 ; "PASSWORD:"
 	ld	hl, TXT_PASSWORD
-	ld	de, namtbl_buffer + 18 * SCR_WIDTH + TXT_PASSWORD.CENTER
+	ld	de, namtbl_buffer + 20 * SCR_WIDTH + TXT_PASSWORD.CENTER
 	call	PRINT_TEXT
 ; " password"
 	inc	de ; " "
@@ -703,14 +748,26 @@ CHAPTER_OVER:
 	halt
 	call	LDIRVM_NAMTBL
 	call	LDIRVM_SPRATR
-; Waits the player
-	call	WAIT_TRIGGER
 	
-; Animation loop (right)
-	ld	b, 256 -8
-	call	.ANIMATION_LOOP
+; Waits for the trigger
+	call	WAIT_TRIGGER_ANIMATION
 
-; Fade out	
+.ANIMATION_LOOP:
+	halt
+	call	LDIRVM_SPRATR
+	call	UPDATE_DYNAMIC_CHARSET
+; Moves the player right
+	call	MOVE_PLAYER_RIGHT
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+; Has the player reached the target coordinate?
+	ld	a, [player.x]
+	cp	128 +32
+	jr	nz, .ANIMATION_LOOP ; no
+; yes: Fade out
+	call	WAIT_TWO_SECONDS_ANIMATION
+	call	PLAYER_DISAPPEARING_ANIMATION
+	call	WAIT_ONE_SECOND_ANIMATION
 	call	DISSCR_FADE_OUT
 	
 ; Go to next chapter
@@ -721,81 +778,84 @@ CHAPTER_OVER:
 	ld	hl, globals.chapters
 ; Is greater than the currently unlocked chapter?
 	cp	[hl]
-	jr	c, .CHAPTERS_OK ; no
-; yes: unlocks the chapter
-	ld	[globals.chapters], a
-.CHAPTERS_OK:
-
+	call	nc, .UNLOCK_CHAPTER ; yes
 	jp	NEW_CHAPTER
 	
-; Chapter over screen initilization
-.INIT:
-; Stops the replayer
-	call	REPLAYER.STOP
+; unlocks the chapter
+.UNLOCK_CHAPTER:
+	ld	[globals.chapters], a
+	ret
 	
-; Prepares the "chapter over" screen
-	call	CLS_NAMTBL
-	call	RESET_SPRITES
-	
+; Initial player vars
+.PLAYER_0:
+	db	120, 128 -32		; .y, .x
+	db	0			; .animation_delay
+	db	PLAYER_STATE_FLOOR	; .state
+	db	0			; .dy_index
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Chapter over text ("SORRY, STEVEDORE", etc.)
+.PRINT_TEXT:
 ; "SORRY, STEVEDORE"
 	ld	hl, TXT_CHAPTER_OVER
-	ld	de, namtbl_buffer + 5 * SCR_WIDTH
+	ld	de, namtbl_buffer + 3 * SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
-
 ; "BUT THE LIGHTHOUSE KEEPER"
 	inc	hl ; (next text)
-	ld	de, namtbl_buffer + 7 * SCR_WIDTH
+	ld	de, namtbl_buffer + 5 * SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
-
 ; Searchs for the correct text
 	inc	hl ; (points to the first text)
 	ld	a, [game.chapter]
 	call	GET_TEXT
 ; "IS IN ANOTHER BUILDING!" and similar texts
-	ld	de, namtbl_buffer + 9 * SCR_WIDTH
-	call	PRINT_CENTERED_TEXT
-
-; Floor
-	ld	hl, INTRO_DATA.FLOOR_CHARS
-	ld	de, namtbl_buffer + 16 *SCR_WIDTH + 11
-	ld	bc, 9 ; 9 bytes
-	ldir
-
-; Fade in
-	call	ENASCR_FADE_IN
-
-; Initialize sprites
-	ld	hl, .PLAYER_0
-	ld	de, player
-	ld	bc, PLAYER_0.SIZE
-	ldir
-	jp	PUT_PLAYER_SPRITE
-	
-; Initial player vars
-.PLAYER_0:
-	db	128, 8			; .y, .x
-	db	0			; .animation_delay
-	db	PLAYER_STATE_FLOOR	; .state
-	db	0			; .dy_index
-		
-; Chapter over animation loop
-; param b: target coordinate
-.ANIMATION_LOOP:
-	push	bc ; preserves target coordinate
-	halt
-	call	LDIRVM_SPRATR
-; Moves the player right
-	call	MOVE_PLAYER_RIGHT
-	call	UPDATE_PLAYER_ANIMATION
-	call	PUT_PLAYER_SPRITE
-; Has the player reached the target coordinate?
-	ld	a, [player.x]
-	pop	bc ; restores target coordinate
-	cp	b
-	ret	z ; yes
-; no
-	jr	.ANIMATION_LOOP
+	ld	de, namtbl_buffer + 7 * SCR_WIDTH
+	jp	PRINT_CENTERED_TEXT
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+.PRINT_BLOCKS:
+; Selects the blocks to print
+	ld	hl, STAGE_SELECT.NAMTBL
+	ld	bc, STAGE_SELECT.HEIGHT * STAGE_SELECT.WIDTH
+	ld	a, [game.chapter]
+.SELECT_BLOCK_LOOP:
+	dec	a
+	jr	z, .SELECT_BLOCK_OK ; element reached
+; Skips one element
+	add	hl, bc
+	jr	.SELECT_BLOCK_LOOP
+.SELECT_BLOCK_OK:
+; Prints the left block
+	ld	de, namtbl_buffer + 10 * SCR_WIDTH + 10
+	call	.PRINT_BLOCK
+; Prints the right block
+	ld	de, namtbl_buffer + 10 * SCR_WIDTH + 18
+.PRINT_BLOCK:
+	ld	bc, STAGE_SELECT.HEIGHT << 8 + STAGE_SELECT.WIDTH
+	jp	PRINT_BLOCK
+; -----------------------------------------------------------------------------
+
+; ; -----------------------------------------------------------------------------
+; ; Chapter over animation loop
+; ; param b: target coordinate
+; .ANIMATION_LOOP:
+	; push	bc ; preserves target coordinate
+	; halt
+	; call	LDIRVM_SPRATR
+; ; Moves the player right
+	; call	MOVE_PLAYER_RIGHT
+	; call	UPDATE_PLAYER_ANIMATION
+	; call	PUT_PLAYER_SPRITE
+; ; Has the player reached the target coordinate?
+	; ld	a, [player.x]
+	; pop	bc ; restores target coordinate
+	; cp	b
+	; ret	z ; yes
+; ; no
+	; jr	.ANIMATION_LOOP
+; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ENDING:
@@ -876,8 +936,8 @@ CHECK_CTRL_K_KEYS:
 ; ret nz: no
 CHECK_STOP_KEY:
 ; Is STOP key pressed?
-	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
-	bit	4, [hl]
+	ld	a, [INTFLG]
+	cp	4
 	ret	z ; yes: ret z
 ; no: also checks trigger B hold
 	jr	CHECK_TRIGGER_B_HOLD
@@ -888,8 +948,9 @@ CHECK_STOP_KEY:
 ; ret nz: no
 CHECK_CTRL_STOP_KEYS:
 ; Are CTRL and STOP keys pressed?
-	call	BREAKX
-	jp	c, RET_ZERO ; yes: ret z
+	ld	a, [INTFLG]
+	cp	3
+	ret	z ; yes: ret z
 ; no: also checks trigger B hold
 	; jp	CHECK_TRIGGER_B_HOLD ; falls through
 ; ------VVVV----falls through--------------------------------------------------
@@ -906,7 +967,7 @@ CHECK_TRIGGER_B_HOLD:
 ; no: resets the framecounter
 	ld	[hl], 0
 ; ret nz
-	or	-1
+	or	$ff
 	ret
 	
 .COUNT:
@@ -917,7 +978,7 @@ CHECK_TRIGGER_B_HOLD:
 ; no: increases the framecounter
 	inc	[hl]
 ; ret nz
-	or	-1
+	or	$ff
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -1104,7 +1165,7 @@ PLAYER_APPEARING_ANIMATION:
 ; -----------------------------------------------------------------------------
 ; Animation of player disappearing
 PLAYER_DISAPPEARING_ANIMATION:
-	ld	b, SPRITE_HEIGHT / 2
+	ld	b, SPRITE_HEIGHT / 2 +1
 .LOOP:
 	push	bc ; (preserves counter)
 	halt
@@ -1124,6 +1185,44 @@ PLAYER_DISAPPEARING_ANIMATION:
 ; Loop condition
 	pop	bc ; (restores counter)
 	djnz	.LOOP
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Waits four seconds, with player and dynamic charset animation
+WAIT_FOUR_SECONDS_ANIMATION:
+	call	WAIT_TWO_SECONDS_ANIMATION
+	; jp	WAIT_TWO_SECONDS_ANIMATION ; falls through
+	
+WAIT_TWO_SECONDS_ANIMATION:
+	call	WAIT_ONE_SECOND_ANIMATION
+	; jp	WAIT_ONE_SECOND_ANIMATION ; falls through
+	
+WAIT_ONE_SECOND_ANIMATION:
+	ld	hl, frame_rate
+	ld	b, [hl]
+.LOOP:
+	push	bc ; preserves counter
+	halt
+	call	LDIRVM_SPRATR
+	call	UPDATE_DYNAMIC_CHARSET
+	call	UPDATE_PLAYER_ANIMATION
+	call	PUT_PLAYER_SPRITE
+	pop	bc ; restores counter
+	djnz	.LOOP
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Waits for the trigger, with dynamic charset animation
+WAIT_TRIGGER_ANIMATION:
+	halt
+	call	LDIRVM_SPRATR
+	call	UPDATE_DYNAMIC_CHARSET
+; Checks trigger
+	call	READ_INPUT
+	and	1 << BIT_TRIGGER_A
+	jr	z, WAIT_TRIGGER_ANIMATION
 	ret
 ; -----------------------------------------------------------------------------
 

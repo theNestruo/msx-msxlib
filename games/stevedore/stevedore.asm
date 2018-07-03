@@ -396,21 +396,21 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 ; (for debugging purposes only)
-	bytes_rom_MSXlib_code:	equ MAIN_INIT - ROM_START
-	bytes_rom_game_code:	equ TXT_PUSH_SPACE_KEY - MAIN_INIT
-	bytes_rom_game_data:	equ PADDING - TXT_PUSH_SPACE_KEY
+	bytes_rom_0_MSXlib_code:	equ MAIN_INIT - ROM_START
+	bytes_rom_1_game_code:		equ TXT_PUSH_SPACE_KEY - MAIN_INIT
+	bytes_rom_2_game_data:		equ PADDING - TXT_PUSH_SPACE_KEY
 
-	bytes_ram_MSXlib:	equ globals - ram_start
-	bytes_ram_game:		equ ram_end - globals
+	bytes_ram_0_MSXlib:		equ globals - ram_start
+	bytes_ram_1_game:		equ ram_end - globals
 	
-	bytes_rom_end:		equ PADDING
-	bytes_ram_end:		equ $
+	bytes_rom_7_end:		equ PADDING
+	bytes_ram_7_end:		equ $
 
-	bytes_total_rom:	equ PADDING - ROM_START
-	bytes_total_ram:	equ $ - ram_start
+	bytes_rom_8_total:		equ PADDING - ROM_START
+	bytes_ram_8_total:		equ $ - ram_start
 
-	bytes_free_rom:		equ PADDING.SIZE
-	bytes_free_ram:		equ $f380 - $
+	bytes_rom_9_free:		equ PADDING.SIZE
+	bytes_ram_9_free:		equ $f380 - $
 ; -----------------------------------------------------------------------------
 
 ; EOF

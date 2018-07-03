@@ -35,24 +35,22 @@ READ_INPUT:
 	push	af ; (preserves previous level)
 	
 ; Reads the cursors/stick value
-	call	GET_STICK
+	call	.GET_STICK
 ; Translates as bit map value
 	ld	hl, INPUT_BITMAP_STICK_TABLE
 	call	ADD_HL_A
 	ld	a, [hl]
 	ld	hl, input.level
 	ld	[hl], a
-; Reads trigger A value	
-	call	GET_TRIGGER
-	or	a
+; Reads trigger A value
+	call	.GET_TRIGGER_A ; TODO TRGFLG-based optimization
 	jr	z, .ELSE_A ; not pressed
 ; Pressed: sets the bit value
 	; ld	hl, input.level ; unnecessary
 	set	BIT_TRIGGER_A, [hl]
 .ELSE_A:
 ; Reads trigger B value
-	call	GET_TRIGGER.B
-	or	a
+	call	.GET_TRIGGER_B ; TODO TRGFLG-based optimization
 	jr	z, .ELSE_B ; not pressed
 ; Pressed: sets the bit value
 	; ld	hl, input.level ; unnecessary
@@ -73,7 +71,7 @@ READ_INPUT:
 ; -----------------------------------------------------------------------------
 ; Reads both keyboard and joystick 1
 ; ret a: GTSTCK read value
-GET_STICK:
+.GET_STICK:
 ; Reads keyboard
 	xor	a
 	call	GTSTCK
@@ -86,29 +84,26 @@ GET_STICK:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Reads both keyboard and joystick 1 trigger
-; ret a: GTTRIG read value
-GET_TRIGGER:
-.A:
-; Reads keyboard
-	xor	a ; 0 -> SPACE KEY
-	call	GTTRIG
-; Had value?
-	or	a
-	ret	nz ; yes
-; No: reads joystick
-	inc	a ; a = 1 -> JOY 1, TRIGGER A
-	jp	GTTRIG
-.B:
+; Reads keyboard and both joysticks' triggers
+; ret z/nz: trigger no pushed / pushed
+.GET_TRIGGER_A:
+; Reads space bar and both joysticks' trigger 1
+	ld	a, [TRGFLG]
+	cpl	; 0 = pressed
+	and	$51 ; 6 = Stick 2 trigger 1, 4 = Stick 1 trigger 1, 0 = Space bar
+	ret
+.GET_TRIGGER_B:
 IFDEF CFG_INPUT_TRIGGER_B_ROW
 ; Reads keyboard
 	ld	a, [NEWKEY + CFG_INPUT_TRIGGER_B_ROW]
 	and	(1 << CFG_INPUT_TRIGGER_B_BIT)
 	jp	z, RET_NOT_ZERO
 ENDIF ; IFDEF CFG_INPUT_TRIGGER_B_ROW
-; Reads joystick
-	ld	a, 3 ; 3 -> JOY 1, TRIGGER B
-	jp	GTTRIG
+; Reads both joysticks' trigger 2
+	ld	a, [TRGFLG]
+	cpl	; 0 = pressed
+	and	$a0 ; 7 = Stick 2 trigger 2, 5 = Stick 1 trigger 2
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

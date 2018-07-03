@@ -7,16 +7,16 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-TXT_COPYRIGHT:
-	db	"STEVEDORE", $00
-	db	" ", $00
-	db	"PROMO VERSION", $00
-	db	"FOR RETROEUSKAL 2018 ONLY", $00
-	db	"DO NOT PUBLISH ??", $00
-	db	" ", $00
-	db	"@ 2018  THENESTRUO = WONDER", $00
-	db	$00
-	
+; TXT_COPYRIGHT:
+	; db	"STEVEDORE", $00
+	; db	" ", $00
+	; db	"PROMO VERSION", $00
+	; db	"FOR RETROEUSKAL 2018 ONLY", $00
+	; db	"DO NOT PUBLISH ??", $00
+	; db	" ", $00
+	; db	"@ 2018  THENESTRUO = WONDER", $00
+	; db	$00
+
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
 
@@ -138,7 +138,7 @@ STAGE_SELECT:
 	.HEIGHT:	equ 8	
 
 .FLOOR_CHARS:
-	db	$24, $25, $84, $85, $14, $24 ; 6 bytes
+	db	$25, $24, $25, $84, $85, $05, $24, $25 ; 8 bytes
 
 .MENU_0_TABLE:
 ; 1st chapter open
@@ -405,19 +405,13 @@ SOUND_BANK:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-IFDEF CFG_DEMO_MODE
-IF CFG_DEMO_MODE = 1 ; 1 = RETROEUSKAL 2018 promo version
+; ; Splash screens
+; SPLASH_SCREENS_PACKED_TABLE:
+	; db	1
+	; dw	.RETROEUSKAL
 
-; Splash screens
-SPLASH_SCREENS_PACKED_TABLE:
-	db	1
-	dw	.RETROEUSKAL
-
-.RETROEUSKAL:
-	incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
-	
-ENDIF ; IF CFG_DEMO_MODE = RETROEUSKAL 2018 promo version
-ENDIF ; IFDEF CFG_DEMO_MODE
+; .RETROEUSKAL:
+	; incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; EOF
