@@ -146,4 +146,116 @@ DECODE_PASSWORD:
 	ret
 ; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
+; Reads an hexadecimal digit from the current state of the keyboard matrix
+; param hl: digit address
+; ret hl: digit address
+; ret z/nz: z = no digit was read, nz = a digit was read
+INPUT_HEXADECIMAL_DIGIT:
+; Checks 0..7
+	ld	de, NEWKEY ; 7 6 5 4 3 2 1 0
+	ld	a, [de]
+	cpl
+	or	a
+	jr	nz, .0_TO_7; yes: computes digit
+; Checks 8..9
+	inc	de ; de = NEWKEY +1 = ; ] [ \ = - 9 8
+	ld	a, [de]
+	cpl
+	and	$03
+	jr	nz, .8_TO_9 ; yes: computes digit
+; Checks A..B
+	inc	de ; de = NEWKEY +2 = B A pound / . , ` '
+	ld	a, [de]
+	cpl
+	and	$c0
+	jr	nz, .A_TO_B ; yes: computes digit
+; Checks C..F
+	inc	de ; de = NEWKEY +3 = J I H G F E D C
+	ld	a, [de]
+	cpl
+	and	$0f
+	jr	nz, .C_TO_F ; yes: computes digit
+; no input
+	ret
+	
+.0_TO_7:
+	ld	b, '0'
+	jr	.INC_LOOP
+.8_TO_9:
+	ld	b, '8'
+	jr	.INC_LOOP
+.C_TO_F:
+	ld	b, 'C'
+	; jr	.INC_LOOP ; falls through
+.INC_LOOP:
+	rra
+	jr	c, .B_OK
+	inc	b
+	jr	.INC_LOOP
+
+.A_TO_B:
+	ld	b, 'B'
+	; jr	.DEC_LOOP ; falls through
+.DEC_LOOP:
+	rla
+	jr	c, .B_OK
+	dec	b
+	jr	.DEC_LOOP
+	
+.B_OK:
+	ld	[hl], b
+; ret nz
+	or	$ff
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Increases an hexadecimal digit
+; param hl: address
+INC_HEXADECIMAL_DIGIT:
+; Edge values?
+	ld	a, [hl]
+	cp	'9'
+	jr	nz, .NO_9
+; yes : 9 -> A
+	ld	[hl], 'A'
+	ret
+.NO_9:
+	cp	'F'
+	jr	nz, .NO_F
+; yes : F -> 0
+	ld	[hl], '0'
+	ret
+.NO_F:
+
+; No: increases the digit
+	inc	[hl]
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Decreases an hexadecimal digit
+; param hl: address
+DEC_HEXADECIMAL_DIGIT:
+; Edge values?
+	ld	a, [hl]
+	cp	'0'
+	jr	nz, .NO_0
+; yes : 0 -> F
+	ld	[hl], 'F'
+	ret
+.NO_0:
+	cp	'A'
+	jr	nz, .NO_A
+; yes : A -> 9
+	ld	[hl], '9'
+	ret
+.NO_A:
+
+; No: decreases the digit
+	dec	[hl]
+	ret
+; -----------------------------------------------------------------------------
+
 ; EOF

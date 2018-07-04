@@ -198,21 +198,20 @@ STAGE_SELECT:
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
-	; dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
-	; dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
-	; dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
-	; dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
-	; dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
-	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
-	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
-	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
-	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
-	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
-; Intro
+; Lighthouse
+	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
+; Ship
+	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
+; Jungle
+	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
+; Volcano
+	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
+; Temple
+	dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
+; Intro screen
 	dw	.INTRO_STAGE
 ; Warehouse (tutorial)
-	; dw	.TUTORIAL_01, .TUTORIAL_02, .TUTORIAL_03, .TUTORIAL_04, .TUTORIAL_05
-	dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
+	dw	.TUTORIAL_01, .TUTORIAL_02, .TUTORIAL_03, .TUTORIAL_04, .TUTORIAL_05
 
 .EMPTY:		incbin	"games/stevedore/maps/empty.tmx.bin.zx7"
 ; Intro	
@@ -405,13 +404,19 @@ SOUND_BANK:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; ; Splash screens
-; SPLASH_SCREENS_PACKED_TABLE:
-	; db	1
-	; dw	.RETROEUSKAL
+; Splash screens
+SPLASH_SCREENS_PACKED_TABLE:
+	db	1
+	dw	.RETROEUSKAL
 
-; .RETROEUSKAL:
-	; incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
+.RETROEUSKAL:
+	incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
 ; -----------------------------------------------------------------------------
+
+IFDEF CFG_DEMO_MODE
+IF CFG_DEMO_MODE = 1 ; 1 = RETROEUSKAL 2018 promo version
+	db	"RetroEuskal 2018 promo version"
+ENDIF ; IF CFG_DEMO_MODE = 1
+ENDIF ; IFDEF CFG_DEMO_MODE
 
 ; EOF

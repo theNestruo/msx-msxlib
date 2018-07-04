@@ -37,8 +37,9 @@
 ; Input, timing & pause routines (BIOS-based)
 
 ; Keyboard trigger B, as row and bit from the keyboard matrix
-	CFG_INPUT_TRIGGER_B_ROW:	equ 4 ; R Q P O N M L K
-	CFG_INPUT_TRIGGER_B_BIT:	equ 2 ;           ^
+	; CFG_INPUT_TRIGGER_B_ROW:	equ 4 ; R Q P O N M L K
+	; CFG_INPUT_TRIGGER_B_BIT:	equ 2 ;           ^
+	; (joytsick trigger B just replaces dedicated keys in this game)
 
 ; Input, timing & pause routines (BIOS-based)
 	include "lib/msx/input.asm"

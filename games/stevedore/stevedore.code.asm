@@ -27,7 +27,7 @@
 	BIT_CHAPTER_STAR:	equ 5 ; Star picked up
 
 ; Debug
-	; CFG_DEMO_MODE:		equ 1
+	CFG_DEMO_MODE:		equ 1
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
@@ -95,6 +95,7 @@ IFEXIST TXT_COPYRIGHT
 ENDIF ; IFEXIST TXT_COPYRIGHT
 	
 ; Is SELECT key pressed?
+	call	READ_INPUT
 	call	CHECK_SELECT_KEY
 	jp	z, MAIN_MENU ; yes: skip intro / tutorial
 ; ------VVVV----falls through--------------------------------------------------
@@ -283,7 +284,7 @@ MAIN_MENU:
 ; Prints the tutorial option
 	ld	hl, STAGE_SELECT.FLOOR_CHARS
 	ld	de, namtbl_buffer + 22 *SCR_WIDTH + 12
-	ld	bc, 6 ; 6 bytes
+	ld	bc, 8 ; 8 bytes
 	ldir
 ; Initializes the sprite attribute table (SPRATR) and the player
 	ld	hl, SPRATR_0
@@ -474,8 +475,8 @@ ENDIF
 	call	CHECK_PLAYER_BULLETS_COLLISIONS
 	
 ; Extra input
-	call	BREAKX
-	call	c, .ON_CTRL_STOP ; yes
+	call	CHECK_CTRL_STOP_KEY
+	call	z, .ON_SUICIDE_KEY ; yes
 	
 ; Check exit condition
 	ld	a, [player.state]
@@ -489,20 +490,12 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-.ON_CTRL_STOP:
+.ON_SUICIDE_KEY:
 ; Has the player already finished?
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
-	ret	nz ; yes: do nothing
-
-; no: Is the player already dying?
-	ld	a, [player.state]
-	and	$ff XOR FLAGS_STATE
-	cp	PLAYER_STATE_DYING
-	ret	z ; yes: do nothing
-	
-; no: kills the player
-	jp	SET_PLAYER_DYING
+	jp	z, SET_PLAYER_DYING ; no: kills the player
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -579,18 +572,18 @@ STAGE_OVER:
 	cp	FIRST_TUTORIAL_STAGE +1
 	jp	nc, NEW_STAGE ; yes: go to next stage
 	
-; Is the fruit picked?
 	ld	hl, game.item_counter
+; Is the fruit picked?
 	ld	a, [stage.flags]
 	bit	BIT_STAGE_FRUIT, a
-	jr	nz, .NO_FRUIT ; no
+	jr	z, .NO_FRUIT ; no
 ; yes: counts the fruit
 	inc	[hl]
 .NO_FRUIT:
 
 ; Is the star picked?
 	bit	BIT_STAGE_STAR, a
-	jr	nz, .NO_STAR ; no
+	jr	z, .NO_STAR ; no
 ; yes: marks the star as picked up
 	set	BIT_CHAPTER_STAR, [hl]
 .NO_STAR:
@@ -660,7 +653,7 @@ CHAPTER_OVER:
 ; Has the player picked up the star?
 	ld	a, [game.item_counter]
 	bit	BIT_CHAPTER_STAR, a
-	jr	nz, .NO_STAR ; no
+	jr	z, .NO_STAR ; no
 
 ; yes: Saves the star in the global flags
 	ld	a, [game.chapter]
@@ -681,6 +674,9 @@ CHAPTER_OVER:
 	ld	a, [game.chapter]
 	cp	5
 	jp	z, ENDING ; yes: goto ending
+	
+; Unlocks the next chapter
+	call	.UNLOCK_CHAPTER
 
 ; Prepares the "chapter over" screen
 	call	CLS_NAMTBL
@@ -709,7 +705,7 @@ CHAPTER_OVER:
 	ld	a, [game.item_counter]
 	and	$0f
 	cp	STAGES_PER_CHAPTER
-	jr	nz, .GIVE_PASSWORD ; yes
+	jr	z, .GIVE_PASSWORD ; yes
 ; no: Sets the player crashed (sprite only)
 	ld	a, PLAYER_SPRITE_KO_PATTERN
 	jr	.SPRITE_OK
@@ -726,19 +722,17 @@ CHAPTER_OVER:
 	ld	hl, password
 	ld	bc, PASSWORD_SIZE
 	ldir
-; Actually shows the password
-	halt
 ; Did the player also picked up the star?
 	ld	a, [game.item_counter]
 	bit	BIT_CHAPTER_STAR, a
-	jr	z, .SET_PLAYER_HAPPY ; yes
-; no: no special animation
-	xor	a
+	jr	z, .DEFAULT_SPRITE ; no
+; yes: Sets the player happy (sprite only)
+	ld	a, PLAYER_SPRITE_HAPPY_PATTERN
 	jr	.SPRITE_OK
 
-.SET_PLAYER_HAPPY:
-; Sets the player happy (sprite only)
-	ld	a, PLAYER_SPRITE_HAPPY_PATTERN
+.DEFAULT_SPRITE:
+; No special animation
+	xor	a
 .SPRITE_OK:
 ; Changes the player sprite
 	ld	[player_spratr.pattern], a
@@ -764,26 +758,24 @@ CHAPTER_OVER:
 	ld	a, [player.x]
 	cp	128 +32
 	jr	nz, .ANIMATION_LOOP ; no
-; yes: Fade out
+; yes: Fade out and goes to the next chapter
 	call	WAIT_TWO_SECONDS_ANIMATION
 	call	PLAYER_DISAPPEARING_ANIMATION
 	call	WAIT_ONE_SECOND_ANIMATION
 	call	DISSCR_FADE_OUT
+	jp	NEW_CHAPTER
 	
-; Go to next chapter
+; Unlocks the next chapter in the menu screen
+.UNLOCK_CHAPTER:
 	ld	a, [game.chapter]
 	inc	a
 	ld	[game.chapter], a
-; Unlocks the chapter in the menu screen
 	ld	hl, globals.chapters
 ; Is greater than the currently unlocked chapter?
 	cp	[hl]
-	call	nc, .UNLOCK_CHAPTER ; yes
-	jp	NEW_CHAPTER
-	
-; unlocks the chapter
-.UNLOCK_CHAPTER:
-	ld	[globals.chapters], a
+	ret	c ; no
+; yes: unlocks the chapter
+	ld	[hl], a
 	ret
 	
 ; Initial player vars
@@ -862,13 +854,13 @@ ENDING:
 	jr	$
 ; -----------------------------------------------------------------------------
 
-IFDEF CFG_DEMO_MODE
-ELSE
-
 ; -----------------------------------------------------------------------------
 ENTER_PASSWORD:
-; Clears the main menu screen
-	call	RESET_PASSWORD
+	halt
+
+; Removes sprites
+	call	CLS_SPRATR
+	call	LDIRVM_SPRATR
 	
 ; Clears the main menu screen
 	xor	a
@@ -877,89 +869,147 @@ ENTER_PASSWORD:
 	ld	de, namtbl_buffer + 6 *SCR_WIDTH +1
 	ld	bc, 17 *SCR_WIDTH -1 ; 22 - 6
 	ldir
-; Removes sprites
-	call	CLS_SPRATR
 	
 ; Prints "INPUT PASSWORD:"
 	ld	hl, TXT_INPUT_PASSWORD
 	ld	de, namtbl_buffer + 6 *SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
+	
+.PASSWORD_LOOP:
+; Resets the password
+	call	RESET_PASSWORD
+; Prints the default password with fade in-out
+	call	.LDIR_PASSWORD
+	call	LDIRVM_NAMTBL_FADE_INOUT
+	
+; Starts with the first digit of the password
+	ld	hl, password
+.DIGIT_LOOP:
+; Handles both direct (keyboard) and indirect (cursor/joystick) input
+	halt
+; Direct read from the keyboard matrix
+	call	INPUT_HEXADECIMAL_DIGIT
+	jr	nz, .ACCEPT_DIGIT ; yes
+; no: Cursor/joystick indirect input
+	push	hl ; preseves pointer
+	call	READ_INPUT
+	pop	hl ; restores pointer
+	ld	a, [input.edge]
+; Checks stick up and down and trigger
+	bit	BIT_STICK_UP, a
+	jp	z, .NO_DIGIT_UP
+; yes: up
+	call	INC_HEXADECIMAL_DIGIT
+	jr	.UPDATE_PASSWORD
+.NO_DIGIT_UP:
 
-; Prints default password
+	bit	BIT_STICK_DOWN, a
+	jp	z, .NO_DIGIT_DOWN
+; yes: down
+	call	DEC_HEXADECIMAL_DIGIT
+	jr	.UPDATE_PASSWORD
+.NO_DIGIT_DOWN:
+
+	bit	BIT_TRIGGER_A, a
+	jr	z, .DIGIT_LOOP ; no input
+; yes: trigger
+	; jr	.ACCEPT_DIGIT ; falls through
+.ACCEPT_DIGIT:
+	inc	hl
+	
+.UPDATE_PASSWORD:
+; Prints the updated password
+	push	hl ; preserves pointer
+	call	.LDIR_PASSWORD
+	call	LDIRVM_NAMTBL
+; Waits for key up
+	call	WAIT_NO_KEY
+	pop	hl ; restores pointer
+	
+; Is the password completed?
+	ld	de, password + PASSWORD_SIZE
+	call	DCOMPR
+	jr	nz, .DIGIT_LOOP ; no
+; yes: Is the password valid?
+	call	DECODE_PASSWORD
+	jr	nz, .INVALID_PASSWORD ; no
+	
+; Is the password forged?
+	ld	hl, password_value ; (eqv. to globals.chapters)
+	ld	a, 6
+	cp	[hl]
+	jr	c, .INVALID_PASSWORD ; yes: globals.chapters >= 6
+	inc	hl ; (eqv. to globals.flags)
+	ld	a, $e0
+	and	[hl]
+	jr	nz, .INVALID_PASSWORD ; yes: globals.flags unused bits are set
+	
+; no: Applies the decoded password
+	ld	hl, password_value
+	ld	de, globals
+	ld	bc, CFG_PASSWORD_DATA_SIZE
+	ldir
+	
+.INVALID_PASSWORD:
+; Fade out and go back to main menu
+	call	DISSCR_FADE_OUT
+	jp	MAIN_MENU
+	
+.LDIR_PASSWORD:
 	ld	hl, password
 	ld	de, namtbl_buffer + 8 *SCR_WIDTH + (SCR_WIDTH - PASSWORD_SIZE)/2
 	ld	bc, PASSWORD_SIZE
 	ldir
-	
-; Fade in-out
-	halt
-	call	LDIRVM_SPRATR
-	call	LDIRVM_NAMTBL_FADE_INOUT
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-ENTER_PASSWORD_LOOP:
-
-	jr	ENTER_PASSWORD_LOOP
+	ret
 ; -----------------------------------------------------------------------------
 
-ENDIF ; IFDEF CFG_DEMO_MODE
-
 ; -----------------------------------------------------------------------------
+; Checks CTRL + K, or if trigger B is pushed
 ; ret z: yes
 ; ret nz: no
 CHECK_SELECT_KEY:
 ; Is SELECT key pressed?
 	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
 	bit	6, [hl]
-; ret z/nz
+	ret z ; yes: ret z
+; no: also checks trigger B level
+	; jp	CHECK_TRIGGER_B_LEVEL ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Checks if the trigger B is pushed
+; ret z: yes
+; ret nz: no
+CHECK_TRIGGER_B_LEVEL:
+; Is trigger B pushed?
+	ld	a, [input.level]
+	cpl	; (to return z when pushed and nz when not pushed)
+	bit	BIT_TRIGGER_B, a
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Checks CTRL + K, or if trigger B has been held
 ; ret z: yes
 ; ret nz: no
 CHECK_CTRL_K_KEYS:
 ; Are CTRL + K key pressed?
 	ld	hl, NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
 	bit	1, [hl]
-	jr	nz, CHECK_TRIGGER_B_HOLD ; no: also checks trigger B hold
+	jr	nz, CHECK_TRIGGER_B_HELD ; no: also checks trigger B hold
 	ld	hl, NEWKEY + 4	; R Q P O N M L K
 	bit	0, [hl]
 	ret	z ; yes: ret z
 ; no: also checks trigger B hold
-	jr	CHECK_TRIGGER_B_HOLD
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; ret z: yes
-; ret nz: no
-CHECK_STOP_KEY:
-; Is STOP key pressed?
-	ld	a, [INTFLG]
-	cp	4
-	ret	z ; yes: ret z
-; no: also checks trigger B hold
-	jr	CHECK_TRIGGER_B_HOLD
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; ret z: yes
-; ret nz: no
-CHECK_CTRL_STOP_KEYS:
-; Are CTRL and STOP keys pressed?
-	ld	a, [INTFLG]
-	cp	3
-	ret	z ; yes: ret z
-; no: also checks trigger B hold
-	; jp	CHECK_TRIGGER_B_HOLD ; falls through
+	; jp	CHECK_TRIGGER_B_HELD ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Checks if the trigger B has been held for enough frames
 ; ret z: yes
 ; ret nz: no
-CHECK_TRIGGER_B_HOLD:
-; Is trigger B hold?
+CHECK_TRIGGER_B_HELD:
+; Is trigger B held?
 	ld	a, [input.level]
 	bit	BIT_TRIGGER_B, a
 	ld	hl, input.trigger_b_framecounter
@@ -971,15 +1021,47 @@ CHECK_TRIGGER_B_HOLD:
 	ret
 	
 .COUNT:
-; Has been hold for enough frames??
+; Has been held for enough frames??
 	ld	a, [hl]
-	cp	FRAMES_TO_TRIGGER_B
-	ret	z ; yes: ret z
+	sub	FRAMES_TO_TRIGGER_B
+	jr	nz, .INC ; no
+; yes: resets the framecounter
+	ld	[hl], a
+; ret z
+	ret
+
+.INC:
 ; no: increases the framecounter
 	inc	[hl]
 ; ret nz
 	or	$ff
 	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Checks CTRL + STOP, or if trigger B has been held
+; ret z: yes
+; ret nz: no
+CHECK_CTRL_STOP_KEY:
+; Are CTRL + STOP keys pressed?
+	ld	a, [INTFLG]
+	cp	3 ; (0 = none, 3 = CTRL+STOP, 4 = STOP)
+	ret	z ; yes: ret z
+; no: also checks trigger B hold
+	jr	CHECK_TRIGGER_B_HELD
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Checks STOP, or if trigger B has been held
+; ret z: yes
+; ret nz: no
+CHECK_STOP_KEY:
+; Is STOP key pressed?
+	ld	hl, NEWKEY + 7 ; CR SEL BS STOP TAB ESC F5 F4
+	bit	4, [hl]
+	ret	z ; yes: ret z
+; no: also checks trigger B pushed
+	jr	CHECK_TRIGGER_B_LEVEL
 ; -----------------------------------------------------------------------------
 
 ;
