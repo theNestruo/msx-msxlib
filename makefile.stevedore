@@ -66,8 +66,8 @@ DATAS=\
 DATAS_INTERMEDIATE=\
 	$(GAME_PATH)\gfx\charset.pcx.chr \
 	$(GAME_PATH)\gfx\charset.pcx.clr \
-	$(GAME_PATH)\gfx\charset_dynamic.pcx.chr \
-	$(GAME_PATH)\gfx\charset_dynamic.pcx.clr \
+	$(GAME_PATH)\gfx\charset_title.pcx.chr \
+	$(GAME_PATH)\gfx\charset_title.pcx.clr \
 	$(GAME_PATH)\gfx\sprites.pcx.spr \
 	$(GAME_PATH)\maps\empty.tmx.bin \
 	$(GAME_PATH)\maps\intro_screen.tmx.bin \

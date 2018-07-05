@@ -20,6 +20,25 @@
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
 
+TXT_STAGE_SELECT:
+	db	"STAGE SELECT", $00
+	
+._0:	db	"WAREHOUSE <TUTORIAL>",		$00
+._1:	db	"LIGHTHOUSE",			$00
+._2:	db	"ABANDONED SHIP",		$00
+._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
+._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
+._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
+	
+TXT_INPUT_PASSWORD:
+	db	"INPUT "
+	
+TXT_PASSWORD:
+	db	"PASSWORD:" ;  + " " + PASSWORD_SIZE
+	.SIZE:		equ ($ + 1 + PASSWORD_SIZE) - TXT_PASSWORD ; "... password"
+	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
+	db	$00
+
 TXT_STAGE:
 	db	"STAGE"
 	.SIZE:		equ ($ + 3) - TXT_STAGE ; "... 00"
@@ -35,20 +54,7 @@ TXT_LIVES:
 TXT_LIFE:
 	db	"LIFE LEFT"
 	db	$00
-	
-TXT_GAME_OVER:
-	db	"GAME OVER", $00
 
-TXT_STAGE_SELECT:
-	db	"STAGE SELECT", $00
-	
-._0:	db	"WAREHOUSE <TUTORIAL>",		$00
-._1:	db	"LIGHTHOUSE",			$00
-._2:	db	"ABANDONED SHIP",		$00
-._3:	db	"SHIPWRECK ISLAND",		$00 ; (jungle)
-._4:	db	"UNCANNY CAVE",			$00 ; (volcano)
-._5:	db	"ANCIENT TEMPLE RUINS",		$00 ; (temple)
-	
 TXT_CHAPTER_OVER:
 	db	"SORRY; STEVEDORE",		$00
 	db	"BUT THE LIGHTHOUSE KEEPER",	$00
@@ -58,14 +64,16 @@ TXT_CHAPTER_OVER:
 	db	"FELL INTO A CAVE?",		$00
 	db	"WAS CAPTURED BY PANTOJOS?",	$00
 
-TXT_INPUT_PASSWORD:
-	db	"INPUT "
+TXT_ENDING:
+	db	"YOU ARE GREAT?", $00
 	
-TXT_PASSWORD:
-	db	"PASSWORD:" ;  + " " + PASSWORD_SIZE
-	.SIZE:		equ ($ + 1 + PASSWORD_SIZE) - TXT_PASSWORD ; "... password"
-	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	db	$00
+TXT_GAME_OVER:
+	db	"GAME OVER", $00
+
+IFDEF CFG_DEMO_MODE
+TXT_DEMO_OVER:
+	db	"DEMO OVER", $00
+ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -201,7 +209,11 @@ NAMTBL_PACKED_TABLE:
 ; Lighthouse
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
 ; Ship
+IFDEF CFG_DEMO_MODE
+	dw	.STAGE_06, .STAGE_10, .STAGE_11, .STAGE_14, .STAGE_16
+ELSE
 	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
+ENDIF ; IF CFG_DEMO_MODE = 1
 ; Jungle
 	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
 ; Volcano
@@ -214,6 +226,7 @@ NAMTBL_PACKED_TABLE:
 	dw	.TUTORIAL_01, .TUTORIAL_02, .TUTORIAL_03, .TUTORIAL_04, .TUTORIAL_05
 
 .EMPTY:		incbin	"games/stevedore/maps/empty.tmx.bin.zx7"
+
 ; Intro	
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"
 
@@ -282,6 +295,7 @@ CHARSET_PACKED:
 	CHAR_LAVA_SURFACE:	equ $f4
 	CHAR_FIRST_DOOR:	equ $f8
 
+; Title charset binary data (CHRTBL and CLRTBL)
 CHARSET_TITLE_PACKED:
 .CHR:
 	incbin	"games/stevedore/gfx/charset_title.pcx.chr.zx7"
@@ -289,11 +303,13 @@ CHARSET_TITLE_PACKED:
 	incbin	"games/stevedore/gfx/charset_title.pcx.clr.zx7"
 	.SIZE:			equ TITLE_HEIGHT *TITLE_WIDTH *8
 	
+; Title charset-related symbolic constants
 	TITLE_CHAR_FIRST:	equ 96
 	TITLE_WIDTH:		equ 16
 	TITLE_HEIGHT:		equ 3
 	TITLE_CENTER:		equ (SCR_WIDTH - TITLE_WIDTH) /2
 	
+; Dynamic charset binary data (CHRTBL and CLRTBL)
 CHARSET_DYNAMIC:
 .CHR:
 	incbin	"games/stevedore/gfx/charset_dynamic.pcx.chr"
@@ -303,11 +319,20 @@ CHARSET_DYNAMIC:
 
 	.ROW_SIZE:		equ 2 *4 *8; 2 doors/surfaces, 4 characters
 
+; Dynamic charset-related symbolic constants
 	CHAR_FIRST_CLOSED_DOOR:	equ $00
 	CHAR_FIRST_OPEN_DOOR:	equ $08
 	CHAR_FIRST_SURFACES:	equ $10
 	
-; Dynamic charset-related symbolic constants
+; Bad ending charset binary data (CHRTBL and CLRTBL)
+; CHARSET_BAD_ENDING_PACKED:
+	incbin	"games/stevedore/gfx/charset_title.pcx.chr.zx7" ; TODO
+	incbin	"games/stevedore/gfx/charset_title.pcx.clr.zx7" ; TODO
+	
+; Good ending charset binary data (CHRTBL and CLRTBL)
+; CHARSET_GOOD_ENDING_PACKED:
+	incbin	"games/stevedore/gfx/charset_title.pcx.chr.zx7" ; TODO
+	incbin	"games/stevedore/gfx/charset_title.pcx.clr.zx7" ; TODO
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -373,15 +398,12 @@ SPRTBL_PACKED:
 ; -----------------------------------------------------------------------------
 ; PT3Player data
 SONG_PACKED_TABLE:
-IFEXIST DEMO_MODE
-	dw	.SONG_0, .SONG_2, .SONG_1, .SONG_3, .SONG_4, .SONG_5
-ELSE
 	dw	.SONG_0, .SONG_1, .SONG_2, .SONG_3, .SONG_4, .SONG_5
-ENDIF
+
 .SONG_0:
 	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7"
 .SONG_1:
-	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7" ; TODO
+	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7" ; TODO lighthous
 .SONG_2:
 	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7"
 .SONG_3:
@@ -389,7 +411,12 @@ ENDIF
 .SONG_4:
 	incbin	"games/stevedore/sfx/cave.pt3.hl.zx7"
 .SONG_5:
-	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7" ; TODO
+	incbin	"games/stevedore/sfx/ship.pt3.hl.zx7" ; TODO temple
+	
+	incbin	"games/stevedore/sfx/cave.pt3.hl.zx7"; TODO chapter over (jingle)
+	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7" ; TODO bad ending
+	incbin	"games/stevedore/sfx/warehouse.pt3.hl.zx7" ; TODO good ending
+	incbin	"games/stevedore/sfx/cave.pt3.hl.zx7"; TODO game over (jingle)
 	
 ; ayFX sound bank
 SOUND_BANK:

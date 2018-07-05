@@ -7,7 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Number of frames required to actually push an object
-	FRAMES_TO_PUSH:		equ 12
+	FRAMES_TO_PUSH:		equ 16
 	
 ; Number of frames to detect trigger B hold
 	FRAMES_TO_TRIGGER_B:	equ 150 ; (~3 seconds)
@@ -31,7 +31,7 @@
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
-	; DEBUG_STAGE:		equ 22 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 5 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -674,9 +674,6 @@ CHAPTER_OVER:
 	ld	a, [game.chapter]
 	cp	5
 	jp	z, ENDING ; yes: goto ending
-	
-; Unlocks the next chapter
-	call	.UNLOCK_CHAPTER
 
 ; Prepares the "chapter over" screen
 	call	CLS_NAMTBL
@@ -700,6 +697,9 @@ CHAPTER_OVER:
 	call	PREPARE_MASK.APPEARING
 	call	PLAYER_APPEARING_ANIMATION
 	call	WAIT_TWO_SECONDS_ANIMATION
+	
+; Unlocks the next chapter (this should be done before encoding password)
+	call	.UNLOCK_CHAPTER
 
 ; Has the player picked up the five fruits?
 	ld	a, [game.item_counter]
@@ -763,7 +763,28 @@ CHAPTER_OVER:
 	call	PLAYER_DISAPPEARING_ANIMATION
 	call	WAIT_ONE_SECOND_ANIMATION
 	call	DISSCR_FADE_OUT
+IFDEF CFG_DEMO_MODE
+; Avoids going to jungle, cave or temple in demo mode
+	ld	a, [game.chapter]
+	cp	3
+	jp	c, NEW_CHAPTER ; lighthouse or ship
+	
+; Prepares demo over screen
+	call	CLS_NAMTBL
+; "DEMO OVER"
+	ld	hl, TXT_DEMO_OVER
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	
+; Fade in, pause, fade out, goto main menu
+	call	ENASCR_FADE_IN
+	call	WAIT_TRIGGER_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
+	jp	MAIN_MENU
+
+ELSE
 	jp	NEW_CHAPTER
+ENDIF ; IFDEF CFG_DEMO_MODE
 	
 ; Unlocks the next chapter in the menu screen
 .UNLOCK_CHAPTER:
@@ -774,6 +795,11 @@ CHAPTER_OVER:
 ; Is greater than the currently unlocked chapter?
 	cp	[hl]
 	ret	c ; no
+IFDEF CFG_DEMO_MODE
+; Avoids unlocking jungle, cave or temple in demo mode
+	cp	3
+	ret	nc
+ENDIF ; IFDEF CFG_DEMO_MODE
 ; yes: unlocks the chapter
 	ld	[hl], a
 	ret
@@ -829,29 +855,25 @@ CHAPTER_OVER:
 	jp	PRINT_BLOCK
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Chapter over animation loop
-; ; param b: target coordinate
-; .ANIMATION_LOOP:
-	; push	bc ; preserves target coordinate
-	; halt
-	; call	LDIRVM_SPRATR
-; ; Moves the player right
-	; call	MOVE_PLAYER_RIGHT
-	; call	UPDATE_PLAYER_ANIMATION
-	; call	PUT_PLAYER_SPRITE
-; ; Has the player reached the target coordinate?
-	; ld	a, [player.x]
-	; pop	bc ; restores target coordinate
-	; cp	b
-	; ret	z ; yes
-; ; no
-	; jr	.ANIMATION_LOOP
-; ; -----------------------------------------------------------------------------
-
 ; -----------------------------------------------------------------------------
 ENDING:
-	jr	$
+	
+; Stops the replayer
+	call	REPLAYER.STOP
+	
+; Prepares ending screen
+	call	CLS_NAMTBL
+; "YOU ARE GREAT?"
+	ld	hl, TXT_ENDING
+	ld	de, namtbl_buffer + 8 * SCR_WIDTH
+	call	PRINT_CENTERED_TEXT
+	
+; Fade in
+	call	ENASCR_FADE_IN ; LDIRVM_NAMTBL_FADE_INOUT ???
+	call	WAIT_TRIGGER_FOUR_SECONDS
+	call	DISSCR_FADE_OUT
+	
+	jp	MAIN_MENU
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1044,8 +1066,10 @@ CHECK_TRIGGER_B_HELD:
 ; ret nz: no
 CHECK_CTRL_STOP_KEY:
 ; Are CTRL + STOP keys pressed?
-	ld	a, [INTFLG]
+	ld	hl, INTFLG
+	ld	a, [hl]
 	cp	3 ; (0 = none, 3 = CTRL+STOP, 4 = STOP)
+	ld	[hl], 0 ; (reset)
 	ret	z ; yes: ret z
 ; no: also checks trigger B hold
 	jr	CHECK_TRIGGER_B_HELD
