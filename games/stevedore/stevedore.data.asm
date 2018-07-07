@@ -7,15 +7,13 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
-; TXT_COPYRIGHT:
-	; db	"STEVEDORE", $00
-	; db	" ", $00
-	; db	"PROMO VERSION", $00
-	; db	"FOR RETROEUSKAL 2018 ONLY", $00
-	; db	"DO NOT PUBLISH ??", $00
-	; db	" ", $00
-	; db	"@ 2018  THENESTRUO = WONDER", $00
-	; db	$00
+TXT_COPYRIGHT:
+	db	"STEVEDORE", $00
+	db	"RETROEUSKAL 2018 PROMO VERSION", $00
+	db	"DO NOT PUBLISH ??", $00
+	db	" ", $00
+	db	"@2018 THENESTRUO = WONDER", $00
+	db	$00
 
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -79,7 +77,11 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
+IFDEF CFG_DEMO_MODE
+	db	2			; .chapters
+ELSE
 	db	1			; .chapters
+ENDIF ; IFDEF CFG_DEMO_MODE
 	db	$00			; .flags
 	.SIZE:	equ $ - GLOBALS_0
 	

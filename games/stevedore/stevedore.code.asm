@@ -31,7 +31,7 @@
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
-	; DEBUG_STAGE:		equ 5 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 7 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ IFEXIST TXT_COPYRIGHT
 	call	CLS_NAMTBL
 	call	CLS_SPRATR
 	ld	hl, TXT_COPYRIGHT
-	ld	de, namtbl_buffer + 8 *SCR_WIDTH
+	ld	de, namtbl_buffer + 14 *SCR_WIDTH
 .LOOP:
 	push	de ; preserves destination
 	call	PRINT_CENTERED_TEXT
@@ -698,8 +698,11 @@ CHAPTER_OVER:
 	call	PLAYER_APPEARING_ANIMATION
 	call	WAIT_TWO_SECONDS_ANIMATION
 	
+IFDEF CFG_DEMO_MODE
+ELSE
 ; Unlocks the next chapter (this should be done before encoding password)
 	call	.UNLOCK_CHAPTER
+ENDIF ; IFDEF CFG_DEMO_MODE
 
 ; Has the player picked up the five fruits?
 	ld	a, [game.item_counter]
@@ -795,11 +798,6 @@ ENDIF ; IFDEF CFG_DEMO_MODE
 ; Is greater than the currently unlocked chapter?
 	cp	[hl]
 	ret	c ; no
-IFDEF CFG_DEMO_MODE
-; Avoids unlocking jungle, cave or temple in demo mode
-	cp	3
-	ret	nc
-ENDIF ; IFDEF CFG_DEMO_MODE
 ; yes: unlocks the chapter
 	ld	[hl], a
 	ret
