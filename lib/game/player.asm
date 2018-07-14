@@ -265,14 +265,14 @@ GET_PLAYER_TILE_FLAGS_UNDER_FAST.ONE_PIXEL:
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_UNDER_FAST:
 ; Moving fast enough to cross the tile boundary?
-	ld	b, a ; delta-Y on b
+	ld	b, a ; preserves delta-Y on b
 	ld	a, [player.y]
 	dec	a
 	or	$f8
 	add	b
 	jp	nc, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
-	
-	ld	a, b
+; yes
+	ld	a, b ; restores delta-Y
 	jp	GET_PLAYER_H_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
@@ -330,6 +330,41 @@ GET_PLAYER_H_TILE_FLAGS.AND:
 ; Player width
 	ld	b, CFG_PLAYER_WIDTH
 	jp	GET_H_TILE_FLAGS.AND
+; -----------------------------------------------------------------------------
+
+
+; -----------------------------------------------------------------------------
+; Returns the AND-ed flags of the tiles under the player
+; when aligned to a tile boundary
+; ret a: AND-ed tile flags
+GET_PLAYER_TILE_FLAGS_WIDE_UNDER_FAST.ONE_PIXEL:
+	ld	a, 1
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the AND-ed flags of the tiles under the player
+; when moving fast enough to cross the tile boundary
+; param a: positive delta-Y
+; ret a: AND-ed tile flags
+GET_PLAYER_TILE_FLAGS_WIDE_UNDER_FAST:
+; Moving fast enough to cross the tile boundary?
+	ld	b, a ; preserves delta-Y on b
+	ld	a, [player.y]
+	dec	a
+	or	$f8
+	add	b
+	jp	nc, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
+; yes
+	ld	a, b ; restores delta-Y
+	jp	GET_PLAYER_H_TILE_FLAGS.AND
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the AND-ed flags of the tiles under the player
+; ret a: AND-ed tile flags
+GET_PLAYER_TILE_FLAGS_WIDE_UNDER:
+	xor	a ; dy = 0
+	jr	GET_PLAYER_H_TILE_FLAGS.AND
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

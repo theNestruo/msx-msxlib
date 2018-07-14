@@ -26,6 +26,15 @@
 	include	"lib/msx/symbols.asm"
 ; MSX cartridge (ROM) header, entry point and initialization
 	include "lib/msx/cartridge.asm"
+
+; Splash screens
+SPLASH_SCREENS_PACKED_TABLE:
+	db	1
+	dw	.RETROEUSKAL
+.RETROEUSKAL:
+	incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
+; -----------------------------------------------------------------------------
+
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

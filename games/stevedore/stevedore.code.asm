@@ -31,7 +31,7 @@
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
-	; DEBUG_STAGE:		equ 7 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 8 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -236,21 +236,27 @@ MAIN_MENU:
 	cp	TITLE_CHAR_FIRST + TITLE_HEIGHT * TITLE_WIDTH
 	jr	c, .TITLE_ROW_LOOP ; no
 	
+; Initializes the selection with the latest chapter
+IFDEF CFG_DEMO_MODE
+	ld	a, 1
+ELSE
+	ld	a, [globals.chapters]
+ENDIF ; IFDEF CFG_DEMO_MODE
+	ld	[menu.selected_chapter], a
+
 ; Prints "STAGE SELECT"
 	ld	hl, TXT_STAGE_SELECT
 	ld	de, namtbl_buffer + 6 *SCR_WIDTH
 	call	PRINT_CENTERED_TEXT
 ; "LIGHTHOUSE" and similar texts
 	inc	hl ; (points to the first text)
-	ld	a, [globals.chapters]
+	ld	a, [menu.selected_chapter]
 	call	PRINT_SELECTED_CHAPTER_NAME.HL_A_OK
 	
-; Initializes the selection with the latest chapter
-	ld	a, [globals.chapters]
-	ld	[menu.selected_chapter], a
 ; Initializes the menu values from the look-up-table
 	ld	hl, STAGE_SELECT.MENU_0_TABLE
 	ld	bc, STAGE_SELECT.MENU_0_SIZE
+	ld	a, [globals.chapters]
 .TABLE_LOOP:
 ; Is the right table entry?
 	dec	a
@@ -698,11 +704,8 @@ CHAPTER_OVER:
 	call	PLAYER_APPEARING_ANIMATION
 	call	WAIT_TWO_SECONDS_ANIMATION
 	
-IFDEF CFG_DEMO_MODE
-ELSE
 ; Unlocks the next chapter (this should be done before encoding password)
 	call	.UNLOCK_CHAPTER
-ENDIF ; IFDEF CFG_DEMO_MODE
 
 ; Has the player picked up the five fruits?
 	ld	a, [game.item_counter]
@@ -789,17 +792,20 @@ ELSE
 	jp	NEW_CHAPTER
 ENDIF ; IFDEF CFG_DEMO_MODE
 	
-; Unlocks the next chapter in the menu screen
+; Updates the chapter and unlocks the next chapter in the menu screen
 .UNLOCK_CHAPTER:
 	ld	a, [game.chapter]
 	inc	a
 	ld	[game.chapter], a
+IFDEF CFG_DEMO_MODE
+ELSE
 	ld	hl, globals.chapters
 ; Is greater than the currently unlocked chapter?
 	cp	[hl]
 	ret	c ; no
 ; yes: unlocks the chapter
 	ld	[hl], a
+ENDIF ; IFDEF CFG_DEMO_MODE
 	ret
 	
 ; Initial player vars

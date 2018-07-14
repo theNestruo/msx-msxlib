@@ -210,9 +210,11 @@ STAGE_SELECT:
 NAMTBL_PACKED_TABLE:
 ; Lighthouse
 	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
+	; dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
 ; Ship
 IFDEF CFG_DEMO_MODE
-	dw	.STAGE_06, .STAGE_10, .STAGE_11, .STAGE_14, .STAGE_16
+	dw	.STAGE_06, .STAGE_08, .STAGE_11, .STAGE_14, .STAGE_16
+	; dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
 ELSE
 	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
 ENDIF ; IF CFG_DEMO_MODE = 1
@@ -430,16 +432,6 @@ SOUND_BANK:
 	; CFG_SOUND_PLAYER_FINISH:	equ 0
 	; CFG_SOUND_ENEMY_KILLED:	equ 0
 	; CFG_SOUND_ENEMY_RESPAWN:	equ 0
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Splash screens
-SPLASH_SCREENS_PACKED_TABLE:
-	db	1
-	dw	.RETROEUSKAL
-
-.RETROEUSKAL:
-	incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 IFDEF CFG_DEMO_MODE
