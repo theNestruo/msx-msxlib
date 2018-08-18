@@ -281,8 +281,8 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
 	
 ; Killed/respawning patterns
-	CFG_ENEMY_DYING_PATTERN:	equ $dc
-	CFG_ENEMY_RESPAWN_PATTERN:	equ $e0
+	CFG_ENEMY_DYING_PATTERN:	equ ENEMY_DYING_PATTERN ; $c4
+	CFG_ENEMY_RESPAWN_PATTERN:	equ ENEMY_RESPAWN_PATTERN ; $c8
 	
 ; Triggers will fire <n> pixels before the actual collision occurs
 	CFG_ENEMY_ADVANCE_COLLISION:	equ 3

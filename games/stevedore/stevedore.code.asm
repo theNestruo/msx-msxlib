@@ -31,7 +31,7 @@
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
-	; DEBUG_STAGE:		equ 19 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 1 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1479,7 +1479,7 @@ POST_PROCESS_STAGE_ELEMENT:
 	dec	a
 	jp	z, NEW_SNAKE_3 ; '5'
 	dec	a
-	jp	z, NEW_PIRATE ; '6'
+	; jp	z, NEW_PIRATE ; '6'
 	dec	a
 	jp	z, NEW_SAVAGE ; '7'
 	dec	a
@@ -1773,84 +1773,84 @@ NEW_SNAKE_3:
 	dw	ENEMY_TYPE_JUMPER.TRIGGERED
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Initializes a new pirate
-NEW_PIRATE:
-	ld	[hl], 0
-	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .PIRATE_DATA
-	jp	INIT_ENEMY
+; ; -----------------------------------------------------------------------------
+; ; Initializes a new pirate
+; NEW_PIRATE:
+	; ld	[hl], 0
+	; call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	; ld	hl, .PIRATE_DATA
+	; jp	INIT_ENEMY
 
-; Pirate: TODO
-.PIRATE_DATA:
-	db	PIRATE_SPRITE_PATTERN
-	db	PIRATE_SPRITE_COLOR
-	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
-	dw	.PIRATE_BEHAVIOUR
+; ; Pirate: TODO
+; .PIRATE_DATA:
+	; db	PIRATE_SPRITE_PATTERN
+	; db	PIRATE_SPRITE_COLOR
+	; db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	; dw	.PIRATE_BEHAVIOUR
 	
-.PIRATE_BEHAVIOUR:
-; The enemy walks ahead
-	dw	GOSUB_ENEMY_HANDLER
-	dw	.PIRATE_BEHAVIOUR_SUB
-	dw	PUT_ENEMY_SPRITE_ANIM
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WALKER_ENEMY_HANDLER.NOTIFY
-	dw	SET_NEW_STATE_HANDLER.NEXT
-; then pauses, turning around
-	dw	GOSUB_ENEMY_HANDLER
-	dw	.PIRATE_BEHAVIOUR_SUB
-	dw	PUT_ENEMY_SPRITE
-	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	dw	WAIT_ENEMY_HANDLER.TURNING
-	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
-; and continues
-	dw	SET_NEW_STATE_HANDLER
-	dw	.PIRATE_BEHAVIOUR ; (restart)
+; .PIRATE_BEHAVIOUR:
+; ; The enemy walks ahead
+	; dw	GOSUB_ENEMY_HANDLER
+	; dw	.PIRATE_BEHAVIOUR_SUB
+	; dw	PUT_ENEMY_SPRITE_ANIM
+	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	; dw	WALKER_ENEMY_HANDLER.NOTIFY
+	; dw	SET_NEW_STATE_HANDLER.NEXT
+; ; then pauses, turning around
+	; dw	GOSUB_ENEMY_HANDLER
+	; dw	.PIRATE_BEHAVIOUR_SUB
+	; dw	PUT_ENEMY_SPRITE
+	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	; dw	WAIT_ENEMY_HANDLER.TURNING
+	; db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
+; ; and continues
+	; dw	SET_NEW_STATE_HANDLER
+	; dw	.PIRATE_BEHAVIOUR ; (restart)
 	
-.PIRATE_BEHAVIOUR_SUB:
-	dw	TRIGGER_ENEMY_HANDLER
-; Is the player ahead of the enemy and in overlapping x coordinates?
-	dw	WAIT_ENEMY_HANDLER.PLAYER_AHEAD
-	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
-	db	PLAYER_BULLET_Y_SIZE
-; Shoot
-	dw	TRIGGER_ENEMY_HANDLER.RESET
-	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
-	dw	.SHOOT_AHEAD_HANDLER
+; .PIRATE_BEHAVIOUR_SUB:
+	; dw	TRIGGER_ENEMY_HANDLER
+; ; Is the player ahead of the enemy and in overlapping x coordinates?
+	; dw	WAIT_ENEMY_HANDLER.PLAYER_AHEAD
+	; dw	WAIT_ENEMY_HANDLER.Y_COLLISION
+	; db	PLAYER_BULLET_Y_SIZE
+; ; Shoot
+	; dw	TRIGGER_ENEMY_HANDLER.RESET
+	; db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	; dw	.SHOOT_AHEAD_HANDLER
 	
-; Enemy handler that shoots a knife ahead (left or right)
-.SHOOT_AHEAD_HANDLER:
-; Is the enemy looking to the left?
-	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, .SHOOT_RIGHT ; no
-; yes: Shoots to the left
-	ld	hl, .KNIFE_LEFT_DATA
-	jr	.SHOOT
-; Shoots to the right
-.SHOOT_RIGHT:
-	ld	hl, .KNIFE_RIGHT_DATA
-	; jr	.SHOOT ; falls through
-; Initializes the bullet
-.SHOOT:
-	ld	b, 0
-	ld	c, -4
-	call	INIT_BULLET_FROM_ENEMY
-; ret 0 (halt)
-	xor	a
-	ret
+; ; Enemy handler that shoots a knife ahead (left or right)
+; .SHOOT_AHEAD_HANDLER:
+; ; Is the enemy looking to the left?
+	; bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	; jr	z, .SHOOT_RIGHT ; no
+; ; yes: Shoots to the left
+	; ld	hl, .KNIFE_LEFT_DATA
+	; jr	.SHOOT
+; ; Shoots to the right
+; .SHOOT_RIGHT:
+	; ld	hl, .KNIFE_RIGHT_DATA
+	; ; jr	.SHOOT ; falls through
+; ; Initializes the bullet
+; .SHOOT:
+	; ld	b, 0
+	; ld	c, -4
+	; call	INIT_BULLET_FROM_ENEMY
+; ; ret 0 (halt)
+	; xor	a
+	; ret
 	
-.KNIFE_LEFT_DATA:
-	db	KNIFE_LEFT_SPRITE_PATTERN
-	db	KNIFE_SPRITE_COLOR
-	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
+; .KNIFE_LEFT_DATA:
+	; db	KNIFE_LEFT_SPRITE_PATTERN
+	; db	KNIFE_SPRITE_COLOR
+	; db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
 	
-.KNIFE_RIGHT_DATA:
-	db	KNIFE_RIGHT_SPRITE_PATTERN
-	db	KNIFE_SPRITE_COLOR
-	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
-; -----------------------------------------------------------------------------
+; .KNIFE_RIGHT_DATA:
+	; db	KNIFE_RIGHT_SPRITE_PATTERN
+	; db	KNIFE_SPRITE_COLOR
+	; db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
+; ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Initializes a new savage
