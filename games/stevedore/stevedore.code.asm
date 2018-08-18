@@ -13,11 +13,11 @@
 	FRAMES_TO_TRIGGER_B:	equ 150 ; (~3 seconds)
 
 ; Number of stages per chapter
-	STAGES_PER_CHAPTER:	equ 5
+	STAGES_PER_CHAPTER:	equ 6
 	
 ; Tutorial stages
-	FIRST_TUTORIAL_STAGE:	equ 25
-	LAST_TUTORIAL_STAGE:	equ 31
+	FIRST_TUTORIAL_STAGE:	equ 6 * STAGES_PER_CHAPTER
+	LAST_TUTORIAL_STAGE:	equ FIRST_TUTORIAL_STAGE + 6
 	
 ; The flags the define the state of the stage
 	BIT_STAGE_KEY:		equ 0 ; Key picked up
@@ -27,11 +27,11 @@
 	BIT_CHAPTER_STAR:	equ 5 ; Star picked up
 
 ; Debug
-	CFG_DEMO_MODE:		equ 1
+	; CFG_DEMO_MODE:		equ 1
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
-	; DEBUG_STAGE:		equ 8 -1 ; DEBUG LINE
+	; DEBUG_STAGE:		equ 19 -1 ; DEBUG LINE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -69,6 +69,7 @@ ENDIF ; IFDEF CFG_DEMO_MODE
 ; -----------------------------------------------------------------------------
 ; Copyright notice and "skip intro" secret option
 COPYRIGHT:
+IFDEF CFG_DEMO_MODE
 IFEXIST TXT_COPYRIGHT
 ; Prints copyright notice
 	call	CLS_NAMTBL
@@ -93,6 +94,7 @@ IFEXIST TXT_COPYRIGHT
 	call	WAIT_TRIGGER_FOUR_SECONDS
 	call	DISSCR_FADE_OUT
 ENDIF ; IFEXIST TXT_COPYRIGHT
+ENDIF ; IFDEF CFG_DEMO_MODE
 	
 ; Is SELECT key pressed?
 	call	READ_INPUT
@@ -237,11 +239,7 @@ MAIN_MENU:
 	jr	c, .TITLE_ROW_LOOP ; no
 	
 ; Initializes the selection with the latest chapter
-IFDEF CFG_DEMO_MODE
-	ld	a, 1
-ELSE
 	ld	a, [globals.chapters]
-ENDIF ; IFDEF CFG_DEMO_MODE
 	ld	[menu.selected_chapter], a
 
 ; Prints "STAGE SELECT"
@@ -327,12 +325,9 @@ MAIN_MENU_LOOP:
 	ld	a, [input.edge]
 	bit	BIT_TRIGGER_A, a
 	jr	nz, .OK
-IFDEF CFG_DEMO_MODE
-ELSE
 ; Are CTRL + K key pressed?
 	call	CHECK_CTRL_K_KEYS
 	jp	z, ENTER_PASSWORD ; yes
-ENDIF ; IFDEF CFG_DEMO_MODE
 ; Else, updates selection
 	call	MAIN_MENU_INPUT
 	jr	MAIN_MENU_LOOP
@@ -882,9 +877,9 @@ ENDING:
 
 ; -----------------------------------------------------------------------------
 ENTER_PASSWORD:
-	halt
 
 ; Removes sprites
+	halt
 	call	CLS_SPRATR
 	call	LDIRVM_SPRATR
 	

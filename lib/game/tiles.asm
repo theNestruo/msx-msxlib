@@ -98,7 +98,12 @@ GET_TILE_VALUE:
 	ld	a, e
 	sub	192 -1
 	jr	nc, .OFF_SCREEN ; yes (y >= 192)
-; no: visible screen
+; no: visible screen. Checks border
+	ld	a, d
+	add	8
+	cp	16
+	jr	c, .BORDER
+; no
 	call	COORDS_TO_OFFSET ; NAMTBL offset in hl
 	ld	de, namtbl_buffer
 	add	hl, de ; NAMTBL buffer pointer in hl
@@ -113,6 +118,10 @@ GET_TILE_VALUE:
 	ret	c ; under visible screen (y - 192 < 32)
 ; over visible screen (y - 192 > 32  =>  y > -32)
 	ld	a, CFG_TILES_VALUE_OVER
+	ret
+	
+.BORDER:
+	ld	a, CFG_TILES_VALUE_BORDER
 	ret
 ; -----------------------------------------------------------------------------
 

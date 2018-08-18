@@ -7,6 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Literals
+IFDEF CFG_DEMO_MODE
 TXT_COPYRIGHT:
 	db	"STEVEDORE", $00
 	db	"RETROEUSKAL 2018 PROMO VERSION", $00
@@ -14,6 +15,7 @@ TXT_COPYRIGHT:
 	db	" ", $00
 	db	"@2018 THENESTRUO = WONDER", $00
 	db	$00
+ENDIF
 
 TXT_PUSH_SPACE_KEY:
 	db	"PUSH SPACE KEY", $00
@@ -77,17 +79,13 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Initial value of the globals
 GLOBALS_0:
-IFDEF CFG_DEMO_MODE
-	db	2			; .chapters
-ELSE
 	db	1			; .chapters
-ENDIF ; IFDEF CFG_DEMO_MODE
 	db	$00			; .flags
 	.SIZE:	equ $ - GLOBALS_0
 	
 ; Initial value of the game-scope vars
 GAME_0:
-	db	3			; .lives
+	db	5			; .lives
 	db	0			; .item_counter
 	db	0			; .chapter
 	.SIZE:	equ $ - GAME_0
@@ -135,7 +133,7 @@ INTRO_DATA:
 	db	$ca, $00, $c8 ; 3 bytes
 	
 .FLOOR_CHARS:
-	db	$25, $24, $25, $5c, $84, $85, $05, $24, $25 ; 9 bytes
+	db	$25, $24, $25, $5c, $84, $85, $11, $24, $25 ; 9 bytes
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -148,7 +146,7 @@ STAGE_SELECT:
 	.HEIGHT:	equ 8	
 
 .FLOOR_CHARS:
-	db	$25, $24, $25, $84, $85, $05, $24, $25 ; 8 bytes
+	db	$25, $24, $25, $84, $85, $11, $24, $25 ; 8 bytes
 
 .MENU_0_TABLE:
 ; 1st chapter open
@@ -199,35 +197,27 @@ STAGE_SELECT:
 	;	.stage,	.stage_bcd
 	db	FIRST_TUTORIAL_STAGE, $00 ; Warehouse (tutorial)
 	db	 0, $01 ; Lighthouse
-	db	 5, $06 ; Ship
-	db	10, $11 ; Jungle
-	db	15, $16 ; Volcano
-	db	20, $21 ; Temple
+	db	 6, $07 ; Ship
+	db	12, $13 ; Jungle
+	db	18, $19 ; Volcano
+	db	24, $25 ; Temple
+	db	30, $31 ; Secret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Screens binary data (NAMTBL)
 NAMTBL_PACKED_TABLE:
-; Lighthouse
-	dw	.STAGE_01, .STAGE_02, .STAGE_03, .STAGE_04, .STAGE_05
-	; dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
-; Ship
-IFDEF CFG_DEMO_MODE
-	dw	.STAGE_06, .STAGE_08, .STAGE_11, .STAGE_14, .STAGE_16
-	; dw	.EMPTY, .EMPTY, .EMPTY, .EMPTY, .EMPTY
-ELSE
-	dw	.STAGE_06, .STAGE_07, .STAGE_08, .STAGE_09, .STAGE_10
-ENDIF ; IF CFG_DEMO_MODE = 1
-; Jungle
-	dw	.STAGE_11, .STAGE_12, .STAGE_13, .STAGE_14, .STAGE_15
-; Volcano
-	dw	.STAGE_16, .STAGE_17, .STAGE_18, .STAGE_19, .STAGE_20
-; Temple
-	dw	.STAGE_21, .STAGE_22, .STAGE_23, .STAGE_24, .STAGE_25
+; Stages
+	dw	.LIGHTHOUSE_1,	.LIGHTHOUSE_2,	.LIGHTHOUSE_3,	.LIGHTHOUSE_4,	.LIGHTHOUSE_5,	.LIGHTHOUSE_6
+	dw	.SHIP_1,	.SHIP_2, 	.SHIP_3,	.SHIP_4,	.SHIP_5,	.SHIP_6
+	dw	.JUNGLE_1,	.JUNGLE_2,	.JUNGLE_3,	.JUNGLE_4,	.JUNGLE_5,	.JUNGLE_6
+	dw	.VOLCANO_1,	.VOLCANO_2, 	.VOLCANO_3,	.VOLCANO_4,	.VOLCANO_5,	.VOLCANO_6
+	dw	.TEMPLE_1,	.TEMPLE_2,	.TEMPLE_3,	.TEMPLE_4,	.TEMPLE_5,	.TEMPLE_6
+	dw	.SECRET_1,	.SECRET_2, 	.SECRET_3,	.SECRET_4,	.SECRET_5,	.SECRET_6
 ; Intro screen
 	dw	.INTRO_STAGE
 ; Warehouse (tutorial)
-	dw	.TUTORIAL_01, .TUTORIAL_02, .TUTORIAL_03, .TUTORIAL_04, .TUTORIAL_05
+	dw	.WAREHOUSE_1,	.WAREHOUSE_2,	.WAREHOUSE_3,	.WAREHOUSE_4,	.WAREHOUSE_5
 
 .EMPTY:		incbin	"games/stevedore/maps/empty.tmx.bin.zx7"
 
@@ -235,46 +225,59 @@ ENDIF ; IF CFG_DEMO_MODE = 1
 .INTRO_STAGE:	incbin	"games/stevedore/maps/intro_stage.tmx.bin.zx7"
 
 ; Warehouse (tutorial)
-.TUTORIAL_01:	incbin	"games/stevedore/maps/tutorial_01.tmx.bin.zx7"
-.TUTORIAL_02:	incbin	"games/stevedore/maps/tutorial_02.tmx.bin.zx7"
-.TUTORIAL_03:	incbin	"games/stevedore/maps/tutorial_03.tmx.bin.zx7"
-.TUTORIAL_04:	incbin	"games/stevedore/maps/tutorial_04.tmx.bin.zx7"
-.TUTORIAL_05:	incbin	"games/stevedore/maps/tutorial_05.tmx.bin.zx7"
+.WAREHOUSE_1:	incbin	"games/stevedore/maps/0-1-warehouse.tmx.bin.zx7"
+.WAREHOUSE_2:	incbin	"games/stevedore/maps/0-2-warehouse.tmx.bin.zx7"
+.WAREHOUSE_3:	incbin	"games/stevedore/maps/0-3-warehouse.tmx.bin.zx7"
+.WAREHOUSE_4:	incbin	"games/stevedore/maps/0-4-warehouse.tmx.bin.zx7"
+.WAREHOUSE_5:	incbin	"games/stevedore/maps/0-5-warehouse.tmx.bin.zx7"
 
 ; Lighthouse
-.STAGE_01:	incbin	"games/stevedore/maps/stage_01.tmx.bin.zx7"
-.STAGE_02:	incbin	"games/stevedore/maps/stage_02.tmx.bin.zx7"
-.STAGE_03:	incbin	"games/stevedore/maps/stage_03.tmx.bin.zx7"
-.STAGE_04:	incbin	"games/stevedore/maps/stage_04.tmx.bin.zx7"
-.STAGE_05:	incbin	"games/stevedore/maps/stage_05.tmx.bin.zx7"
+.LIGHTHOUSE_1:	incbin	"games/stevedore/maps/1-1-lighthouse.tmx.bin.zx7"
+.LIGHTHOUSE_2:	incbin	"games/stevedore/maps/1-2-lighthouse.tmx.bin.zx7"
+.LIGHTHOUSE_3:	incbin	"games/stevedore/maps/1-3-lighthouse.tmx.bin.zx7"
+.LIGHTHOUSE_4:	incbin	"games/stevedore/maps/1-4-lighthouse.tmx.bin.zx7"
+.LIGHTHOUSE_5:	incbin	"games/stevedore/maps/1-5-lighthouse.tmx.bin.zx7"
+.LIGHTHOUSE_6:	incbin	"games/stevedore/maps/1-6-lighthouse.tmx.bin.zx7"
 
 ; Ship
-.STAGE_06:	incbin	"games/stevedore/maps/stage_06.tmx.bin.zx7"
-.STAGE_07:	incbin	"games/stevedore/maps/stage_07.tmx.bin.zx7"
-.STAGE_08:	incbin	"games/stevedore/maps/stage_08.tmx.bin.zx7"
-.STAGE_09:	incbin	"games/stevedore/maps/stage_09.tmx.bin.zx7"
-.STAGE_10:	incbin	"games/stevedore/maps/stage_10.tmx.bin.zx7"
+.SHIP_1:	incbin	"games/stevedore/maps/2-1-ship.tmx.bin.zx7"
+.SHIP_2:	incbin	"games/stevedore/maps/2-2-ship.tmx.bin.zx7"
+.SHIP_3:	incbin	"games/stevedore/maps/2-3-ship.tmx.bin.zx7"
+.SHIP_4:	incbin	"games/stevedore/maps/2-4-ship.tmx.bin.zx7"
+.SHIP_5:	incbin	"games/stevedore/maps/2-5-ship.tmx.bin.zx7"
+.SHIP_6:	incbin	"games/stevedore/maps/2-6-ship.tmx.bin.zx7"
 
 ; Jungle
-.STAGE_11:	incbin	"games/stevedore/maps/stage_11.tmx.bin.zx7"
-.STAGE_12:	incbin	"games/stevedore/maps/stage_12.tmx.bin.zx7"
-.STAGE_13:	incbin	"games/stevedore/maps/stage_13.tmx.bin.zx7"
-.STAGE_14:	incbin	"games/stevedore/maps/stage_14.tmx.bin.zx7"
-.STAGE_15:	incbin	"games/stevedore/maps/stage_15.tmx.bin.zx7"
+.JUNGLE_1:	incbin	"games/stevedore/maps/3-1-jungle.tmx.bin.zx7"
+.JUNGLE_2:	incbin	"games/stevedore/maps/3-2-jungle.tmx.bin.zx7"
+.JUNGLE_3:	incbin	"games/stevedore/maps/3-3-jungle.tmx.bin.zx7"
+.JUNGLE_4:	incbin	"games/stevedore/maps/3-4-jungle.tmx.bin.zx7"
+.JUNGLE_5:	incbin	"games/stevedore/maps/3-5-jungle.tmx.bin.zx7"
+.JUNGLE_6:	incbin	"games/stevedore/maps/3-6-jungle.tmx.bin.zx7"
 
 ; Volcano
-.STAGE_16:	incbin	"games/stevedore/maps/stage_16.tmx.bin.zx7"
-.STAGE_17:	incbin	"games/stevedore/maps/stage_17.tmx.bin.zx7"
-.STAGE_18:	incbin	"games/stevedore/maps/stage_18.tmx.bin.zx7"
-.STAGE_19:	incbin	"games/stevedore/maps/stage_19.tmx.bin.zx7"
-.STAGE_20:	incbin	"games/stevedore/maps/stage_20.tmx.bin.zx7"
+.VOLCANO_1:	incbin	"games/stevedore/maps/4-1-volcano.tmx.bin.zx7"
+.VOLCANO_2:	incbin	"games/stevedore/maps/4-2-volcano.tmx.bin.zx7"
+.VOLCANO_3:	incbin	"games/stevedore/maps/4-3-volcano.tmx.bin.zx7"
+.VOLCANO_4:	incbin	"games/stevedore/maps/4-4-volcano.tmx.bin.zx7"
+.VOLCANO_5:	incbin	"games/stevedore/maps/4-5-volcano.tmx.bin.zx7"
+.VOLCANO_6:	incbin	"games/stevedore/maps/4-6-volcano.tmx.bin.zx7"
 
 ; Temple
-.STAGE_21:	incbin	"games/stevedore/maps/stage_21.tmx.bin.zx7"
-.STAGE_22:	incbin	"games/stevedore/maps/stage_22.tmx.bin.zx7"
-.STAGE_23:	incbin	"games/stevedore/maps/stage_23.tmx.bin.zx7"
-.STAGE_24:	incbin	"games/stevedore/maps/stage_24.tmx.bin.zx7"
-.STAGE_25:	incbin	"games/stevedore/maps/stage_25.tmx.bin.zx7"
+.TEMPLE_1:	incbin	"games/stevedore/maps/5-1-temple.tmx.bin.zx7"
+.TEMPLE_2:	incbin	"games/stevedore/maps/5-2-temple.tmx.bin.zx7"
+.TEMPLE_3:	incbin	"games/stevedore/maps/5-3-temple.tmx.bin.zx7"
+.TEMPLE_4:	incbin	"games/stevedore/maps/5-4-temple.tmx.bin.zx7"
+.TEMPLE_5:	incbin	"games/stevedore/maps/5-5-temple.tmx.bin.zx7"
+.TEMPLE_6:	incbin	"games/stevedore/maps/5-6-temple.tmx.bin.zx7"
+
+; Secret
+.SECRET_1:	incbin	"games/stevedore/maps/6-1-secret.tmx.bin.zx7"
+.SECRET_2:	incbin	"games/stevedore/maps/6-2-secret.tmx.bin.zx7"
+.SECRET_3:	incbin	"games/stevedore/maps/6-3-secret.tmx.bin.zx7"
+.SECRET_4:	incbin	"games/stevedore/maps/6-4-secret.tmx.bin.zx7"
+.SECRET_5:	incbin	"games/stevedore/maps/6-5-secret.tmx.bin.zx7"
+.SECRET_6:	incbin	"games/stevedore/maps/6-6-secret.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -434,10 +437,10 @@ SOUND_BANK:
 	; CFG_SOUND_ENEMY_RESPAWN:	equ 0
 ; -----------------------------------------------------------------------------
 
-IFDEF CFG_DEMO_MODE
-IF CFG_DEMO_MODE = 1 ; 1 = RETROEUSKAL 2018 promo version
-	db	"RetroEuskal 2018 promo version"
-ENDIF ; IF CFG_DEMO_MODE = 1
-ENDIF ; IFDEF CFG_DEMO_MODE
+; IFDEF CFG_DEMO_MODE
+; IF CFG_DEMO_MODE = 1 ; 1 = RETROEUSKAL 2018 promo version
+	; db	"RetroEuskal 2018 promo version"
+; ENDIF ; IF CFG_DEMO_MODE = 1
+; ENDIF ; IFDEF CFG_DEMO_MODE
 
 ; EOF

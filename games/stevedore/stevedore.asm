@@ -28,11 +28,11 @@
 	include "lib/msx/cartridge.asm"
 
 ; Splash screens
-SPLASH_SCREENS_PACKED_TABLE:
-	db	1
-	dw	.RETROEUSKAL
-.RETROEUSKAL:
-	incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
+; SPLASH_SCREENS_PACKED_TABLE:
+	; db	1
+	; dw	.RETROEUSKAL
+; .RETROEUSKAL:
+	; incbin	"splash/retroeuskal/retroeuskal.bin.zx7"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -146,8 +146,9 @@ CFG_CUSTOM_PALETTE:
 ; Sprite-tile helper routines
 
 ; Tile indexes (values) to be returned by GET_TILE_VALUE
-; when the coordinates are over and under visible screen
-	CFG_TILES_VALUE_OVER:	equ $30 ; tile with BIT_WORLD_FLOOR | BIT_WORLD_SOLID flags
+; when the coordinates are screen borders, or over and under visible screen
+	CFG_TILES_VALUE_BORDER:	equ $30 ; tile with BIT_WORLD_FLOOR | BIT_WORLD_SOLID flags
+	CFG_TILES_VALUE_OVER:	equ $00 ; tile with no flags
 	CFG_TILES_VALUE_UNDER:	equ $e8 ; tile with BIT_WORLD_DEATH flags
 
 ; Table of tile flags in pairs (up to index, tile flags)
