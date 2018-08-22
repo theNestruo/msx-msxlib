@@ -31,7 +31,9 @@
 	; ; undefined = release version
 	; ; 1 = RETROEUSKAL 2018 promo version
 	
-	DEBUG_STAGE:		equ 1 -1 ; DEBUG LINE
+	DEBUG_STAGE:		equ 1 -1 ; Tests one specific stage
+	DEBUG_BETATESTER:	equ 1 ; Enables SELECT to skip stage
+	; DEBUG_EDITOR		equ 1 ; Enables
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -478,7 +480,11 @@ ENDIF
 ; Extra input
 	call	CHECK_CTRL_STOP_KEY
 	call	z, .ON_SUICIDE_KEY ; yes
-	
+IFDEF DEBUG_BETATESTER
+	call	CHECK_SELECT_KEY
+	jr	z, STAGE_OVER
+ENDIF ; IFDEF DEBUG_BETATESTER
+
 ; Check exit condition
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
@@ -1477,9 +1483,9 @@ POST_PROCESS_STAGE_ELEMENT:
 	dec	a
 	jp	z, NEW_SNAKE_2 ; '4'
 	dec	a
-	jp	z, NEW_SNAKE_3 ; '5'
+	jp	z, NEW_MONKEY_1 ; '5'
 	dec	a
-	; jp	z, NEW_PIRATE ; '6'
+	jp	z, NEW_MONKEY_2 ; '6'
 	dec	a
 	jp	z, NEW_SAVAGE ; '7'
 	dec	a
@@ -1602,18 +1608,13 @@ NEW_LEFT_TRAP:
 
 ; Enemy handler that shoots a bullet to the left
 .SHOOT_LEFT_HANDLER:
-	ld	hl, .ARROW_LEFT_DATA
+	ld	hl, BULLET_DATA.ARROW_LEFT
 	ld	b, -1 ; (ensures the bullets start outside the tile)
 	ld	c, -8
 	call	INIT_BULLET_FROM_ENEMY
 ; ret 0 (halt)
 	xor	a
 	ret
-	
-.ARROW_LEFT_DATA:
-	db	ARROW_LEFT_SPRITE_PATTERN
-	db	ARROW_SPRITE_COLOR
-	db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1643,18 +1644,13 @@ NEW_RIGHT_TRAP:
 
 ; Enemy handler that shoots a bullet to the right
 .SHOOT_RIGHT_HANDLER:
-	ld	hl, .ARROW_RIGHT_DATA
+	ld	hl, BULLET_DATA.ARROW_RIGHT
 	ld	b, 0
 	ld	c, -8
 	call	INIT_BULLET_FROM_ENEMY
 ; ret 0 (halt)
 	xor	a
 	ret
-	
-.ARROW_RIGHT_DATA:
-	db	ARROW_RIGHT_SPRITE_PATTERN
-	db	ARROW_SPRITE_COLOR
-	db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1758,99 +1754,36 @@ NEW_SNAKE_2:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Initializes a new snake (3)
-NEW_SNAKE_3:
+; Initializes a new monkey (1)
+NEW_MONKEY_1:
 	ld	[hl], 0
 	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	ld	hl, .SNAKE_3_DATA
+	ld	hl, .MONKEY_1_DATA
 	jp	INIT_ENEMY
 
-; Snake (1): the snake walks, the pauses, turning around, and continues
-.SNAKE_3_DATA:
-	db	SNAKE_SPRITE_PATTERN
-	db	SNAKE_SPRITE_COLOR_3
+; Monkey (1): TODO description
+.MONKEY_1_DATA:
+	db	MONKEY_SPRITE_PATTERN
+	db	MONKEY_SPRITE_COLOR_1
 	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
-	dw	ENEMY_TYPE_JUMPER.TRIGGERED
+	dw	ENEMY_TYPE_PACER.PAUSED
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Initializes a new pirate
-; NEW_PIRATE:
-	; ld	[hl], 0
-	; call	NAMTBL_POINTER_TO_LOGICAL_COORDS
-	; ld	hl, .PIRATE_DATA
-	; jp	INIT_ENEMY
+; -----------------------------------------------------------------------------
+; Initializes a new monkey (2)
+NEW_MONKEY_2:
+	ld	[hl], 0
+	call	NAMTBL_POINTER_TO_LOGICAL_COORDS
+	ld	hl, .MONKEY_2_DATA
+	jp	INIT_ENEMY
 
-; ; Pirate: TODO
-; .PIRATE_DATA:
-	; db	PIRATE_SPRITE_PATTERN
-	; db	PIRATE_SPRITE_COLOR
-	; db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
-	; dw	.PIRATE_BEHAVIOUR
-	
-; .PIRATE_BEHAVIOUR:
-; ; The enemy walks ahead
-	; dw	GOSUB_ENEMY_HANDLER
-	; dw	.PIRATE_BEHAVIOUR_SUB
-	; dw	PUT_ENEMY_SPRITE_ANIM
-	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	; dw	WALKER_ENEMY_HANDLER.NOTIFY
-	; dw	SET_NEW_STATE_HANDLER.NEXT
-; ; then pauses, turning around
-	; dw	GOSUB_ENEMY_HANDLER
-	; dw	.PIRATE_BEHAVIOUR_SUB
-	; dw	PUT_ENEMY_SPRITE
-	; dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
-	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	; dw	WAIT_ENEMY_HANDLER.TURNING
-	; db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
-; ; and continues
-	; dw	SET_NEW_STATE_HANDLER
-	; dw	.PIRATE_BEHAVIOUR ; (restart)
-	
-; .PIRATE_BEHAVIOUR_SUB:
-	; dw	TRIGGER_ENEMY_HANDLER
-; ; Is the player ahead of the enemy and in overlapping x coordinates?
-	; dw	WAIT_ENEMY_HANDLER.PLAYER_AHEAD
-	; dw	WAIT_ENEMY_HANDLER.Y_COLLISION
-	; db	PLAYER_BULLET_Y_SIZE
-; ; Shoot
-	; dw	TRIGGER_ENEMY_HANDLER.RESET
-	; db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
-	; dw	.SHOOT_AHEAD_HANDLER
-	
-; ; Enemy handler that shoots a knife ahead (left or right)
-; .SHOOT_AHEAD_HANDLER:
-; ; Is the enemy looking to the left?
-	; bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	; jr	z, .SHOOT_RIGHT ; no
-; ; yes: Shoots to the left
-	; ld	hl, .KNIFE_LEFT_DATA
-	; jr	.SHOOT
-; ; Shoots to the right
-; .SHOOT_RIGHT:
-	; ld	hl, .KNIFE_RIGHT_DATA
-	; ; jr	.SHOOT ; falls through
-; ; Initializes the bullet
-; .SHOOT:
-	; ld	b, 0
-	; ld	c, -4
-	; call	INIT_BULLET_FROM_ENEMY
-; ; ret 0 (halt)
-	; xor	a
-	; ret
-	
-; .KNIFE_LEFT_DATA:
-	; db	KNIFE_LEFT_SPRITE_PATTERN
-	; db	KNIFE_SPRITE_COLOR
-	; db	BULLET_DIR_LEFT OR 4 ; (4 pixels / frame)
-	
-; .KNIFE_RIGHT_DATA:
-	; db	KNIFE_RIGHT_SPRITE_PATTERN
-	; db	KNIFE_SPRITE_COLOR
-	; db	BULLET_DIR_RIGHT OR 4 ; (4 pixels / frame)
-; ; -----------------------------------------------------------------------------
+; Monkey (2): TODO description
+.MONKEY_2_DATA:
+	db	MONKEY_SPRITE_PATTERN
+	db	MONKEY_SPRITE_COLOR_2
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	dw	ENEMY_TYPE_WALKER
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Initializes a new savage
@@ -1865,7 +1798,60 @@ NEW_SAVAGE:
 	db	SAVAGE_SPRITE_PATTERN
 	db	SAVAGE_SPRITE_COLOR
 	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
-	dw	ENEMY_TYPE_PACER.FOLLOWER
+	dw	.SAVAGE_BEHAVIOUR
+	
+.SAVAGE_BEHAVIOUR:
+; The enemy walks ahead
+	dw	GOSUB_ENEMY_HANDLER
+	dw	.SAVAGE_BEHAVIOUR_SUB
+	dw	PUT_ENEMY_SPRITE_ANIM
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WALKER_ENEMY_HANDLER.NOTIFY
+	dw	SET_NEW_STATE_HANDLER.NEXT
+; then pauses, turning around
+	dw	GOSUB_ENEMY_HANDLER
+	dw	.SAVAGE_BEHAVIOUR_SUB
+	dw	PUT_ENEMY_SPRITE
+	dw	FALLER_ENEMY_HANDLER ; (falls if not on the floor)
+	db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
+	dw	WAIT_ENEMY_HANDLER.TURNING
+	db	(2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
+; and continues
+	dw	SET_NEW_STATE_HANDLER
+	dw	.SAVAGE_BEHAVIOUR ; (restart)
+	
+.SAVAGE_BEHAVIOUR_SUB:
+	dw	TRIGGER_ENEMY_HANDLER
+; Is the player ahead of the enemy and in overlapping x coordinates?
+	dw	WAIT_ENEMY_HANDLER.PLAYER_AHEAD
+	dw	WAIT_ENEMY_HANDLER.Y_COLLISION
+	db	PLAYER_BULLET_Y_SIZE
+; Shoot
+	dw	TRIGGER_ENEMY_HANDLER.RESET
+	db	CFG_ENEMY_PAUSE_M ; medium pause until next shoot
+	dw	.SHOOT_AHEAD_HANDLER
+	
+; Enemy handler that shoots a knife ahead (left or right)
+.SHOOT_AHEAD_HANDLER:
+; Is the enemy looking to the left?
+	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	jr	z, .SHOOT_RIGHT ; no
+; yes: Shoots to the left
+	ld	hl, BULLET_DATA.ARROW_LEFT
+	jr	.SHOOT
+; Shoots to the right
+.SHOOT_RIGHT:
+	ld	hl, BULLET_DATA.ARROW_RIGHT
+	; jr	.SHOOT ; falls through
+; Initializes the bullet
+.SHOOT:
+	ld	b, 0
+	ld	c, -4
+	call	INIT_BULLET_FROM_ENEMY
+; ret 0 (halt)
+	xor	a
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -1940,18 +1926,13 @@ NEW_JELLYFISH:
 
 ; JELLYFISH: the JELLYFISH shoots oil up
 .SHOOT_UP_HANDLER:
-	ld	hl, .SPARK_UP_DATA
+	ld	hl, BULLET_DATA.SPARK
 	ld	b, 0
 	ld	c, -12
 	call	INIT_BULLET_FROM_ENEMY
 ; ret 0 (halt)
 	xor	a
 	ret
-	
-.SPARK_UP_DATA:
-	db	SPARK_SPRITE_PATTERN
-	db	SPARK_SPRITE_COLOR
-	db	BULLET_DIR_UP OR 4 ; (4 pixels / frame)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
