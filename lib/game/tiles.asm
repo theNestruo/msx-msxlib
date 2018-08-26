@@ -94,22 +94,33 @@ NAMTBL_POINTER_TO_LOGICAL_COORDS:
 ; ret a: tile index (value)
 ; touches: de
 GET_TILE_VALUE:
-; Checks off-screen
-	ld	a, e
-	sub	192 -1
-	jr	nc, .OFF_SCREEN ; yes (y >= 192)
-; no: visible screen. Checks border
+
+; Checks screen borders
+IFDEF CFG_TILES_VALUE_BORDER
 	ld	a, d
 	add	8
 	cp	16
-	jr	c, .BORDER
-; no
+	jr	c, .SCREEN_BORDER ; yes
+ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
+
+; no: Checks off-screen
+	ld	a, e
+	sub	192 -1
+	jr	nc, .OFF_SCREEN ; yes (y >= 192)
+	
+; no: visible screen
 	call	COORDS_TO_OFFSET ; NAMTBL offset in hl
 	ld	de, namtbl_buffer
 	add	hl, de ; NAMTBL buffer pointer in hl
 ; reads the tile index (value)
 	ld	a, [hl]
 	ret
+	
+IFDEF CFG_TILES_VALUE_BORDER
+.SCREEN_BORDER:
+	ld	a, CFG_TILES_VALUE_BORDER
+	ret
+ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 	
 .OFF_SCREEN:
 ; Is over or under visible screen?
@@ -118,10 +129,6 @@ GET_TILE_VALUE:
 	ret	c ; under visible screen (y - 192 < 32)
 ; over visible screen (y - 192 > 32  =>  y > -32)
 	ld	a, CFG_TILES_VALUE_OVER
-	ret
-	
-.BORDER:
-	ld	a, CFG_TILES_VALUE_BORDER
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -157,49 +164,32 @@ GET_V_TILE_FLAGS:
 ; Calculates how many tiles to check
 	ld	a, e ; from top
 	call	HOW_MANY_TILES
-; First tile
-	call	GET_TILE_VALUE ; also: NAMTBL buffer pointer in hl
+; Reads the first tile flags
+	push	de ; preserves pixel coordinates
+	call	GET_TILE_VALUE
+	pop	de ; restores pixel coordinates
+	call	GET_TILE_FLAGS
 ; Only one tile?
 	dec	b
-	jp	z, GET_TILE_FLAGS ; yes
+	ret	z ; yes
 	
-; no: reads first tile flags
-	ex	de, hl ; NAMTBL buffer pointer in de
-	call	GET_TILE_FLAGS
-; For each other tile
+; no: For each other tile
 .LOOP:
 	ld	c, a ; current flags in c
-	push	bc ; preserves counter and current flags
-; Reads the next tile
-	call	.GET_NEXT_TILE_FLAGS
-; ; Moves pointer one tile down
-	; ld	a, SCR_WIDTH
-	; add	e ; de += a => de += 32
-	; ld	e, a
-	; adc	d
-	; sub	e
-	; ld	d, a
-; ; Reads other tile
-	; ld	a, [de]
-	; call	GET_TILE_FLAGS
-	pop	bc ; restores counter and previous flags
-; OR tile flags
+; Moves coordinates one tile down
+	ld	a, 8
+	add	e
+	ld	e, a
+; Reads the next tile flags
+	push	de ; preserves pixel coordinates
+	call	GET_TILE_VALUE
+	pop	de ; restores pixel coordinates
+	call	GET_TILE_FLAGS
+; OR current tile flags
 	or	c
 ; Next tile
 	djnz	.LOOP
 	ret
-	
-.GET_NEXT_TILE_FLAGS:
-; Moves pointer one tile down
-	ld	a, SCR_WIDTH
-	add	e ; de += a => de += 32
-	ld	e, a
-	adc	d
-	sub	e
-	ld	d, a
-; Reads other tile
-	ld	a, [de]
-	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

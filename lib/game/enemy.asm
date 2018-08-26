@@ -672,38 +672,12 @@ GET_ENEMY_TILE_FLAGS:
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles to the left of the enemy
-; when aligned to the tile boundary
-; param ix: pointer to the current enemy
-; ret a: OR-ed tile flags
-GET_ENEMY_TILE_FLAGS_LEFT_FAST:
-; Aligned to tile boundary?
-	ld	a, [ix + enemy.x]
-	add	ENEMY_BOX_X_OFFSET
-	and	$07
-	jp	nz, GET_NO_ENEMY_TILE_FLAGS ; no: return no flags
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles to the left of the enemy
 ; param ix: pointer to the current enemy
 ; ret a: OR-ed tile flags
 GET_ENEMY_TILE_FLAGS_LEFT:
 	ld	a, ENEMY_BOX_X_OFFSET -1
 	jr	GET_ENEMY_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles to the right of the enemy
-; when aligned to the tile boundary
-; param ix: pointer to the current enemy
-; ret a: OR-ed tile flags
-GET_ENEMY_TILE_FLAGS_RIGHT_FAST:
-; Aligned to tile boundary?
-	ld	a, [ix + enemy.x]
-	add	ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
-	and	$07
-	jp	nz, GET_NO_ENEMY_TILE_FLAGS ; no: return no flags
-; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles to the right of the enemy
@@ -735,12 +709,6 @@ GET_ENEMY_V_TILE_FLAGS:
 ; Enemy height
 	ld	b, CFG_ENEMY_HEIGHT
 	jp	GET_V_TILE_FLAGS
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Convenience routine to read no flags
-; (used in GET_ENEMY_TILE_FLAGS_*_FAST)
-	GET_NO_ENEMY_TILE_FLAGS:	equ RET_ZERO
 ; -----------------------------------------------------------------------------
 
 ; EOF

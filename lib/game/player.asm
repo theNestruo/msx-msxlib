@@ -172,35 +172,11 @@ GET_PLAYER_TILE_FLAGS:
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles to the left of the player
-; when aligned to the tile boundary
-; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_LEFT_FAST:
-; Aligned to tile boundary?
-	ld	a, [player.x]
-	add	PLAYER_BOX_X_OFFSET
-	and	$07
-	jp	nz, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles to the left of the player
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_LEFT:
 	ld	a, PLAYER_BOX_X_OFFSET -1
 	jr	GET_PLAYER_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles to the right of the player
-; when aligned to the tile boundary
-; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_RIGHT_FAST:
-; Aligned to tile boundary?
-	ld	a, [player.x]
-	add	PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH
-	and	$07
-	jp	nz, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
-; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles to the right of the player
@@ -232,48 +208,10 @@ GET_PLAYER_V_TILE_FLAGS:
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles above the player
-; when aligned to the tile boundary
-; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_ABOVE_FAST:
-; Aligned to tile boundary?
-	ld	a, [player.y]
-	add	PLAYER_BOX_Y_OFFSET
-	and	$07
-	jp	nz, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles above the player
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_ABOVE:
 	ld	a, PLAYER_BOX_Y_OFFSET - 1
 	jr	GET_PLAYER_H_TILE_FLAGS
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles under the player
-; when aligned to a tile boundary
-; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_UNDER_FAST.ONE_PIXEL:
-	ld	a, 1
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the OR-ed flags of the tiles under the player
-; when moving fast enough to cross the tile boundary
-; param a: positive delta-Y
-; ret a: OR-ed tile flags
-GET_PLAYER_TILE_FLAGS_UNDER_FAST:
-; Moving fast enough to cross the tile boundary?
-	ld	b, a ; preserves delta-Y on b
-	ld	a, [player.y]
-	dec	a
-	or	$f8
-	add	b
-	jp	nc, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
-; yes
-	ld	a, b ; restores delta-Y
-	jp	GET_PLAYER_H_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -332,45 +270,12 @@ GET_PLAYER_H_TILE_FLAGS.AND:
 	jp	GET_H_TILE_FLAGS.AND
 ; -----------------------------------------------------------------------------
 
-
-; -----------------------------------------------------------------------------
-; Returns the AND-ed flags of the tiles under the player
-; when aligned to a tile boundary
-; ret a: AND-ed tile flags
-GET_PLAYER_TILE_FLAGS_WIDE_UNDER_FAST.ONE_PIXEL:
-	ld	a, 1
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Returns the AND-ed flags of the tiles under the player
-; when moving fast enough to cross the tile boundary
-; param a: positive delta-Y
-; ret a: AND-ed tile flags
-GET_PLAYER_TILE_FLAGS_WIDE_UNDER_FAST:
-; Moving fast enough to cross the tile boundary?
-	ld	b, a ; preserves delta-Y on b
-	ld	a, [player.y]
-	dec	a
-	or	$f8
-	add	b
-	jp	nc, GET_NO_PLAYER_TILE_FLAGS ; no: return no flags
-; yes
-	ld	a, b ; restores delta-Y
-	jp	GET_PLAYER_H_TILE_FLAGS.AND
-; -----------------------------------------------------------------------------
-
 ; -----------------------------------------------------------------------------
 ; Returns the AND-ed flags of the tiles under the player
 ; ret a: AND-ed tile flags
 GET_PLAYER_TILE_FLAGS_WIDE_UNDER:
 	xor	a ; dy = 0
 	jr	GET_PLAYER_H_TILE_FLAGS.AND
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Convenience routine to read no flags
-; (used in GET_PLAYER_TILE_FLAGS_*_FAST)
-	GET_NO_PLAYER_TILE_FLAGS:	equ RET_ZERO
 ; -----------------------------------------------------------------------------
 
 ; EOF
