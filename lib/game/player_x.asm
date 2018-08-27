@@ -246,7 +246,7 @@ UPDATE_PLAYER_AIR:
 
 ; (dy > 0): Is there floor under the player?
 	push	af ; preserves dy
-	call	GET_PLAYER_TILE_FLAGS_UNDER
+	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
 	bit	BIT_WORLD_FLOOR, a
 	pop	bc ; restores dy in b (to keep f)
 	jp	nz, SET_PLAYER_FLOOR.LANDING ; yes

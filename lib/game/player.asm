@@ -216,6 +216,24 @@ GET_PLAYER_TILE_FLAGS_ABOVE:
 
 ; -----------------------------------------------------------------------------
 ; Returns the OR-ed flags of the tiles under the player
+; when moving fast enough to cross the tile boundary
+; param a: positive delta-Y
+; ret a: OR-ed tile flags
+GET_PLAYER_TILE_FLAGS_UNDER_FAST:
+; Moving fast enough to cross the tile boundary?
+	ld	b, a ; preserves delta-Y on b
+	ld	a, [player.y]
+	dec	a
+	or	$f8
+	add	b
+	jp	nc, RET_ZERO ; no: return no flags
+; yes
+	ld	a, b ; restores delta-Y
+	jp	GET_PLAYER_H_TILE_FLAGS
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the OR-ed flags of the tiles under the player
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_UNDER:
 	xor	a ; dy = 0
