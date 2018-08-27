@@ -50,7 +50,18 @@
 	
 ; Number of sprites reserved at the beginning of the SPRATR buffer
 ; (i.e.: first sprite number for the "volatile" sprites)
-	CFG_SPRITES_RESERVED:	equ 2
+	CFG_SPRITES_RESERVED:	equ CFG_PLAYER_SPRITES
+	
+; Define if the LDIRVM the SPRATR buffer should use flickering
+	; CFG_SPRITES_FLICKER:
+	
+; Number of sprites that won't enter the flickering loop
+; (i.e.: number of sprites that will use the most priority planes)
+	; CFG_SPRITES_NO_FLICKER:	equ CFG_PLAYER_SPRITES_INDEX + 1 ; 7
+	
+; If defined, in/out fades sweep from center instead of sweeping from left to right
+	; CFG_FADE_TYPE_DOUBLE:
+
 
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
@@ -63,10 +74,16 @@
 ; Palette routines for MSX2 VDP
 
 ; Custom initial palette in $0GRB format (with R, G, B in 0..7).
-CFG_CUSTOM_PALETTE:
+; CFG_CUSTOM_PALETTE:
 ; Example: Default MSX2 palette
 	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
 	; dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
+; Example: CoolColors (c) Fabio R. Schmidlin, 1997
+	; dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
+	; dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
+; Example: TMS approximate (Wolf's Polka)
+	; dw	$0000, $0000, $0522, $0623, $0326, $0337, $0261, $0637
+	; dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
 
 ; Palette routines for MSX2 VDP
 	; include "lib/msx/vram_msx2.asm"
@@ -78,7 +95,7 @@ CFG_CUSTOM_PALETTE:
 
 ; Define to enable the "vpoke" routines (deferred WRTVRMs)
 ; Maximum number of "vpokes" per frame
-	CFG_VPOKES: 		equ 64
+	CFG_VPOKES: 		equ 4
 
 ; Define to enable the spriteable routines
 ; Maximum number of simultaneous spriteables
@@ -99,9 +116,15 @@ CFG_CUSTOM_PALETTE:
 	; CFG_PT3_HEADERLESS:
 
 ; PT3-based implementation
-	; include	"lib\msx\replayer_pt3.asm"
+	; include	"lib/msx/replayer_pt3.asm"
 ; WYZPlayer v0.47c-based implementation
-	; include	"lib\msx\replayer_wyz.asm"
+	; include	"lib/msx/replayer_wyz.asm"
+
+; Define to use relative volume version (the default is fixed volume)
+	; CFG_AYFX_RELATIVE:
+	
+; ayFX REPLAYER v1.31
+	; include	"libext/ayFX-replayer/ayFX-ROM.tniasm.asm"
 ; -----------------------------------------------------------------------------
 
 
@@ -116,8 +139,9 @@ CFG_CUSTOM_PALETTE:
 
 ; Tile indexes (values) to be returned by GET_TILE_VALUE
 ; when the coordinates are over and under visible screen
-	CFG_TILES_VALUE_OVER:	equ $8f ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
-	CFG_TILES_VALUE_UNDER:	equ $8f ; BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	CFG_TILES_VALUE_BORDER:	equ $a0 ; tile with BIT_WORLD_FLOOR | BIT_WORLD_SOLID
+	CFG_TILES_VALUE_OVER:	equ $00 ; tile with no flags
+	CFG_TILES_VALUE_UNDER:	equ $d0 ; tile with BIT_WORLD_DEATH
 
 ; Table of tile flags in pairs (up to index, tile flags)
 TILE_FLAGS_TABLE:
@@ -163,9 +187,9 @@ TILE_FLAGS_TABLE:
 PLAYER_SPRATR_TABLE:
 	;	0	ANIM	LEFT	LEFT|ANIM
 	db	$00,	$08,	$10,	$18	; PLAYER_STATE_FLOOR
-	db	$20,	$28,	$20,	$28	; PLAYER_STATE_STAIRS
+	db	$08,	$18,	$08,	$18	; PLAYER_STATE_STAIRS
 	db	$08,	$08,	$18,	$18	; PLAYER_STATE_AIR
-	db	$30,	$38,	$30,	$38	; PLAYER_STATE_DYING
+	db	$20,	$28,	$20,	$28	; PLAYER_STATE_DYING
 	;	...				; PLAYER_STATE_...
 
 ; Maps player states to assembly routines
@@ -186,6 +210,7 @@ PLAYER_DY_TABLE:
 	.FALL_OFFSET:	equ $ - PLAYER_DY_TABLE
 	db	1, 1, 1, 1, 1, 1	; (23,-14) / (6,6)
 	db	2, 2, 2			; (26,-8) / (9,12)
+	db	4
 	.SIZE:		equ $ - PLAYER_DY_TABLE
 
 ; Terminal falling speed (pixels/frame)
@@ -212,7 +237,7 @@ PLAYER_DY_TABLE:
 ; Enemy-tile helper routines
 
 ; Maximum simultaneous number of enemies
-	CFG_ENEMY_COUNT:		equ 4
+	CFG_ENEMY_COUNT:		equ 8
 
 ; Logical sprite sizes (bounding box size) (pixels)
 	CFG_ENEMY_WIDTH:		equ 8
@@ -245,6 +270,14 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_PAUSE_S:	equ 16 ; short pause (~16 frames)
 	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
+	
+; Killed/respawning patterns
+	; CFG_ENEMY_DYING_PATTERN:	equ ENEMY_DYING_PATTERN ; $c4
+	; CFG_ENEMY_RESPAWN_PATTERN:	equ ENEMY_RESPAWN_PATTERN ; $c8
+	
+; Triggers will fire <n> pixels before the actual collision occurs
+	CFG_ENEMY_ADVANCE_COLLISION:	equ 0
+
 
 ; Default enemy types (platformer game)
 ; Convenience enemy state handlers (platformer game)
@@ -262,10 +295,6 @@ PLAYER_DY_TABLE:
 ; Logical bullet sprite sizes (bounding box size) (pixels)
 	; CFG_BULLET_WIDTH:		equ 4
 	; CFG_BULLET_HEIGHT:		equ 4
-
-; Offsets to create a new bullet from an emey position (pixels)
-	; CFG_ENEMY_TO_BULLET_X_OFFSET:	equ 0
-	; CFG_ENEMY_TO_BULLET_Y_OFFSET:	equ -8
 
 ; Bullet related routines (generic)
 ; Bullet-tile helper routines
@@ -587,19 +616,48 @@ INIT_STAGE:
 	jr	.LOOP
 	
 .INIT_ELEMENT:
-; 0 = Initial player coordinates
-	cp	'0'
-	jr	z, .INIT_START_POINT
+; Is it the start point?
+	sub	'0'
+	jr	z, .INIT_START_POINT ; '0'
+; Is it an enemy?
+	dec	a
+	jp	z, .INIT_ENEMY_1 ; '1'
+	dec	a
+	jp	z, .INIT_ENEMY_2 ; '2'
+	; dec	a
+	; jp	z, .INIT_ENEMY_3 ; '3'
+	; dec	a
+	; jp	z, .INIT_ENEMY_4 ; '4'
 	ret
 
 ; Initial player coordinates
 .INIT_START_POINT:
 	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
 	ld	hl, player.y
-	ld	[hl], d
-	inc	hl ; hl = player.x
 	ld	[hl], e
+	inc	hl ; hl = player.x
+	ld	[hl], d
 	ret
+
+.INIT_ENEMY_1:
+	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
+	ld	hl, .ENEMY_1_DATA
+	jp	INIT_ENEMY
+.ENEMY_1_DATA:
+	db	$30
+	db	14
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	dw	ENEMY_TYPE_WALKER
+
+.INIT_ENEMY_2:
+	call	.CLEAR_CHAR_GET_LOGICAL_COORDS
+	ld	hl, .ENEMY_2_DATA
+	jp	INIT_ENEMY
+.ENEMY_2_DATA:
+	db	$78
+	db	4
+	db	FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH
+	dw	ENEMY_TYPE_WAVER
 
 ; Rutina de conveniencia que elimina el caracter de control
 ; y devuelve las coordenadas lógicas para ubicar ahí un sprite
@@ -609,15 +667,7 @@ INIT_STAGE:
 ; elimina el caracter de control
 	ld	[hl], 0
 ; calcula las coordenadas
-	call	NAMTBL_POINTER_TO_COORDS
-; convierte a coordenadas lógicas
-	ld	a, 4 ; medio caracter a la derecha
-	add	e
-	ld	e, a
-	ld	a, 8 ; un caracter hacia abajo
-	add	d
-	ld	d, a
-	ret
+	jp	NAMTBL_POINTER_TO_LOGICAL_COORDS
 ; -----------------------------------------------------------------------------
 
 ;
@@ -714,7 +764,7 @@ STAGE_0:
 
 ; Initial (per stage) sprite attributes table
 SPRATR_0:
-	db	SPAT_OB, 0, 0, 9	; Player 1st sprite
+	db	SPAT_OB, 0, 0, 4	; Player 1st sprite
 	db	SPAT_OB, 0, 0, 15	; Player 2nd sprite
 	db	SPAT_END		; SPAT end marker
 	
@@ -758,7 +808,7 @@ CHARSET:
 ; -----------------------------------------------------------------------------
 ; Sprites binary data (SPRTBL)
 SPRTBL_PACKED:
-	incbin	"games/stevedore/gfx/sprites.pcx.spr.zx7"
+	incbin	"games/template/sprites.pcx.spr.zx7"
 
 ; Sprite-related symbolic constants (SPRATR)
 	; ...

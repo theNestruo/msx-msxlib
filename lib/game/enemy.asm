@@ -101,6 +101,7 @@ UPDATE_ENEMIES:
 	jp	z, .NEXT ; yes
 ; no: update enemy
 
+IFEXIST CFG_ENEMY_DYING_PATTERN
 IFEXIST BIT_ENEMY_SOLID
 ; Reads the tile flags at the enemy coordinates
 	call	GET_ENEMY_TILE_FLAGS
@@ -133,6 +134,7 @@ IFEXIST BIT_ENEMY_SOLID
 	
 .NOT_KILLED:
 ENDIF ; IFEXIST BIT_WORLD_SOLID
+ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 
 ; Dereferences the state pointer of the current enemy
 	ld	l, [ix + enemy.state_l]
@@ -156,6 +158,7 @@ ENDIF ; IFEXIST BIT_WORLD_SOLID
 ; =============================================================================
 ;
 
+IFEXIST CFG_ENEMY_DYING_PATTERN
 ; -----------------------------------------------------------------------------
 ; Killed: the enemy has been killed. Shows the dying animation
 ; and respawns the enemy after a pause
@@ -199,7 +202,7 @@ ENEMY_TYPE_KILLED:
 ; Resets the animation delay and the frame counter for the next frame
 	jr	SET_ENEMY_STATE.RESET_FRAME_COUNTERS
 ; -----------------------------------------------------------------------------
-
+ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 
 ;
 ; =============================================================================
