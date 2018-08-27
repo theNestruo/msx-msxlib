@@ -17,8 +17,17 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Walker: the enemy walks along the ground
-; (see also: Pacer)
+;  Stationary: The enemy does no move at all
+ENEMY_TYPE_STATIONARY:	equ PUT_ENEMY_SPRITE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+;  Stationary: The enemy does no move at all
+.ANIMATED:	equ PUT_ENEMY_SPRITE_ANIMATE
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Walker: the enemy walks along the ground (see also: Pacer)
 ENEMY_TYPE_WALKER:
 ; (falls if not on the floor)
 	call	ENEMY_TYPE_FALLER.FLOOR_HANDLER
@@ -32,13 +41,52 @@ ENEMY_TYPE_WALKER:
 ; then turns around and continues
 ENEMY_TYPE_FLYER:
 	call	PUT_ENEMY_SPRITE_ANIMATE
-	; jp	.HANDLER ; (falls through)
+	; jp	.HANDLER ; falls through
 	
 .HANDLER:
 ; Checks wall
 	call	CAN_ENEMY_FLY
 	jp	nz, MOVE_ENEMY ; no: moves the enemy
 	jp	TURN_ENEMY ; yes: turns around
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Walker + Follower: The enemy follows the player (see also: Pacer + Follower)
+ENEMY_TYPE_WALKER.FOLLOWER:
+; (falls if not on the floor)
+	call	ENEMY_TYPE_FALLER.FLOOR_HANDLER
+	jp	z, PUT_ENEMY_SPRITE_ANIM
+; Pauses briefly
+	call	PUT_ENEMY_SPRITE
+	ld	b, CFG_ENEMY_PAUSE_M ; medium pause
+	call	WAIT_ENEMY_HANDLER
+	ret	nz
+; Then turns towards the player
+	call	TURN_ENEMY.TOWARDS_PLAYER
+	call	SET_ENEMY_STATE.NEXT ; (end)
+; (falls if not on the floor)
+	call	ENEMY_TYPE_FALLER.FLOOR_HANDLER
+	jp	z, PUT_ENEMY_SPRITE_ANIM
+; Walks ahead along the ground a medium distance
+	call	PUT_ENEMY_SPRITE_ANIMATE
+	ld	b, CFG_ENEMY_PAUSE_M ; medium distance
+	call	ENEMY_TYPE_WALKER.RANGED_HANDLER
+	ret	nz
+; Then continues
+	ld	hl, ENEMY_TYPE_WALKER.FOLLOWER ; (restart)
+	jp	SET_ENEMY_STATE
+
+; The enemy walks a number of pixels along the ground
+; param b: distance (frames/pixels) (0 = forever)
+; ret z/nz: z if the distance has been reached, nz otherwise
+ENEMY_TYPE_WALKER.RANGED_HANDLER:
+; Checks if the distance has been reached
+	call	WAIT_ENEMY_HANDLER
+	ret	z ; yes
+; Checks wall
+	call	CAN_ENEMY_FLY
+	ret	z; yes
+	jp	MOVE_ENEMY ; no: moves the enemy
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -203,7 +251,36 @@ ENEMY_TYPE_PACER:
 	jp	z, PUT_ENEMY_SPRITE
 ; Walks along the ground then turns around
 	call	PUT_ENEMY_SPRITE_ANIMATE
-	jp	WALKER_ENEMY_HANDLER
+	; jp	.DEFAULT_HANDLER ; falls through
+
+; The enemy walks ahead along the ground,
+; turning around when the wall is hit or at the end of the platform
+.DEFAULT_HANDLER:
+; Checks floor (or wall)
+	call	CAN_ENEMY_WALK
+	jp	z, TURN_ENEMY ; no: turns around
+; yes: moves the enemy
+	jp	MOVE_ENEMY
+	
+; The enemy walks ahead a number of pixels along the ground
+; or until a wall is hit, the end of the platform is reached
+; param b: distance (frames/pixels) (0 = forever)
+; ret z/nz: z if a wall has been hit or the distance has been reached, nz otherwise
+.RANGED_HANDLER:
+; Checks if the distance has been reached
+	call	WAIT_ENEMY_HANDLER
+	ret	z ; yes
+	; jr	.HANDLER ; falls through
+
+; The enemy walks ahead along the ground,
+; until a wall is hit or the end of the platform is reached
+; ret z/nz: z if a wall has been hit, nz otherwise
+.HANDLER:
+; Checks floor (or wall)
+	call	CAN_ENEMY_WALK
+	ret	z ; no
+; yes: moves the enemy
+	jp	MOVE_ENEMY
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -212,18 +289,18 @@ ENEMY_TYPE_PACER:
 .PAUSED:
 ; (falls if not on the floor)
 	call	ENEMY_TYPE_FALLER.FLOOR_HANDLER
-	jp	z, PUT_ENEMY_SPRITE
+	jp	z, PUT_ENEMY_SPRITE_ANIM
 ; Walks along the ground
 	call	PUT_ENEMY_SPRITE_ANIMATE
-	call	WALKER_ENEMY_HANDLER.NOTIFY
+	call	.HANDLER
 	ret	nz
 ; Then
-	call	SET_ENEMY_STATE.NEXT
-	call	PUT_ENEMY_SPRITE
+	call	SET_ENEMY_STATE.NEXT ; (end)
 ; (falls if not on the floor)
 	call	ENEMY_TYPE_FALLER.FLOOR_HANDLER
-	ret	z
+	jp	z, PUT_ENEMY_SPRITE_ANIM
 ; Pauses, turning around
+	call	PUT_ENEMY_SPRITE
 	ld	b, (2 << 6) OR CFG_ENEMY_PAUSE_M ; 3 (even) times, medium pause
 	call	WAIT_ENEMY_HANDLER.TURNING
 	ret	nz
@@ -233,26 +310,30 @@ ENEMY_TYPE_PACER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Follower: The enemy follows the player (Often used in top-down games).
+; Pacer + Follower: The enemy follows the player (see also: Walker + Follower)
 .FOLLOWER:
-; ; The enemy pauses briefly
-	; dw	PUT_ENEMY_SPRITE
-	; dw	ENEMY_TYPE_FALLER.HANDLER ; (falls if not on the floor)
-	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	; dw	WAIT_ENEMY_HANDLER
-	; db	CFG_ENEMY_PAUSE_M ; medium pause
-; ; then turns towards the player
-	; dw	TURN_ENEMY.TOWARDS_PLAYER
-	; dw	SET_ENEMY_STATE.NEXT
-; ; walks ahead along the ground a medium distance
-	; dw	PUT_ENEMY_SPRITE_ANIMATE
-	; dw	ENEMY_TYPE_FALLER.HANDLER ; (falls if not on the floor)
-	; db	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_FLOOR)
-	; dw	WALKER_ENEMY_HANDLER.RANGED
-	; db	CFG_ENEMY_PAUSE_M ; medium distance
-; ; and continues
-	; dw	SET_ENEMY_STATE
-	; dw	.FOLLOWER ; (restart)
+; (falls if not on the floor)
+	call	ENEMY_TYPE_FALLER.FLOOR_HANDLER
+	jp	z, PUT_ENEMY_SPRITE_ANIM
+; Pauses briefly
+	call	PUT_ENEMY_SPRITE
+	ld	b, CFG_ENEMY_PAUSE_M ; medium pause
+	call	WAIT_ENEMY_HANDLER
+	ret	nz
+; Then turns towards the player
+	call	TURN_ENEMY.TOWARDS_PLAYER
+	call	SET_ENEMY_STATE.NEXT ; (end)
+; (falls if not on the floor)
+	call	ENEMY_TYPE_FALLER.FLOOR_HANDLER
+	jp	z, PUT_ENEMY_SPRITE_ANIM
+; Walks ahead along the ground a medium distance
+	call	PUT_ENEMY_SPRITE_ANIMATE
+	ld	b, CFG_ENEMY_PAUSE_M ; medium distance
+	call	ENEMY_TYPE_PACER.RANGED_HANDLER
+	ret	nz
+; Then continues
+	ld	hl, .FOLLOWER ; (restart)
+	jp	SET_ENEMY_STATE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -296,36 +377,6 @@ ENEMY_TYPE_PACER:
 ; Example: Castlevania's Bats, Super Mario's Swoopers, Super Mario 3's Angry Sun
 ; -----------------------------------------------------------------------------
 
-;
-; =============================================================================
-;	Convenience enemy state handlers (platformer game)
-; =============================================================================
-;
-
-; -----------------------------------------------------------------------------
-; Walker state handler: the enemy walks ahead along the ground,
-; turning around when the wall is hit or at the end of the platform
-; param ix: pointer to the current enemy
-WALKER_ENEMY_HANDLER:
-; Checks floor (or wall)
-	call	CAN_ENEMY_WALK
-	jp	z, TURN_ENEMY ; no: turns around
-; yes: moves the enemy
-	jp	MOVE_ENEMY
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Walker state handler: the enemy walks ahead along the ground,
-; until a wall is hit or the end of the platform is reached
-; param ix: pointer to the current enemy
-; ret z/nz: z if a wall has been hit, nz otherwise
-.NOTIFY:
-; Checks floor (or wall)
-	call	CAN_ENEMY_WALK
-	ret	z
-; yes: moves the enemy
-	jp	MOVE_ENEMY
-; -----------------------------------------------------------------------------
 
 ;
 ; =============================================================================

@@ -234,32 +234,28 @@ SET_ENEMY_STATE:
 	ld	[ix + enemy.dy_index], a
 	ret
 	
-; ; Sets the new state as the new state (and the respawning state)
-; .AND_SAVE_RESPAWN:
-; ; Sets the new state
-	; call	SET_ENEMY_STATE
-	; ; jr	.SAVE_RESPAWN ; falls through
+; Sets the new state as the new state (and the respawning state)
+; param ix: pointer to the current enemy
+; param hl: address of the next state (word)
+.AND_SAVE_RESPAWN:
+; Sets the new state
+	call	SET_ENEMY_STATE
+	; jr	.SAVE_RESPAWN ; falls through
 
-; ; Saves the current data as the respawning data
-; .SAVE_RESPAWN:
-	; push	ix ; hl = ix
-	; pop	hl
-	; ld	d, h ; de = hl
-	; ld	e, l
-	; ld	a, enemy.respawn_data ; hl += .respawn_data
-	; call	ADD_HL_A
-	; ex	de, hl
-	; ld	bc, enemy.RESPAWN_SIZE 
-	; ldir
-; ; ret z (halt)
-	; xor	a
-	; ret
-
-; ; Sets the next state as the new state (and the respawning state)
-; .NEXT_AND_SAVE_RESPAWN:
-	; call	.NEXT
-	; jr	.SAVE_RESPAWN
-; ; -----------------------------------------------------------------------------
+; Saves the current data as the respawning data
+; param ix: pointer to the current enemy
+.SAVE_RESPAWN:
+	push	ix ; hl = ix
+	pop	hl
+	ld	d, h ; de = hl
+	ld	e, l
+	ld	a, enemy.respawn_data ; hl += .respawn_data
+	call	ADD_HL_A
+	ex	de, hl
+	ld	bc, enemy.RESPAWN_SIZE 
+	ldir
+	ret
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Updates animation counter and toggles the animation flag,
@@ -395,46 +391,53 @@ WAIT_ENEMY_HANDLER:
 	ret	; nz
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Wait state handler: waits until the player is ahead of the enemy
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; ret a: continue (2) if the player is ahead of the enemy, halt (0) otherwise
-; .PLAYER_AHEAD:
-	; bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	; jr	z, .PLAYER_RIGHT
-	; ; jr	.PLAYER_LEFT ; falls through
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is ahead of the enemy
+; param ix: pointer to the current enemy
+; ret z/nz: z if the wait has finished (the player is ahead), nz otherwise
+.PLAYER_AHEAD:
+	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
+	jr	z, .PLAYER_RIGHT
+	; jr	.PLAYER_LEFT ; falls through
+; ------VVVV----falls through--------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Wait state handler: waits until the player is left of the enemy
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; ret a: continue (2) if the player is left of the enemy, halt (0) otherwise
-; .PLAYER_LEFT:
-; ; Is the player to the left?
-	; ld	a, [player.x]
-	; cp	[ix + enemy.x]
-	; jp	c, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
-; ; no: halt (ret 0)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is left of the enemy
+; param ix: pointer to the current enemy
+; ret z/nz: z if the wait has finished (the player is left), nz otherwise
+.PLAYER_LEFT:
+; Is the player to the left?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	jp	nc, RET_NOT_ZERO ; no (ret nz)
+	jr	.PLAYER_AT_Y
+; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Wait state handler: waits until the player is right of the enemy
-; ; param ix: pointer to the current enemy
-; ; param iy: pointer to the current enemy state
-; ; ret a: continue (2) if the player is right of the enemy, halt (0) otherwise
-; .PLAYER_RIGHT:
-; ; Is the player to the right?
-	; ld	a, [player.x]
-	; cp	[ix + enemy.x]
-	; jp	nc, CONTINUE_ENEMY_HANDLER.NO_ARGS ; yes: continue (ret 2)
-; ; no: halt (ret 0)
-	; xor	a
-	; ret
-; ; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is right of the enemy
+; param ix: pointer to the current enemy
+; ret z/nz: z if the wait has finished (the player is right), nz otherwise
+.PLAYER_RIGHT:
+; Is the player to the right?
+	ld	a, [player.x]
+	cp	[ix + enemy.x]
+	ret	c ; no (ret nz)
+	; jr	.PLAYER_AT_Y ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Wait state handler: waits until the player is overlapping y coordinates
+; param ix: pointer to the current enemy
+; param h: vertical maximum distance
+; ret z/nz: z if the wait has finished (the player is overlapping), nz otherwise
+.PLAYER_AT_Y:
+; Is the player overlapping y coordinates?
+	call	CHECK_PLAYER_COLLISION.Y
+	jp	nc, RET_NOT_ZERO ; no
+; ret z
+	xor	a
+	ret
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Wait state handler: waits until the player is above the enemy
@@ -443,7 +446,7 @@ WAIT_ENEMY_HANDLER:
 .PLAYER_ABOVE_DEFAULT:
 ; Default horizontal maximum distance
 	ld	l, PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
-	; jr	.PLAYER_ABOVE : falls through
+	; jr	.PLAYER_ABOVE ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
