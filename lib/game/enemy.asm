@@ -483,6 +483,7 @@ WAIT_ENEMY_HANDLER:
 .PLAYER_BELOW:
 ; Is the player below?
 	ld	a, [player.y]
+	dec	a ; (avoids false positive due player.y == enemy.y)
 	cp	[ix + enemy.y]
 	ret	c ; no (ret nz)
 	; jr	.PLAYER_X : falls through

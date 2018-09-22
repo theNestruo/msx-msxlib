@@ -171,7 +171,7 @@ ENDIF
 	ld	c, CFG_SPRITES_NO_FLICKER
 .LOOP:
 	cp	[hl]
-	jr	z, .B_OK
+	jr	z, .C_OK
 	inc	c
 ; Skips to the next sprite
 	inc	hl
@@ -179,7 +179,7 @@ ENDIF
 	inc	hl
 	inc	hl
 	jr	.LOOP
-.B_OK:
+.C_OK:
 ; Enough sprites in this frame to apply the flickering routine?
 IF CFG_SPRITES_NO_FLICKER < 4
 	ld	a, 4 ; (at least five sprites)
@@ -469,36 +469,13 @@ LDIRVM_NAMTBL_COLUMN:
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
-; Reads a string from a 0-terminated string array
-; param hl: source of the first string
-; param a: string index
-; ret hl: source of the a-th string
-GET_TEXT:
-	ld	d, a ; string index in d
-	xor	a ; (looks for $00)
-; Checks the border case (d == 0)
-	cp	d
-	ret	z ; yes: text found
-; no: Looks for the proper text
-.LOOP:
-; Moves the pointer to the next text
-	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
-	cpir
-; Is the proper text?
-	dec	d
-	ret	z ; yes
-; No: repeats the loop
-	jr	.LOOP
-	
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Writes a 0-terminated string centered in the NAMTBL buffer
 ; param hl: source string
 ; param de: NAMTBL buffer pointer (beginning of the line)
 ; touches: a, bc, de, hl
 PRINT_CENTERED_TEXT:
 	call	LOCATE_CENTER
+	; jr	PRINT_TEXT ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -516,37 +493,13 @@ PRINT_TEXT:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Writes a collection of 0-terminated strings centered
-; (until the first null string is found) in the NAMTBL buffer
-; param hl: source string
-; param de: NAMTBL buffer pointer (beginning of the line)
-; touches: a, bc, de, hl
-PRINT_TEXTS:
-; Writes one string
-	push	de ; preserves destination
-	call	PRINT_TEXT
-	pop	de ; restores destination
-; Are there more strings?
-	inc	hl ; skips the \0
-	ld	a, [hl]
-	or	a
-	ret	z ; no
-; yes: line feed
-	ex	de, hl ; destination in hl
-	ld	bc, SCR_WIDTH; hl += 32
-	add	hl, bc
-	ex	de, hl ; destination in de
-	jr	PRINT_TEXTS
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Center a 0-terminated string
 ; param hl: source string
 ; param de: NAMTBL buffer pointer (beginning of the line)
 ; ret de: NAMTBL buffer pointer
 ; touches: a, bc
 LOCATE_CENTER:
-	push	hl ; preservaes source
+	push	hl ; preserves source
 ; Looks for the \0
 	xor	a
 	ld	bc, SCR_WIDTH +1 ; (+1 to count the last dec bc)
@@ -583,6 +536,29 @@ CLEAR_LINE:
 	ld	[hl], a
 	ldir
 	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Reads a string from a 0-terminated string array
+; param hl: source of the first string
+; param a: string index
+; ret hl: source of the a-th string
+GET_TEXT:
+	ld	d, a ; string index in d
+	xor	a ; (looks for \0)
+; Checks the border case (d == 0)
+	cp	d
+	ret	z ; yes: text found
+; no: Looks for the proper text
+.LOOP:
+; Moves the pointer to the next text
+	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
+	cpir
+; Is the proper text?
+	dec	d
+	ret	z ; yes
+; No: repeats the loop
+	jr	.LOOP
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

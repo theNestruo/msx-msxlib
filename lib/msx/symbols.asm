@@ -149,6 +149,9 @@
 
 ; -----------------------------------------------------------------------------
 ; MSX system variables
+	LINL40: equ $f3ae ; Width for SCREEN 0 (default 37)
+	LINL32: equ $f3af ; Width for SCREEN 1 (default 29)
+	LINLEN: equ $f3b0 ; Width for the current text mode
 	CLIKSW:	equ $f3db ; Keyboard click sound
 	RG0SAV:	equ $f3df ; Content of VDP(0) register (R#0)
 	RG1SAV:	equ $f3e0 ; Content of VDP(1) register (R#1)
@@ -190,6 +193,7 @@
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
 	INTFLG:	equ $fc9b ; STOP flag (0 = none, 3 = CTRL+STOP, 4 = STOP)
 	JIFFY:	equ $fc9e ; Software clock; each VDP interrupt gets increased by 1
+	SCRMOD: equ $fcaf ; Screen mode.
 	EXPTBL:	equ $fcc1 ; Set to $80 during power-up if Primary Slot is expanded (4b)
 	SLTTBL:	equ $fcc5 ; Mirror of the four possible Secondary Slot Registers (4b)
 
@@ -222,6 +226,22 @@
 	SPAT_END:	equ $d0 ; Sprite attribute table end marker
 	SPAT_OB:	equ $d1 ; Sprite out of bounds marker (not standard)
 	SPAT_EC:	equ $80 ; Early clock bit (32 pixels)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; ASCII
+	ASCII_NUL:	equ $00 ; NUL (null)
+	ASCII_EOT:	equ $04 ; EOT (End of transmission)
+	ASCII_BEL:	equ $07 ; BEL (bell)
+	ASCII_BS:	equ $08 ; BS (Backspace)
+	ASCII_HT:	equ $09 ; HT (Horizontal tab)
+	ASCII_LF:	equ $0a ; LF (Line feed)
+	ASCII_CR:	equ $0d ; CR (Carriage return)
+	ASCII_SYN:	equ $16 ; SYN (Synchronous idle)
+	ASCII_SUB:	equ $1a ; SUB (Substitute) (see ASCII_EOF)
+	ASCII_EOF:	equ $1a ; EOF (End of file, Control-Z) (see ASCII_SUB)
+	ASCII_ESC:	equ $1b ; ESC (Escape)
+	ASCII_DEL:	equ $7f ; DEL (Delete)
 ; -----------------------------------------------------------------------------
 
 ; EOF

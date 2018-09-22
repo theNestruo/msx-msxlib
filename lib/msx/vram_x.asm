@@ -1,8 +1,69 @@
 
 ; =============================================================================
+;	Attract-mode text-printing routines
 ;	"vpoke" routines (deferred WRTVRMs routines)
 ;	Spriteables routines (2x2 chars that eventually become a sprite)
 ; =============================================================================
+
+
+; =============================================================================
+;	Attract-mode text-printing routines
+; =============================================================================
+
+IFDEF CFG_ATTRACT_PRINT
+
+; -----------------------------------------------------------------------------
+; param hl
+; param de
+INIT_ATTRACT_PRINT:
+	ld	[attract_print.target_line], de
+.TARGET_OK:
+	ld	[attract_print.source], hl
+.NEXT_LINE:
+	xor	a
+	ld	[attract_print.framecounter], a
+; Locates the actual destination	
+	ld	hl, [attract_print.source]
+	ld	de, [attract_print.target_line]
+	call	LOCATE_CENTER
+	ld	[attract_print.target_char], de
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+ATTRACT_PRINT_CHAR:
+; Checks delay
+	ld	hl, attract_print.framecounter
+	inc	[hl]
+	ld	a, [hl]
+	sub	CFG_ATTRACT_PRINT_DELAY
+	ret	nz
+	; xor	a ; unnecessary
+	ld	[hl], a
+; Prints one character
+	ld	hl, [attract_print.source]
+	ld	de, [attract_print.target_char]
+	ldi
+; (preserves updated pointers)
+	ld	[attract_print.source], hl
+	ld	[attract_print.target_char], de
+; Is the end of the string?
+	xor	a
+	cp	[hl]
+	ret	; z = yes, nz = no
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+ATTRACT_PRINT_MOVE_LF_LF:
+	ld	bc, 2 *SCR_WIDTH
+ATTRACT_PRINT_MOVE:
+	ld	hl, [attract_print.target_line]
+	add	hl, bc
+	ld	[attract_print.target_line], hl
+	ret
+; -----------------------------------------------------------------------------
+
+ENDIF ; IFDEF CFG_ATTRACT_PRINT
 
 
 ; =============================================================================
@@ -132,8 +193,12 @@ RESET_SPRITEABLES:
 ; -----------------------------------------------------------------------------
 ; Initializes a spriteable
 ; param hl: NAMTBL buffer pointer to the upper left character
+; param a: initial background character
 ; ret ix: address of the spriteable (to set sprite pattern and color)
 INIT_SPRITEABLE:
+	xor	a ; default background character is $00
+.USING_A:
+	push	af ; preserves background character
 	ex	de, hl ; NAMTBL buffer pointer in de
 ; Translates NAMTBL buffer pointer into NAMTBL offset
 	ld	hl, -namtbl_buffer +$10000
@@ -157,6 +222,12 @@ INIT_SPRITEABLE:
 	ld	[ix + _SPRITEABLE_FOREGROUND +2], a
 	inc	a
 	ld	[ix + _SPRITEABLE_FOREGROUND +3], a
+; Initializes background characters
+	pop	af ; restores background character
+	ld	[ix + _SPRITEABLE_BACKGROUND], a
+	ld	[ix + _SPRITEABLE_BACKGROUND +1], a
+	ld	[ix + _SPRITEABLE_BACKGROUND +2], a
+	ld	[ix + _SPRITEABLE_BACKGROUND +3], a
 	ret
 ; -----------------------------------------------------------------------------
 

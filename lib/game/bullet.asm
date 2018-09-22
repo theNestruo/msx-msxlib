@@ -98,13 +98,19 @@ UPDATE_BULLETS:
 	ld	c, [ix + bullet.pattern]
 	ld	b, [ix + bullet.color]
 	call	PUT_SPRITE
+	
 ; Has the bullet hit a wall?
 	pop	de ; restores bullet coordinates
 	dec	e
 	call	GET_TILE_VALUE
 	call	GET_TILE_FLAGS
 	bit	BIT_WORLD_SOLID, a
-	jr	z, .SKIP ; no
+	jr	nz, .REMOVE ; yes
+; Checks off-screen
+	ld	a, [ix + bullet.y]
+	sub	192 -1
+	jr	c, .SKIP ; yes
+.REMOVE:
 ; Removes the bullet (for the next frame)
 	xor	a ; (marker value: y = 0)
 	ld	[ix + bullet.y], a

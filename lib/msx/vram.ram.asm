@@ -30,6 +30,24 @@ ENDIF
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+IFDEF CFG_ATTRACT_PRINT
+
+; Vars for attract-mode text-printing routines
+attract_print:
+
+.source:
+	rw	1 ; source pointer
+.target_line:
+	rw	1 ; destination pointer (current line)
+.target_char:
+	rw	1 ; destination pointer (current character)
+.framecounter:
+	rb	1 ; frame counter for slow printing
+
+ENDIF
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 IFDEF CFG_VPOKES
 
 ; Vars for "vpoke" routines (deferred WRTVRMs routines)
