@@ -57,6 +57,9 @@ INIT_ENEMY:
 	jr	.LOOP
 	
 .INIT:
+	push	hl
+	pop	ix
+	
 	ld	b, h ; preserves target start in bc
 	ld	c, l
 ; Stores the logical coordinates
@@ -233,7 +236,7 @@ SET_ENEMY_STATE:
 	xor	a
 	ld	[ix + enemy.animation_delay], a
 	ld	[ix + enemy.frame_counter], a
-	ld	[ix + enemy.trigger_frame_counter], a
+	; ld	[ix + enemy.trigger_frame_counter], a
 	ld	[ix + enemy.dy_index], a
 	ret
 	
@@ -546,8 +549,7 @@ GET_ENEMY_TILE_FLAGS:
 	dec	a
 	ld	e, a
 	ld	d, [ix + enemy.x]
-; Reads the tile index and then the tile flags
-	call	GET_TILE_VALUE
+; Reads the tile flags
 	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 

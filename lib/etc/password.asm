@@ -12,6 +12,8 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Resets the password (fills it with zeroes)
+; ret [password]: '00...00'
 RESET_PASSWORD:
 	ld	a, '0'
 	ld	hl, password
@@ -153,39 +155,50 @@ DECODE_PASSWORD:
 ; ret z/nz: z = no digit was read, nz = a digit was read
 INPUT_HEXADECIMAL_DIGIT:
 ; Checks 0..7
-	ld	de, NEWKEY ; 7 6 5 4 3 2 1 0
-	ld	a, [de]
+	xor	a ; a = 0 = 7 6 5 4 3 2 1 0
+	call	SNSMAT
 	cpl
 	or	a
-	jr	nz, .0_TO_7; yes: computes digit
-; Checks 8..9
-	inc	de ; de = NEWKEY +1 = ; ] [ \ = - 9 8
-	ld	a, [de]
-	cpl
-	and	$03
-	jr	nz, .8_TO_9 ; yes: computes digit
-; Checks A..B
-	inc	de ; de = NEWKEY +2 = B A pound / . , ` '
-	ld	a, [de]
-	cpl
-	and	$c0
-	jr	nz, .A_TO_B ; yes: computes digit
-; Checks C..F
-	inc	de ; de = NEWKEY +3 = J I H G F E D C
-	ld	a, [de]
-	cpl
-	and	$0f
-	jr	nz, .C_TO_F ; yes: computes digit
-; no input
-	ret
-	
-.0_TO_7:
+	jr	z, .NOT_0_TO_7 ; no
+; yes: computes digit (0 to 7)
 	ld	b, '0'
 	jr	.INC_LOOP
-.8_TO_9:
+.NOT_0_TO_7:
+	
+; Checks 8..9
+	inc	a ; a = 1 = ; ] [ \ = - 9 8
+	call	SNSMAT
+	cpl
+	and	$03
+	jr	z, .NOT_8_TO_9 ; no
+; yes: computes digit (8 or 9)
 	ld	b, '8'
 	jr	.INC_LOOP
-.C_TO_F:
+.NOT_8_TO_9:
+
+; Checks A..B
+	ld	a, 2 ; B A pound / . , ` '
+	call	SNSMAT
+	cpl
+	and	$c0
+	jr	z, .NOT_A_TO_B ; no
+; yes: computes digit
+	ld	b, 'B'
+	; jr	.DEC_LOOP ; falls through
+.DEC_LOOP:
+	rla
+	jr	c, .B_OK
+	dec	b
+	jr	.DEC_LOOP
+.NOT_A_TO_B:
+
+; Checks C..F
+	ld	a, 3 ; J I H G F E D C
+	call	SNSMAT
+	cpl
+	and	$0f
+	ret	z ; no input
+; yes: computes digit
 	ld	b, 'C'
 	; jr	.INC_LOOP ; falls through
 .INC_LOOP:
@@ -194,15 +207,6 @@ INPUT_HEXADECIMAL_DIGIT:
 	inc	b
 	jr	.INC_LOOP
 
-.A_TO_B:
-	ld	b, 'B'
-	; jr	.DEC_LOOP ; falls through
-.DEC_LOOP:
-	rla
-	jr	c, .B_OK
-	dec	b
-	jr	.DEC_LOOP
-	
 .B_OK:
 	ld	[hl], b
 ; ret nz

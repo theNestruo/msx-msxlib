@@ -166,6 +166,7 @@
 	FORCLR:	equ $f3e9 ; Foreground colour
 	BAKCLR:	equ $f3ea ; Background colour
 	BDRCLR:	equ $f3eb ; Border colour
+	SCNCNT: equ $f3f6 ; Key scan timing
 	OLDKEY:	equ $fbda ; Previous state of the keyboard matrix (11b)
 	; OLDKEY	; 7 6 5 4 3 2 1 0
 	; OLDKEY +1	; ; ] [ \ = - 9 8

@@ -493,8 +493,7 @@ GET_ENEMY_TILE_FLAGS_ABOVE:
 	add	ENEMY_BOX_Y_OFFSET -1
 	ld	e, a
 	ld	d, [ix + enemy.x]
-; Reads the tile index and then the tile flags
-	call	GET_TILE_VALUE
+; Reads the tile flags
 	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
@@ -534,8 +533,7 @@ GET_ENEMY_TILE_FLAGS_UNDER_FAST:
 	ld	a, c
 	add	e ; [ix + enemy.y]
 	ld	e, a
-; Reads the tile index and then the tile flags
-	call	GET_TILE_VALUE
+; Reads the tile flags
 	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
@@ -552,8 +550,7 @@ GET_ENEMY_TILE_FLAGS_UNDER:
 ; x += dx
 	add	[ix + enemy.x]
 	ld	d, a
-; Reads the tile index and then the tile flags
-	call	GET_TILE_VALUE
+; Reads the tile flags
 	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 

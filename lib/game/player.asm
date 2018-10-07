@@ -167,7 +167,7 @@ GET_PLAYER_TILE_VALUE:
 ; touches: de
 GET_PLAYER_TILE_FLAGS:
 	call	GET_PLAYER_TILE_VALUE
-	jp	GET_TILE_FLAGS
+	jp	GET_FLAGS_OF_TILE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

@@ -12,10 +12,6 @@ replayer:
 .frameskip:
 	rb	1
 
-; Backup of the H.TIMI hook previous to the installation of the replayer hook
-.old_htimi_hook:
-	rb	HOOK_SIZE
-
 ENDIF
 
 IFDEF CFG_REPLAYER_PT3

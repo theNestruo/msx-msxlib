@@ -14,6 +14,9 @@ ram_start:
 ; Vars for the initialization routines
 	include	"lib\msx\cartridge.ram.asm"
 
+; Vars for the Interrupt routine (H.TIMI hook)
+	include "lib\msx\hook.ram.asm"
+	
 ; Vars for the input routines
 	include	"lib\msx\input.ram.asm"
 

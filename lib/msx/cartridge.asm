@@ -135,7 +135,8 @@ IFEXIST SET_PALETTE
 	or	a
 	jr	z, .PALETTE_OK
 ; Is the GRAPH key down?
-	ld	hl, NEWKEY + 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	ld	a, 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	call	SNSMAT
 	bit	2, [hl]
 	jr	z, .PALETTE_OK ; yes
 ; no: sets custom palette
@@ -165,33 +166,22 @@ ENDIF
 
 ; Frame rate related variables
 ; Chooses the proper source (50Hz or 60Hz)
+	ld	hl, .FRAME_RATE_50HZ_0
+	ld	de, frame_rate
 	ld	a, [MSXID1]
 	bit	7, a ; 0=60Hz, 1=50Hz
-	ld	hl, .FRAME_RATE_50HZ_0
-	ld	bc, .FRAME_RATE_SIZE
 	jr	nz, .HL_OK
 ; skips the 50Hz entry and goes to the 60Hz entry
-	add	hl, bc
+	inc	hl
+	inc	hl
 .HL_OK:
 ; blits the correct entry
-	ld	de, frame_rate
-	ld	bc, .FRAME_RATE_SIZE_ ; (unecessary)
-	ldir
-IFEXIST REPLAYER.FRAME
-; Installs the replayer hook in the interruption
-	push	hl ; (preseves source)
-; Preserves the existing hook
-	ld	hl, HTIMI
-	ld	de, replayer.old_htimi_hook
-	ld	bc, HOOK_SIZE
-	ldir
-; Install the replayer hook
-	di
-	pop	hl ; (restores source)
-	ld	de, HTIMI
-	ld	bc, HOOK_SIZE
-	ldir
-	ei
+	ldi
+	ldi
+	
+; Installs the H.TIMI hook in the interruption
+IFEXIST HOOK.INSTALL
+	call	HOOK.INSTALL
 ENDIF
 
 ; Skips to the game entry point
@@ -205,23 +195,10 @@ ENDIF
 .FRAME_RATE_50HZ_0:
 	db	50	; frame rate
 	db	5	; frames per tenth
-	.FRAME_RATE_SIZE_:	equ $ - .FRAME_RATE_50HZ_0
-IFEXIST REPLAYER.FRAME
-	jp	.HTIMI_HOOK
-	ret		; (padding to match HOOK_SIZE)
-	ret
-ENDIF
-	.FRAME_RATE_SIZE:	equ $ - .FRAME_RATE_50HZ_0
 	
 .FRAME_RATE_60HZ_0:
 	db	60	; frame rate
 	db	6	; frames per tenth
-IFEXIST REPLAYER.FRAME
-	jp	.HTIMI_HOOK_FRAMESKIP
-	ret		; (padding to match HOOK_SIZE)
-	ret
-ENDIF
-	
 	
 IFEXIST SET_PALETTE
 IFEXIST CFG_CUSTOM_PALETTE
@@ -240,30 +217,6 @@ ELSE
 	; dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
 ENDIF ; CFG_CUSTOM_PALETTE
 ENDIF ; SET_PALETTE
-
-
-IFEXIST REPLAYER.FRAME
-; H.TIMI hook that invokes both the replayer (with frameskip in 60Hz machines)
-; and the previously existing hook
-.HTIMI_HOOK_FRAMESKIP:
-	push	af ; Preserves VDP status register S#0 (a)
-	ld	hl, replayer.frameskip
-	inc	[hl]
-	ld	a, [hl]
-	sub	6
-	jr	nz, .HTIMI_HOOK_FRAME
-	ld	[hl], a
-	jr	.HTIMI_HOOK_END
-
-; H.TIMI hook that invokes both the replayer and the previously existing hook
-.HTIMI_HOOK:
-	push	af ; Preserves VDP status register S#0 (a)
-.HTIMI_HOOK_FRAME:
-	call	REPLAYER.FRAME
-.HTIMI_HOOK_END:
-	pop	af ; Restores VDP status register S#0 (a)
-	jp	replayer.old_htimi_hook
-ENDIF ; REPLAYER.FRAME
 ; -----------------------------------------------------------------------------
 
 ; EOF

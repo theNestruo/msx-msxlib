@@ -1,11 +1,51 @@
 
 ; =============================================================================
+;	Additional VRAM routines (not BIOS-based)
 ;	Attract-mode text-printing routines
 ;	"vpoke" routines (deferred WRTVRMs routines)
 ;	Spriteables routines (2x2 chars that eventually become a sprite)
 ; =============================================================================
 
 
+; =============================================================================
+;	Additional VRAM routines (not BIOS-based)
+; =============================================================================
+
+; ; -----------------------------------------------------------------------------
+; ; FAST LDIRVM (en MSX1 sólo funciona dentro del vblank o con la pantalla apagada)
+; ; (original routine: FLDIRVM by SapphiRe_MSX)
+; ; HL = Direccion de origen en RAM
+; ; DE = Direccion de destino en VRAM (si activamos los bits adecuados de D nos podríamos ahorrar las instrucciones set y res)
+; ; B = Numero de bloques de 16 bytes a transferir, pero multiplicados por 17 y módulo 256
+; FLDIRVM:        ld a,[7]    ; a = puerto #0 de escritura del VDP
+                ; ld c,a      ; c = puerto #0 de escritura del VDP
+                ; inc c       ; c = puerto #1 de escritura del VDP
+                ; out [c],e   ; Escribimos en el VDP el byte bajo de la direccion de destino
+                ; set 6,d     ; Activamos el sexto bit del byte alto (no seria necesario si ya lo dejamos activado al inicializar DE)
+                ; res 7,d     ; Desactivamos el séptimo bit del byte alto (no seria necesario si ya lo dejamos desactivado al inicializar DE)
+                ; out [c],d   ; Escribimos en el VDP el byte alto de la direccion de destino
+                ; dec c       ; c = puerto #0 de escritura del VDP
+; .LOOP:          outi        ; (1)
+                ; outi        ; (2)
+                ; outi        ; (3)
+                ; outi        ; (4)
+                ; outi        ; (5)
+                ; outi        ; (6)
+                ; outi        ; (7)
+                ; outi        ; (8)
+                ; outi        ; (9)
+                ; outi        ; (10)
+                ; outi        ; (11)
+                ; outi        ; (12)
+                ; outi        ; (13)
+                ; outi        ; (14)
+                ; outi        ; (15)
+                ; outi        ; (16)
+                ; djnz .LOOP
+                ; ret
+; ; -----------------------------------------------------------------------------
+
+		
 ; =============================================================================
 ;	Attract-mode text-printing routines
 ; =============================================================================

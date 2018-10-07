@@ -102,7 +102,6 @@ UPDATE_BULLETS:
 ; Has the bullet hit a wall?
 	pop	de ; restores bullet coordinates
 	dec	e
-	call	GET_TILE_VALUE
 	call	GET_TILE_FLAGS
 	bit	BIT_WORLD_SOLID, a
 	jr	nz, .REMOVE ; yes
