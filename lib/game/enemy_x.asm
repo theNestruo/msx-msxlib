@@ -47,7 +47,16 @@ ENEMY_TYPE_FLYER:
 ; Checks wall
 	call	CAN_ENEMY_FLY
 	jp	nz, MOVE_ENEMY ; no: moves the enemy
+IFEXIST ENEMY_TYPE_KILLED
+	call	TURN_ENEMY ; yes: turns around
+; Is the enemy trapped between two walls?
+	call	CAN_ENEMY_FLY
+	ret	nz ; no
+	jp	KILL_ENEMY ; yes: kills the enemy
+.NOT_TRAPPED:
+ELSE
 	jp	TURN_ENEMY ; yes: turns around
+ENDIF ; IFEXIST ENEMY_TYPE_KILLED
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

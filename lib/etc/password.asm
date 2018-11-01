@@ -112,6 +112,7 @@ DECODE_PASSWORD:
 ; Reads and checks the checksum digit
 	call	.READ_DIGIT
 	sub	PASSWORD_SALT
+	and	$0f
 	xor	c
 ; ret z/nz
 	ret

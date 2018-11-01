@@ -53,7 +53,7 @@ NAMTBL_POINTER_TO_COORDS:
 ; ret de: pixel coordinates (y, x) (CAUTION: order is reversed)
 ; touches: a
 OFFSET_TO_COORDS:
-; y = (de / 32) *8 = (de / 4) mod 8
+; y = (de / 32) *8 = (de / 4) div 8
 	ld	a, e ; a instead of e to preserve e
 	srl	d
 	rr	a
@@ -104,8 +104,8 @@ IFDEF CFG_TILES_VALUE_BORDER
 ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 
 ; no: Checks off-screen
-	ld	a, e	; (0..192, 193..255)
-	cp	192 +1	; (  c,       nc)
+	ld	a, e	; (0..191, 192..255)
+	cp	192	; (  c,       nc)
 	jr	nc, .OFF_SCREEN ; yes (y >= 192)
 	
 ; no: visible screen
@@ -270,6 +270,5 @@ GET_H_TILE_FLAGS:
 	djnz	.AND_LOOP
 	ret
 ; -----------------------------------------------------------------------------
-
 
 ; EOF

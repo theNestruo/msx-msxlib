@@ -37,6 +37,7 @@ PUT_PLAYER_SPRITE:
 	call	GET_HL_A_BYTE
 .PATTERN:
 	ld	[player_spratr.pattern], a
+.ONLY_MOVE:
 ; Moves the player sprites
 	ld	hl, player_spratr
 	ld	de, [player.xy]

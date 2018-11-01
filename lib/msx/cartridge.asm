@@ -23,7 +23,14 @@ ROM_START:
 	ld	sp, [HIMEM]
 
 IFDEF CFG_INIT_32KB_ROM
-; Reads the primary slot of the page 1
+; Is the game running on RAM? (e.g.: ROM Loader)
+	ld	hl, $400a ; (first reserved byte of the cartridge header)
+	ld	a, [hl]
+	cpl
+	ld	[hl], a
+	xor	[hl]
+	jr	z, .RAM_OK ; yes
+; No: Reads the primary slot of the page 1
 	call    RSLREG	; a = 33221100
 	rrca
 	rrca
@@ -59,7 +66,7 @@ IFDEF CFG_INIT_16KB_RAM
 	cpl
 	ld	[hl], a
 	xor	[hl]
-	jr	z, .RAM_OK ; yes
+	jr	z, .RAM_OK ; yes (value was written)
 
 ; no: screen 1 and warning text
 	call	INIT32
@@ -75,9 +82,8 @@ IFDEF CFG_INIT_16KB_RAM
 .TXT:
 	db	"16KB RAM REQUIRED"
 	.TXT_SIZE:	equ $ - .TXT
-	
-.RAM_OK:
 ENDIF ; CFG_INIT_16KB_RAM
+.RAM_OK:
 
 ; CPU: Ensures Z80 mode
 	ld	a, [MSXID3]
@@ -134,11 +140,11 @@ IFEXIST SET_PALETTE
 	ld	a, [MSXID3]
 	or	a
 	jr	z, .PALETTE_OK
-; Is the GRAPH key down?
-	ld	a, 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
-	call	SNSMAT
-	bit	2, [hl]
-	jr	z, .PALETTE_OK ; yes
+; ; Is the GRAPH key down?
+	; ld	a, 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	; call	SNSMAT
+	; bit	2, [hl]
+	; jr	z, .PALETTE_OK ; yes
 ; no: sets custom palette
 IFEXIST CFG_CUSTOM_PALETTE
 	ld	hl, CFG_CUSTOM_PALETTE
@@ -165,19 +171,13 @@ IFEXIST REPLAYER.RESET
 ENDIF
 
 ; Frame rate related variables
-; Chooses the proper source (50Hz or 60Hz)
-	ld	hl, .FRAME_RATE_50HZ_0
-	ld	de, frame_rate
 	ld	a, [MSXID1]
 	bit	7, a ; 0=60Hz, 1=50Hz
+	ld	hl, 5 << 8 + 50 ; frame rate and frames per tenth for 50Hz
 	jr	nz, .HL_OK
-; skips the 50Hz entry and goes to the 60Hz entry
-	inc	hl
-	inc	hl
+	ld	hl, 6 << 8 + 60 ; frame rate and frames per tenth for 60Hz
 .HL_OK:
-; blits the correct entry
-	ldi
-	ldi
+	ld	[frame_rate], hl
 	
 ; Installs the H.TIMI hook in the interruption
 IFEXIST HOOK.INSTALL
@@ -191,15 +191,6 @@ ENDIF
 ; -----------------------------------------------------------------------------
 ; Data
 
-; Frame rate related values
-.FRAME_RATE_50HZ_0:
-	db	50	; frame rate
-	db	5	; frames per tenth
-	
-.FRAME_RATE_60HZ_0:
-	db	60	; frame rate
-	db	6	; frames per tenth
-	
 IFEXIST SET_PALETTE
 IFEXIST CFG_CUSTOM_PALETTE
 ELSE

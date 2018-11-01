@@ -44,7 +44,7 @@ ENDIF
 	call	RDPSG
 	cpl	
 	and	$3f ; a = 00BARLDU
-; Preserves in b
+; Preserves input value in b
 	ld	b, a
 	
 ; Reads keyboard
@@ -53,32 +53,27 @@ ENDIF
 	ld	a, 8 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
 	call	SNSMAT
 	cpl
-	and	$f1 ; discards DEL INS HOME
-	jr	z, .NO_CURSORS_OR_SPACE
-; Space key
-	bit	0, a
-	jr	z, .NOT_SPACE
-	set	BIT_TRIGGER_A, b
-.NOT_SPACE:
-; Cursors
-	rlca	; (RIGHT in carry)
-	jr	nc, .NOT_RIGHT
-	set	BIT_STICK_RIGHT, b
-.NOT_RIGHT:
-	rlca	; (DOWN in carry)
-	jr	nc, .NOT_DOWN
-	set	BIT_STICK_DOWN, b
-.NOT_DOWN:
-	rlca	; (UP in carry)
-	jr	nc, .NOT_UP
-	set	BIT_STICK_UP, b
-.NOT_UP:
-	rlca	; (LEFT in carry)
-	jr	nc, .NOT_LEFT
-	set	BIT_STICK_LEFT, b
-.NOT_LEFT:
-
-.NO_CURSORS_OR_SPACE:
+; Introduces LEFT in input value
+	rrca	; SPACE RIGHT DOWN UP LEFT DEL INS HOME
+	rrca	; HOME SPACE RIGHT DOWN UP LEFT DEL INS
+	ld	c, a ; (preserves rotated row)
+	and	$04 ; b |= 00000L00
+	or	b
+	ld	b, a
+; Introduces SPACE and RIGHT in input value
+	ld	a, c ; (restores rotated row)
+	rrca	; INS HOME SPACE RIGHT DOWN UP LEFT DEL
+	rrca	; DEL INS HOME SPACE RIGHT DOWN UP LEFT
+	ld	c, a ; (preserves rotated row)
+	and	$18 ; b |= 000AR000
+	or	b
+	ld	b, a
+; Introduces DOWN and UP in input value
+	ld	a, c ; (restores rotated row)
+	rrca	; LEFT DEL INS HOME SPACE RIGHT DOWN UP
+	and	$03 ; b |= 000000DU
+	or	b
+	ld	b, a
 
 ; Trigger B (M key)
 	ld	a, 4 ; R Q P O N M L K
@@ -232,8 +227,6 @@ ENDIF
 ; Waits until no key is pressed
 WAIT_NO_KEY:
 	halt
-	ld	b, b
-	jr	$+2
 ; Ten lines
 	ld	b, 11
 	ld	d, $ff

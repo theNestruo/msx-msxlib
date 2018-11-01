@@ -277,6 +277,11 @@ SET_PLAYER_DYING:
 ; no: Sets the player state
 	ld	a, PLAYER_STATE_DYING
 	call	SET_PLAYER_STATE
+IFEXIST CFG_SOUND_PLAYER_KILLED
+	ld	a, CFG_SOUND_PLAYER_KILLED
+	ld	c, 8
+	call	ayFX_INIT
+ENDIF
 ; Initializes Delta-Y (dY) table index
 	xor	a
 	ld	[player.dy_index], a

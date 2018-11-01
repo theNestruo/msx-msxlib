@@ -42,6 +42,7 @@ RESET_ENEMIES:
 ; Initializes a enemy in the first empty enemy slot
 ; param hl: pointer to the new enemy data (pattern, color, state pointer)
 ; param de: logical coordinates (x, y)
+; ret ix: pointer to the new initialized enemy
 ; touches: a, hl, de, bc
 INIT_ENEMY:
 	push	hl ; preserves source data
@@ -57,6 +58,7 @@ INIT_ENEMY:
 	jr	.LOOP
 	
 .INIT:
+; Prepares ret ix: pointer to the new enemy
 	push	hl
 	pop	ix
 	
@@ -127,13 +129,7 @@ IFEXIST BIT_ENEMY_SOLID
 ; yes
 	
 .KILL_ENEMY:
-; Makes the enemy non-lethal and non-solid
-	ld	a, $ff AND NOT (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH)
-	and	[ix + enemy.flags]
-	ld	[ix + enemy.flags], a
-; Sets the enemy the behaviour when killed
-	ld	hl, ENEMY_TYPE_KILLED
-	call	SET_ENEMY_STATE
+	call	KILL_ENEMY
 	
 .NOT_KILLED:
 ENDIF ; IFEXIST BIT_WORLD_SOLID
@@ -154,58 +150,6 @@ ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 	ret
 ; -----------------------------------------------------------------------------
 
-
-;
-; =============================================================================
-;	Default enemy types (generic)
-; =============================================================================
-;
-
-IFEXIST CFG_ENEMY_DYING_PATTERN
-; -----------------------------------------------------------------------------
-; Killed: the enemy has been killed. Shows the dying animation
-; and respawns the enemy after a pause
-ENEMY_TYPE_KILLED:
-; Shows the dying pattern
-	ld	c, CFG_ENEMY_DYING_PATTERN
-	call	PUT_ENEMY_SPRITE_PATTERN
-	ld	b, CFG_ENEMY_PAUSE_S ; short pause
-	call	WAIT_ENEMY_HANDLER
-	ret	nz ; (end)
-; Then
-	call	SET_ENEMY_STATE.NEXT
-; Pause
-	ld	b, CFG_ENEMY_PAUSE_L ; long wait
-	call	WAIT_ENEMY_HANDLER
-	ret	nz ; (end)
-; (restores the coordinates from the respawning data)
-	ld	c, [ix + enemy.respawn_data + enemy.y]
-	ld	b, [ix + enemy.respawn_data + enemy.x]
-	ld	a, CFG_ENEMY_RESPAWN_PATTERN
-	ld	[ix + enemy.y], c
-	ld	[ix + enemy.x], b
-	ld	[ix + enemy.pattern], a
-; Then
-	call	SET_ENEMY_STATE.NEXT
-; Shows the respawning animation
-	call	PUT_ENEMY_SPRITE_ANIMATE
-	ld	b, CFG_ENEMY_PAUSE_L ; long wait
-	call	WAIT_ENEMY_HANDLER
-	ret	nz ; (end)
-; Then respawns the enemy
-; (restores the respawning data as the current data)
-	push	ix ; hl = ix
-	pop	hl
-	ld	d, h ; de = hl
-	ld	e, l
-	ld	a, enemy.respawn_data ; hl += .respawn_data
-	call	ADD_HL_A
-	ld	bc, enemy.RESPAWN_SIZE 
-	ldir
-; Resets the animation delay and the frame counter for the next frame
-	jr	SET_ENEMY_STATE.RESET_FRAME_COUNTERS
-; -----------------------------------------------------------------------------
-ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 
 ;
 ; =============================================================================
@@ -320,6 +264,18 @@ TURN_ENEMY:
 	ld	a, FLAG_ENEMY_PATTERN_LEFT
 	xor	[ix + enemy.pattern]
 	ld	[ix + enemy.pattern], a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Toggles the left flag of both the current enemy and the respawning data
+; (usually used to allow enemies that start looking in the opposite direction)
+; param ix: pointer to the current enemy
+.RESPAWN_AWARE:
+; Toggles the left flag
+	call	TURN_ENEMY
+; Toggles the left flag in the respawning data
+	ld	[ix + enemy.respawn_data + enemy.pattern], a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -531,6 +487,34 @@ TRIGGER_ENEMY_HANDLER:
 	ld	[ix + enemy.trigger_frame_counter], a
 	ret
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+REMOVE_ENEMY:
+	xor	a ; (marker value: y = 0)
+	ld	[ix + enemy.y], a
+	ret
+; -----------------------------------------------------------------------------
+
+IFEXIST CFG_ENEMY_DYING_PATTERN
+; -----------------------------------------------------------------------------
+; Kills the enemy
+; param ix: pointer to the current enemy
+KILL_ENEMY:
+IFEXIST CFG_SOUND_ENEMY_KILLED
+	ld	a, CFG_SOUND_ENEMY_KILLED
+	ld	c, 8
+	call	ayFX_INIT
+ENDIF
+; Makes the enemy non-lethal and non-solid
+	ld	a, $ff AND NOT (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH)
+	and	[ix + enemy.flags]
+	ld	[ix + enemy.flags], a
+; Sets the enemy the behaviour when killed
+	ld	hl, ENEMY_TYPE_KILLED
+	jp	SET_ENEMY_STATE
+; -----------------------------------------------------------------------------
+ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
+
 	
 ;
 ; =============================================================================
@@ -593,5 +577,58 @@ GET_ENEMY_V_TILE_FLAGS:
 	ld	b, CFG_ENEMY_HEIGHT
 	jp	GET_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
+
+
+;
+; =============================================================================
+;	Default enemy types (generic)
+; =============================================================================
+;
+
+IFEXIST CFG_ENEMY_DYING_PATTERN
+; -----------------------------------------------------------------------------
+; Killed: the enemy has been killed. Shows the dying animation
+; and respawns the enemy after a pause
+ENEMY_TYPE_KILLED:
+; Shows the dying pattern
+	ld	c, CFG_ENEMY_DYING_PATTERN
+	call	PUT_ENEMY_SPRITE_PATTERN
+	ld	b, CFG_ENEMY_PAUSE_S ; short pause
+	call	WAIT_ENEMY_HANDLER
+	ret	nz ; (end)
+; Then
+	call	SET_ENEMY_STATE.NEXT
+; Pause
+	ld	b, CFG_ENEMY_PAUSE_L ; long wait
+	call	WAIT_ENEMY_HANDLER
+	ret	nz ; (end)
+; (restores the coordinates from the respawning data)
+	ld	c, [ix + enemy.respawn_data + enemy.y]
+	ld	b, [ix + enemy.respawn_data + enemy.x]
+	ld	a, CFG_ENEMY_RESPAWN_PATTERN
+	ld	[ix + enemy.y], c
+	ld	[ix + enemy.x], b
+	ld	[ix + enemy.pattern], a
+; Then
+	call	SET_ENEMY_STATE.NEXT
+; Shows the respawning animation
+	call	PUT_ENEMY_SPRITE_ANIMATE
+	ld	b, CFG_ENEMY_PAUSE_L ; long wait
+	call	WAIT_ENEMY_HANDLER
+	ret	nz ; (end)
+; Then respawns the enemy
+; (restores the respawning data as the current data)
+	push	ix ; hl = ix
+	pop	hl
+	ld	d, h ; de = hl
+	ld	e, l
+	ld	a, enemy.respawn_data ; hl += .respawn_data
+	call	ADD_HL_A
+	ld	bc, enemy.RESPAWN_SIZE 
+	ldir
+; Resets the animation delay and the frame counter for the next frame
+	jp	SET_ENEMY_STATE.RESET_FRAME_COUNTERS
+; -----------------------------------------------------------------------------
+ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 
 ; EOF
