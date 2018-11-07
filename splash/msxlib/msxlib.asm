@@ -5,17 +5,12 @@
 	ENASCR:	equ $0044 ; Enable screen
 	RDVRM:	equ $004a ; Read byte from VRAM
 	WRTVRM:	equ $004d ; Write byte to VRAM
-	; FILVRM:	equ $0056 ; Fill block of VRAM with data byte
 	LDIRVM:	equ $005c ; Copy block to VRAM, from memory
 	INIT32:	equ $006f ; Initialize VDP to 32x24 Text Mode
-	; CLS:	equ $00c3 ; Clear screen
 
 ; MSX system variables
-	; CLIKSW:	equ $f3db ; Keyboard click sound
 	RG1SAV:	equ $f3e0 ; Content of VDP(1) register (R#1)
 	FORCLR:	equ $f3e9 ; Foreground colour
-	BAKCLR:	equ $f3ea ; Background colour
-	BDRCLR:	equ $f3eb ; Border colour
 
 ; VRAM addresses
 	CHRTBL:	equ $0000 ; Pattern table
@@ -26,19 +21,19 @@
 
 ; VDP symbolic constants
 	SCR_WIDTH:	equ 32
-	NAMTBL_SIZE:	equ 32 * 24
-	CHRTBL_SIZE:	equ 256 * 8
 	SPAT_END:	equ $d0 ; Sprite attribute table end marker
-	SPAT_EC:	equ $80 ; Early clock bit (32 pixels)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; VDP: color ,1,1
+	ld	hl, FORCLR
 	ld	a, 15
-	ld	[FORCLR], a
+	ld	[hl], a
 	ld	a, 4
-	ld	[BAKCLR], a
-	ld	[BDRCLR], a
+	inc	hl ; BAKCLR
+	ld	[hl], a
+	inc	hl ; BDRCLR
+	ld	[hl], a
 ; VDP: screen 2
 	call	INIT32
 ; screen ,2
@@ -47,61 +42,60 @@
 ; Disable screen
 	call	DISSCR
 
-; Charset
+; Charset 1/2: CHRTBL
 	ld	hl, .CHRTBL_0
 	ld	de, CHRTBL
 	ld	bc, .CHRTBL_0_SIZE
 	call	LDIRVM
+; Sprites 1/2: SPRTBL
+	ld	hl, .SPRTBL_0
+	ld	de, SPRTBL
+	ld	bc, .SPRTBL_0_SIZE
+	call	LDIRVM
+; Sprites 2/2: SPRATR
+	ld	hl, .SPRATR_0
+	ld	de, SPRATR
+	ld	bc, .SPRATR_0_SIZE
+	call	LDIRVM
+; Charset 2/2: CLRTBL
 	ld	hl, CLRTBL + 1
-	call	.WRTVRM_BLACK
+	ld	a, $10
+	call	WRTVRM
 	ld	hl, CLRTBL + 3
-	call	.WRTVRM_BLACK
+	ld	a, $10
+	call	WRTVRM
 ; Name table
 	ld	hl, NAMTBL + 11 *SCR_WIDTH + 9
 	xor	a
 	call	.LDIRVM_NAMTBL
 	ld	hl, NAMTBL + 12 *SCR_WIDTH + 9
-	ld	a, $10
 	call	.LDIRVM_NAMTBL
-; Sprite
-	ld	hl, .SPRTBL_0
-	ld	de, SPRTBL
-	ld	bc, .SPRTBL_0_SIZE
-	call	LDIRVM
-	ld	hl, .SPRATR_0
-	ld	de, SPRATR
-	ld	bc, .SPRATR_0_SIZE
-	call	LDIRVM
 
 ; Enable screen
 	halt
 	call	ENASCR
 	
-; Animation #1: "MSX"
-	ld	b, 10
-.MSX_LOOP:
+; Animation
+	ld	b, 16
+.ANIMATION_LOOP:
 	push	bc ; preserves counter
-	halt
-	halt
-	ld	hl, SPRATR + 16
+	ld	hl, SPRATR + 16 ; MSX.y
 	call	.DEC_VRAM
-	ld	hl, SPRATR + 20
+	ld	hl, SPRATR + 20 ; MSX.y
 	call	.DEC_VRAM
+	ld	hl, SPRATR + 25 ; LIB.x
+	call	RDVRM
+	inc	a
+	call	WRTVRM
 	pop	bc ; restores counter
-	djnz	.MSX_LOOP
-	
-; Animation #2: "LIB"
-	ld	b, 17
-.LIB_LOOP:
-	push	bc ; preserves counter
 	halt
 	halt
-	ld	hl, SPRATR + 25
-	call	.INC_VRAM
-	ld	hl, SPRATR + 29
-	call	.INC_VRAM
-	pop	bc ; restores counter
-	djnz	.LIB_LOOP
+	djnz	.ANIMATION_LOOP
+; (last pixel)
+	ld	hl, SPRATR + 25 ; LIB.x
+	call	RDVRM
+	inc	a
+	call	WRTVRM
 	
 ; Pause
 	ld	b, 60 ; ~1 second
@@ -110,12 +104,8 @@
 	djnz	.PAUSE_LOOP
 	jp	DISSCR
 
-.WRTVRM_BLACK:	
-	ld	a, $10
-	jp	WRTVRM
-	
 .LDIRVM_NAMTBL:
-	ld	b, 10
+	ld	b, 16
 .LDIRVM_NAMTBL_LOOP:
 	inc	a
 	call	WRTVRM
@@ -127,11 +117,6 @@
 	call	RDVRM
 	dec	a
 	jp	WRTVRM
-	
-.INC_VRAM:
-	call	RDVRM
-	inc	a
-	jp	WRTVRM
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -142,13 +127,13 @@
 	incbin	"sprites.pcx.spr"
 	.SPRTBL_0_SIZE:	equ $ - .SPRTBL_0
 .SPRATR_0:
-	db	88 +12, 0,       $0c, SPAT_EC OR 1
-	db	88 +12, 0,       $0c, SPAT_EC OR 1
-	db	88 +12, 0,       $0c, SPAT_EC OR 1
-	db	88 +12, 0,       $0c, SPAT_EC OR 1
-	db	88 +12, 128  +0, $00, 15
-	db	88 +12, 128 +16, $04, 15
-	db	88  +2, 128  +8, $08, 1
+	db	88 +12, 0,       $00, 0
+	db	88 +12, 0,       $00, 0
+	db	88 +12, 0,       $00, 0
+	db	88 +12, 0,       $00, 0
+	db	88 +18, 128  +0, $00, 15 ; MSX
+	db	88 +18, 128 +16, $04, 15 ; MSX
+	db	88  +2, 128  +8, $08, 1	; LIB
 	db	SPAT_END
 	.SPRATR_0_SIZE:	equ $ - .SPRATR_0
 ; -----------------------------------------------------------------------------

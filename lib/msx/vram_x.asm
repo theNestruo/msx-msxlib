@@ -437,6 +437,7 @@ MOVE_SPRITEABLE_1:
 
 ; -----------------------------------------------------------------------------
 ; Starts moving a spriteable down
+; (note: does not show the spriteable sprite)
 ; param ix: pointer to the current spriteable
 MOVE_SPRITEABLE_DOWN:
 ; Sets new status, removes the spriteable from NAMTBL VRAM and buffer
@@ -451,6 +452,7 @@ MOVE_SPRITEABLE_DOWN:
 
 ; -----------------------------------------------------------------------------
 ; Starts moving a spriteable to the right
+; (note: does not show the spriteable sprite)
 ; param ix: pointer to the current spriteable
 MOVE_SPRITEABLE_RIGHT:
 ; Sets new status, removes the spriteable from NAMTBL VRAM and buffer
@@ -464,6 +466,7 @@ MOVE_SPRITEABLE_RIGHT:
 
 ; -----------------------------------------------------------------------------
 ; Starts moving a spriteable to the left
+; (note: does not show the spriteable sprite)
 ; param ix: pointer to the current spriteable
 MOVE_SPRITEABLE_LEFT:
 ; Sets new status, removes the spriteable from NAMTBL VRAM and buffer
@@ -477,16 +480,14 @@ MOVE_SPRITEABLE_LEFT:
 
 ; -----------------------------------------------------------------------------
 ; (convenience routine to optimize size)
-; Saves NAMTBL offset, shows the spriteable sprite,
-; and puts the spriteable back in the NAMTBL buffer (only)
+; Saves NAMTBL offset and puts the spriteable back in the NAMTBL buffer (only)
+; (but does not show the spriteable sprite!)
 ; param ix: pointer to the current spriteable
 ; param hl: NAMTBL offset
 MOVE_SPRITEABLE_2:
 ; Saves NAMTBL offset
 	ld	[ix +_SPRITEABLE_OFFSET_L], l
 	ld	[ix +_SPRITEABLE_OFFSET_H], h
-; Shows the spriteable sprite
-	call	PUT_SPRITEABLE_SPRITE
 ; Puts the spriteable back in the NAMTBL buffer (only)
 	jp	NAMTBL_BUFFER_SPRITEABLE_FOREGROUND
 ; -----------------------------------------------------------------------------
