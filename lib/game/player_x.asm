@@ -20,9 +20,8 @@
 	PLAYER_STATE_FLOOR:	equ (0 << 2) ; $00
 	PLAYER_STATE_STAIRS:	equ (1 << 2) ; $04
 	PLAYER_STATE_AIR:	equ (2 << 2) ; $08
-	PLAYER_STATE_DYING:	equ (3 << 2) ; $0c
-	PLAYER_STATE_DEAD:	equ (0 << 2) + (1 << BIT_STATE_FINISH) ; $80
-	PLAYER_STATE_FINISH:	equ (1 << 2) + (1 << BIT_STATE_FINISH) ; $84
+	PLAYER_STATE_DYING:	equ (3 << 2) + (1 << BIT_STATE_FINISH) ; $8c
+	PLAYER_STATE_FINISH:	equ PLAYER_STATE_FLOOR + (1 << BIT_STATE_FINISH) ; $80
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -30,6 +29,7 @@
 UPDATE_PLAYER:
 ; Invokes PLAYER_UPDATE_TABLE[player.state] routine
 	ld	a, [player.state] ; a = player.state without flags
+	and	$ff - (1 << BIT_STATE_FINISH) ; (removes finish bit)
 	srl	a
 	srl	a
 	ld	hl, PLAYER_UPDATE_TABLE
@@ -282,38 +282,27 @@ IFEXIST CFG_SOUND_PLAYER_KILLED
 	ld	c, 8
 	call	ayFX_INIT
 ENDIF
-; Initializes Delta-Y (dY) table index
-	xor	a
-	ld	[player.dy_index], a
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Control routine when the player is dying
 UPDATE_PLAYER_DYING:
-; Animation and vertical movement
+; Animation
 	call	UPDATE_PLAYER_ANIMATION
-	
-	; call	UPDATE_PLAYER_DY_INDEX
-	call	READ_PLAYER_DY_VALUE
-	ld	hl, player.dy_index
-	inc	[hl]
-	
-	call	MOVE_PLAYER_V
-; Is the player off-screen?
-	ld	a, [player.y]
-	cp	192 +16 +1
-	ret	c ; no
-; yes
-	; jr	SET_PLAYER_DEAD ; falls through
-; ------VVVV----falls through--------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Set the player to be dead (with special state marker: exit state)
-SET_PLAYER_DEAD:
-; Sets the player state
-	ld	a, PLAYER_STATE_DEAD
-	jp	SET_PLAYER_STATE
+; Each two frames
+	ld	a, [JIFFY]
+	and	1
+	ret	z ; no
+; yes: checks solid
+	; ld	a, 1 ; unnecessary
+	call	GET_PLAYER_TILE_FLAGS_UNDER_FAST
+	bit	BIT_WORLD_SOLID, a
+	ret	nz ; yes
+; no: moves 1 pixel down
+	ld	a, 1
+	jp	MOVE_PLAYER_V
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

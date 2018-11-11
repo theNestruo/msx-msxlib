@@ -53,8 +53,9 @@
 IFDEF CFG_ATTRACT_PRINT
 
 ; -----------------------------------------------------------------------------
-; param hl
-; param de
+; Initializes the attract-mode print
+; param hl: pointer to the source data
+; param de: pointer to the NAMTBL buffer
 INIT_ATTRACT_PRINT:
 	ld	[attract_print.target_line], de
 .TARGET_OK:
@@ -71,6 +72,9 @@ INIT_ATTRACT_PRINT:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Prints one character in attract-mode print
+; ret z: the end of the string has been reached
+; ret nz: otherwise
 ATTRACT_PRINT_CHAR:
 ; Checks delay
 	ld	hl, attract_print.framecounter
@@ -94,8 +98,15 @@ ATTRACT_PRINT_CHAR:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-ATTRACT_PRINT_MOVE_LF_LF:
-	ld	bc, 2 *SCR_WIDTH
+; Moves the attract print pointer one line down
+ATTRACT_PRINT_MOVE_LF:
+	ld	bc, SCR_WIDTH
+	; jr	ATTRACT_PRINT_MOVE ; falls through
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Moves the attract print pointer a number of lines down
+; param bc: the target pointer displacement (a multiple of SCR_WIDTH)
 ATTRACT_PRINT_MOVE:
 	ld	hl, [attract_print.target_line]
 	add	hl, bc

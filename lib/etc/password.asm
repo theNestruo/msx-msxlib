@@ -34,29 +34,32 @@ ENCODE_PASSWORD:
 	ld	a, r
 	; and	$0f ; unnecessary (because .WRITE_DIGIT implementation)
 	ld	c, a ; preserves digit in c
+	ex	af, af'
+	ld	a, c ; initializes the checksum (a') with the first digit
+	ex	af, af'
 	ld	de, password
 	call	.WRITE_DIGIT
 
 ; For each byte to encode
 	ld	b, CFG_PASSWORD_DATA_SIZE
 .LOOP:
-; Reads and encodes the high nibble
-	ld	a, [hl]
-	srl	a
-	srl	a
-	srl	a
-	srl	a
-	call	.ENCODE_NIBBLE
 ; Reads and encodes the low nibble
 	ld	a, [hl]
 	; and	$0f ; unnecessary (because .WRITE_DIGIT implementation)
+	call	.ENCODE_NIBBLE
+; Reads and encodes the high nibble
+	ld	a, [hl]
+	rrca
+	rrca
+	rrca
+	rrca
 	call	.ENCODE_NIBBLE
 ; Until all the bytes are encoded
 	inc	hl
 	djnz	.LOOP
 	
 ; Checksum as last digit
-	ld	a, c
+	ex	af, af'
 	add	PASSWORD_SALT
 	jr	.WRITE_DIGIT
 
@@ -71,6 +74,9 @@ ENCODE_PASSWORD:
 	xor	c
 	add	PASSWORD_SALT
 	ld	c, a ; preserves digit in c
+	ex	af, af'
+	add	c ; adds the digit to the checksum (a')
+	ex	af, af'
 	; jr	.WRITE_DIGIT ; falls through
 
 ; Writes a digit of the password
@@ -93,6 +99,22 @@ ENCODE_PASSWORD:
 ; ret z/nz: if the password is valid (z) or invalid (nz)
 ; ret [password_value]: the decoded bytes
 DECODE_PASSWORD:
+; Verifies the checksum
+	ld	de, password
+	ld	b, PASSWORD_SIZE -1
+	ld	c, PASSWORD_SALT ; (start with the salt)
+.CHECKSUM_LOOP:
+; Reads and adds the digit
+	call	.READ_DIGIT
+	add	c
+	ld	c, a
+	djnz	.CHECKSUM_LOOP
+; Compares with the checksum digit
+	call	.READ_DIGIT
+	xor	c
+	and	$0f ; (only the lower nibble)
+	ret	nz ; invalid
+	
 ; Reads the random digit
 	ld	de, password
 	call	.READ_DIGIT
@@ -108,13 +130,8 @@ DECODE_PASSWORD:
 	inc	hl
 ; Until all the bytes are decoded
 	djnz	.LOOP
-	
-; Reads and checks the checksum digit
-	call	.READ_DIGIT
-	sub	PASSWORD_SALT
-	and	$0f
-	xor	c
-; ret z/nz
+; ret z
+	xor	a
 	ret
 
 ; Decodes a nibble
@@ -129,7 +146,7 @@ DECODE_PASSWORD:
 	push	af ; preserves digit in a
 	sub	PASSWORD_SALT
 	xor	c
-	rld
+	rrd
 ; (restores the digit to preserve it in c)
 	pop	af ; restores digit in a
 	ld	c, a ; preserves digit in c

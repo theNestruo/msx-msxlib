@@ -39,12 +39,13 @@ LDIRVM_BLOCKS:
 	ret
 ; -----------------------------------------------------------------------------
 
+IFEXIST UNPACK
+
 ; -----------------------------------------------------------------------------
 ; Unpacks to VRAM using the decompression buffer
 ; param hl: packed data source address
 ; param de: VRAM destination address
 ; param bc: uncompressed data size
-IFEXIST UNPACK
 UNPACK_LDIRVM:
 	push	de ; preserves VRAM destination
 	push	bc ; preserves size
@@ -57,18 +58,15 @@ UNPACK_LDIRVM:
 	pop	bc ; restores size
 	pop	de ; restores VRAM destination
 	jp	LDIRVM
-ENDIF ; UNPACK
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Unpacks CHRTBL to the three banks
 ; param hl: packed CHRTBL source address
-IFEXIST UNPACK
 UNPACK_LDIRVM_CHRTBL:
 	ld	de, unpack_buffer
 	call	UNPACK
 	; jr	LDIRVM_CHRTBL ; falls through
-ENDIF ; UNPACK
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -85,12 +83,10 @@ LDIRVM_CHRTBL:
 ; -----------------------------------------------------------------------------
 ; Unpacks CLRTBL to the three banks
 ; param hl: packed CLRTBL source address
-IFEXIST UNPACK
 UNPACK_LDIRVM_CLRTBL:
 	ld	de, unpack_buffer
 	call	UNPACK
 	; jr	LDIRVM_CLRTBL ; falls through
-ENDIF ; UNPACK
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -113,6 +109,8 @@ LDIRVM_CLRTBL_BANK:
 	ld	bc, CHRTBL_SIZE
 	jp	LDIRVM
 ; -----------------------------------------------------------------------------
+
+ENDIF ; IFEXIST UNPACK
 
 
 ; =============================================================================
@@ -292,11 +290,16 @@ DISSCR_NO_FADE:
 ; Fade out (horizontal sweep)
 ; Disables the screen, clears NAMTBL and disables sprites
 DISSCR_FADE_OUT:
-; Disables sprites
 	halt	; (sync before disabling sprites / first column)
+; Disables sprites
 	ld	hl, SPRATR
 	ld	a, SPAT_END
 	call	WRTVRM
+
+; Checks if the screen is already disabled
+	ld	hl, RG1SAV
+	bit	6, [hl]
+	ret	z ; yes: do nothing
 
 IFDEF CFG_FADE_TYPE_DOUBLE
 ; Fade out (double)
@@ -354,14 +357,23 @@ ENASCR_NO_FADE:
 ; -----------------------------------------------------------------------------
 ; Fade in (horizontal sweep)
 ; LDIRVM the NAMTBL and SPRATR buffer and enables the screen
+; If the screen is already enabled, defaults to LDIRVM_NAMTBL_FADE_INOUT
 ENASCR_FADE_IN:
-; Clears NAMTBL and disables sprites
 	halt	; (sync in case screen was enabled)
+	
+; Checks if the screen is already enabled
+	ld	hl, RG1SAV
+	bit	6, [hl]
+	jr	nz, LDIRVM_NAMTBL_FADE_INOUT ; yes: uses fade in/out
+	
+; No: clears NAMTBL and disables sprites
+	; halt	; (sync in case screen was enabled)
 	call	DISSCR_NO_FADE.CLEAR
-
-; Activa la pantalla
+; Enables the screen
 	halt	; (sync before enabling screen)
 	call	ENASCR
+; And starts the fade in
+	; jr	LDIRVM_NAMTBL_FADE_INOUT ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------

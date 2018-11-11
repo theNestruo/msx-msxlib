@@ -127,10 +127,10 @@ ENDIF ; IFEXIST SPLASH_SCREENS_PACKED_TABLE
 	ld	[BDRCLR], a
 ; VDP: screen 2
 	call	INIGRP
-	call	DISSCR
 ; screen ,2
+	call	DISSCR
 	ld	hl, RG1SAV
-	set	1, [hl]
+	set	1, [hl] ; (ENASCR will apply to VDP)
 ; screen ,,0
 	xor	a
 	ld	[CLIKSW], a
@@ -140,17 +140,22 @@ IFEXIST SET_PALETTE
 	ld	a, [MSXID3]
 	or	a
 	jr	z, .PALETTE_OK
-; ; Is the GRAPH key down?
-	; ld	a, 6 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
-	; call	SNSMAT
-	; bit	2, [hl]
-	; jr	z, .PALETTE_OK ; yes
+; Is the 1 key or 2 key down?
+	xor	a ; 7 6 5 4 3 2 1 0
+	call	SNSMAT
+	ld	hl, .TMS_APPROXIMATE_PALETTE
+	bit	1, a
+	jr	z, .PALETTE_HL_OK ; Yes (1 key): TMS approximate
+	ld	hl, .DEFAULT_MSX2_PALETTE
+	bit	2, a
+	jr	z, .PALETTE_HL_OK ; Yes (2 key): Default MSX2 palette
 ; no: sets custom palette
 IFEXIST CFG_CUSTOM_PALETTE
 	ld	hl, CFG_CUSTOM_PALETTE
 ELSE
 	ld	hl, .COOL_COLORS_PALETTE
 ENDIF
+.PALETTE_HL_OK:
 	call	SET_PALETTE
 .PALETTE_OK:
 ENDIF
@@ -192,20 +197,20 @@ ENDIF
 ; Data
 
 IFEXIST SET_PALETTE
+; TMS approximate (Wolf's Polka)
+.TMS_APPROXIMATE_PALETTE:
+	dw	$0000, $0000, $0522, $0623, $0326, $0337, $0261, $0637
+	dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
+; Default MSX2 palette
+.DEFAULT_MSX2_PALETTE:
+	dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
+	dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
 IFEXIST CFG_CUSTOM_PALETTE
 ELSE
-; Example: Default MSX2 palette
-; .DEFAULT_MSX2_PALETTE:
-	; dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
-	; dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
 ; CoolColors (c) Fabio R. Schmidlin, 1997
 .COOL_COLORS_PALETTE:
 	dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
 	dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
-; TMS approximate (Wolf's Polka)
-; .TMS_APPROXIMATE_PALETTE:
-	; dw	$0000, $0000, $0522, $0623, $0326, $0337, $0261, $0637
-	; dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
 ENDIF ; CFG_CUSTOM_PALETTE
 ENDIF ; SET_PALETTE
 ; -----------------------------------------------------------------------------

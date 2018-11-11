@@ -33,6 +33,7 @@
 PUT_PLAYER_SPRITE:
 ; First pattern according player state
 	ld	a, [player.state]
+	and	$ff - (1 << BIT_STATE_FINISH) ; (removes finish bit)
 	ld	hl, PLAYER_SPRATR_TABLE
 	call	GET_HL_A_BYTE
 .PATTERN:

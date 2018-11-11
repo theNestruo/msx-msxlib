@@ -84,21 +84,18 @@ ENDIF
 	set	BIT_TRIGGER_B, b
 .NOT_TRIGGER_B:
 
-; "Select" button (SEL or TAB keys)
+; "Select" button (SEL key)
 	ld	a, 7 ; CR SEL BS STOP TAB ESC F5 F4
 	call	SNSMAT
-	cpl
-	ld	c, a ; preserves read row in c
-	and	$48
-	jr	z, .NOT_SELECT
+	bit	6, a
+	jr	nz, .NOT_SELECT
 ; Saves "select" button in current level
 	set	BIT_BUTTON_SELECT, b
 .NOT_SELECT:
 
-; "Start" button (CR or STOP keys)
-	ld	a, $90
-	and	c
-	jr	z, .NOT_START
+; "Start" button (STOP key)
+	bit	4, a
+	jr	nz, .NOT_START
 ; Saves "start" button in current level
 	set	BIT_BUTTON_START, b
 .NOT_START:
