@@ -36,11 +36,6 @@ HOOK:
 .ACTUAL_HOOK:
 	push	af ; Preserves VDP status register S#0 (a)
 	
-IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 15
-	call	SET_BDRCLR ; grey: custom hook frame time
-ENDIF
-
 ; Invokes the replayer
 IFEXIST REPLAYER.FRAME
 ; Invokes the replayer (with frameskip in 60Hz machines)
@@ -74,11 +69,6 @@ ELSE
 	ld	[SCNCNT], a
 ENDIF ; IFEXIST CFG_HOOK_KEEP_BIOS_INPUT
 ENDIF ; IFEXIST CFG_HOOK_READ_INPUT
-
-IFDEF CFG_DEBUG_BDRCLR
-	ld	b, 13
-	call	SET_BDRCLR ; magenta: BIOS interrupt frame time
-ENDIF
 
 ; Invokes the previously existing hook
 	pop	af ; Restores VDP status register S#0 (a)
