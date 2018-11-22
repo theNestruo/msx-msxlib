@@ -6,23 +6,15 @@
 EXAMPLES_PATH=\
 	examples
 
-# SRCS=\
-# 	$(GAME_PATH)\$(GAME).asm \
-# 	$(GAME_PATH)\$(GAME).code.asm \
-# 	$(GAME_PATH)\$(GAME).data.asm \
-# 	$(GAME_PATH)\$(GAME).ram.asm
-# 
-# DATAS=\
-# 	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
-# 	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION) \
-# 	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION) \
-# 	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
-# 
-# DATAS_INTERMEDIATE=\
-# 	$(GAME_PATH)\charset.pcx.chr \
-# 	$(GAME_PATH)\charset.pcx.clr \
-# 	$(GAME_PATH)\sprites.pcx.spr \
-# 	$(GAME_PATH)\screen.tmx.bin
+DATAS=\
+	$(EXAMPLES_PATH)\shared\charset.pcx.chr \
+	$(EXAMPLES_PATH)\shared\charset.pcx.chr.$(PACK_EXTENSION) \
+	$(EXAMPLES_PATH)\shared\charset.pcx.clr \
+	$(EXAMPLES_PATH)\shared\charset.pcx.clr.$(PACK_EXTENSION) \
+	$(EXAMPLES_PATH)\shared\sprites.pcx.spr \
+	$(EXAMPLES_PATH)\shared\sprites.pcx.spr.$(PACK_EXTENSION) \
+	$(EXAMPLES_PATH)\shared\screen.tmx.bin \
+	$(EXAMPLES_PATH)\shared\screen.tmx.bin.$(PACK_EXTENSION)
 
 #
 # tools
@@ -41,8 +33,8 @@ TMX2BIN=tmx2bin
 
 # Uncomment for ZX7
 # (please note that ZX7 does not overwrite output)
-# PACK=zx7.exe
-# PACK_EXTENSION=zx7
+PACK=zx7.exe
+PACK_EXTENSION=zx7
 
 #
 # commands
@@ -58,17 +50,13 @@ RENAME=cmd /c ren
 # paths and file lists
 #
 	
-# TEMPLATE_PATH=\
-# 	games\template
-# 
-# ROM=\
-# 	roms\$(GAME).rom
+ROMS=\
+	$(EXAMPLES_PATH)\00minimal\minimal.rom \
+	$(EXAMPLES_PATH)\01basic\basic.rom
 	
-ROM_INTERMEDIATE=\
-	$(EXAMPLES_PATH)\minimal\example.rom
-	
-SYM_INTERMEDIATE=\
-	$(EXAMPLES_PATH)\minimal\example.sym
+SYMS=\
+	$(EXAMPLES_PATH)\00minimal\minimal.sym \
+	$(EXAMPLES_PATH)\01basic\basic.sym
 
 SRCS_MSXLIB=\
 	lib\ram.asm \
@@ -107,40 +95,31 @@ SRCS_LIBEXT=\
 default: compile
 
 clean:
-	$(REMOVE) $(ROM_INTERMEDIATE)
-	$(REMOVE) $(SYM_INTERMEDIATE) tniasm.sym tniasm.tmp
+	$(REMOVE) $(ROMS)
+	$(REMOVE) $(SYMS) tniasm.sym tniasm.tmp
 
 cleandata:
-	$(REMOVE) $(DATAS) $(DATAS_INTERMEDIATE)
+	$(REMOVE) $(DATAS)
 
 cleanall: clean cleandata
 
-compile: $(ROM_INTERMEDIATE)
+compile: $(ROMS)
 
-test: $(ROM_INTERMEDIATE)
-	$(EMULATOR) $<
+# test: $(ROMS)
+# 	$(EMULATOR) $<
 
-debug: $(ROM_INTERMEDIATE) $(SYM_INTERMEDIATE)
-	$(DEBUGGER) $<
+# debug: $(ROMS) $(SYMS)
+# 	$(DEBUGGER) $<
 
-deploy: $(ROM)
-
-# secondary targets
-# .secondary: $(DATAS_INTERMEDIATE)
+# deploy: $(ROM)
 
 #
 # main targets
 #
 	
-%.rom: %.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT)
+%.rom: %.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(DATAS)
 	$(ASM) $< $@
-	cmd /c findstr /b /i "bytes_" tniasm.sym | sort
-
-# $(SYM_INTERMEDIATE): tniasm.sym
-# 	$(COPY) $< $@
-# 
-# $(ROM): $(ROM_INTERMEDIATE)
-# 	$(COPY) $< $@
+	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
 	
 #
 # GFXs targets

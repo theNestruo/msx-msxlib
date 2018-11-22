@@ -1,75 +1,71 @@
 
 ;
 ; =============================================================================
-;	MSXlib core configuration, routines and initialization
+;	MSXlib minimal example
 ; =============================================================================
 ;
 
 ; -----------------------------------------------------------------------------
-; MSX cartridge (ROM) header, entry point and initialization
-
-; Define if the ROM is larger than 16kB (typically, 32kB)
-; Includes search for page 2 slot/subslot at start
-	; CFG_INIT_32KB_ROM:
-
-; Define if the game needs 16kB instead of 8kB
-; RAM will start at the beginning of the page 2 instead of $e000
-; and availability will be checked at start
-	; CFG_INIT_16KB_RAM:
-	
 ; MSX symbolic constants
 	include	"lib/msx/symbols.asm"
+; -----------------------------------------------------------------------------
+
+; =============================================================================
+;	ROM
+; =============================================================================
+
+; -----------------------------------------------------------------------------
 ; MSX cartridge (ROM) header, entry point and initialization
 	include "lib/msx/cartridge.asm"
 ; -----------------------------------------------------------------------------
-
-;
-; =============================================================================
-; 	Game code and data
-; =============================================================================
-;
 
 ; -----------------------------------------------------------------------------
 ; Game entry point
 MAIN_INIT:
 
-; (prepares an uninspired charset)
-	ld	hl, [CGTABL]
+; At this point, the cartridge is init, the RAM zeroed,
+; The screen mode 2 with 16x16 unmagnified sprites,
+; the keyboard click is muted, and the screen is disabled.
+
+;
+; PUT YOUR CODE (ROM) HERE
+;
+
+; In screen mode 2 we need to set up a charset
+; to actually show something in the screen.
+; Prepares a very uninspired charset (the default one) in the first bank
+	ld	hl, [CGTABL] ; (address of ROM character set)
 	ld	de, CHRTBL
 	ld	bc, CHRTBL_SIZE
 	call	LDIRVM
-; (white over black)
-	ld	a, $F0
+	ld	a, $F0 ; (white over blak)
 	ld	hl, CLRTBL
 	ld	bc, CHRTBL_SIZE
 	call	FILVRM
 
-; CLS	
+; Fills the name table with spaces
+; and prints a simple message
 	ld	a, $20 ; ' '
 	ld	hl, NAMTBL
 	ld	bc, NAMTBL_SIZE
 	call	FILVRM
-	
-; Prints a message
-	ld	hl, HELLO_WORLD
+	ld	hl, .MESSAGE
 	ld	de, NAMTBL
-	ld	bc, HELLO_WORLD.SIZE
+	ld	bc, .MESSAGE_SIZE
 	call	LDIRVM
 	
-; Enables the screen
+; Re-enables the screen so we can see the results
 	call	ENASCR
 
-; Infinite loop
+; (infinite loop)
 .LOOP:
 	halt
 	jr	.LOOP
-; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
 ; The message to print
-HELLO_WORLD:
+.MESSAGE:
 	db	"Hello, World!"
-	.SIZE:	equ $ - HELLO_WORLD
+	.MESSAGE_SIZE:	equ $ - .MESSAGE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -79,32 +75,33 @@ PADDING:
 	.SIZE:	equ $ - PADDING
 ; -----------------------------------------------------------------------------
 
-;
 ; =============================================================================
 ;	RAM
 ; =============================================================================
-;
 
 ; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
 	include	"lib/ram.asm"
 ; -----------------------------------------------------------------------------
 
-ram_end:
+; -----------------------------------------------------------------------------
+; lib/ram.asm automatically starts the RAM section at the proper address
+; (either $C000 (16KB) or $E000 (8KB)) and includes everything MSXlib requires.
+
+;
+; PUT YOUR VARIABLES (RAM) HERE
+;
+
+ram_end: ; (required by MSXlib)
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; (for debugging purposes only)
-	bytes_rom_MSXlib_code:	equ MAIN_INIT - ROM_START
-	bytes_rom_game_code:	equ PADDING - MAIN_INIT
-
-	; bytes_ram_MSXlib:	equ globals - ram_start
-	; bytes_ram_game:		equ ram_end - globals
+	dbg_rom_size_bytes:	equ PADDING - ROM_START
+	dbg_rom_free_bytes:	equ PADDING.SIZE
 	
-	bytes_total_rom:	equ PADDING - ROM_START
-	bytes_total_ram:	equ ram_end - ram_start
-
-	bytes_free_rom:		equ PADDING.SIZE
-	bytes_free_ram:		equ $f380 - $
+	dbg_ram_size_bytes:	equ $ - ram_start
+	dbg_ram_free_bytes:	equ $f380 - $
 ; -----------------------------------------------------------------------------
 
 ; EOF
