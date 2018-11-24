@@ -1,6 +1,6 @@
 ;
 ; =============================================================================
-;	Enemy-player helper routines
+;	Player-enemy-bullet helper routines
 ; =============================================================================
 ;
 
@@ -10,7 +10,7 @@
 	PLAYER_ENEMY_Y_OFFSET:	equ (CFG_ENEMY_HEIGHT - CFG_PLAYER_HEIGHT) /2
 	PLAYER_ENEMY_YX_SIZES:	equ (PLAYER_ENEMY_Y_SIZE << 8) + PLAYER_ENEMY_X_SIZE
 
-IFDEF RESET_BULLETS
+IFEXIST RESET_BULLETS
 	PLAYER_BULLET_X_SIZE:	equ (CFG_PLAYER_WIDTH + CFG_BULLET_WIDTH) /2
 	PLAYER_BULLET_Y_SIZE:	equ (CFG_PLAYER_HEIGHT + CFG_BULLET_HEIGHT) /2
 	PLAYER_BULLET_Y_OFFSET:	equ (CFG_BULLET_HEIGHT - CFG_PLAYER_HEIGHT) /2
@@ -43,8 +43,8 @@ CHECK_PLAYER_ENEMIES_COLLISIONS:
 	ret
 ; -----------------------------------------------------------------------------
 
+IFEXIST RESET_BULLETS
 ; -----------------------------------------------------------------------------
-IFDEF RESET_BULLETS
 ; Checks collision between the player and any bullet
 CHECK_PLAYER_BULLETS_COLLISIONS:
 ; For each bullet in the array
@@ -66,8 +66,8 @@ CHECK_PLAYER_BULLETS_COLLISIONS:
 	add	ix, de
 	djnz	.BULLET_LOOP
 	ret
-ENDIF
 ; -----------------------------------------------------------------------------
+ENDIF
 
 ; -----------------------------------------------------------------------------
 ; Checks collision between the player and one enemy

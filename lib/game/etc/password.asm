@@ -3,6 +3,8 @@
 ;	Password encoding/decoding routines
 ; =============================================================================
 
+	CFG_RAM_PASSWORD:	equ	1
+
 ; -----------------------------------------------------------------------------
 ; Password length (in bytes)
 	PASSWORD_SIZE:	equ 1 + CFG_PASSWORD_DATA_SIZE * 2 + 1

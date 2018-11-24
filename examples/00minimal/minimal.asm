@@ -64,15 +64,12 @@ INIT:
 	.MY_MESSAGE_SIZE:	equ $ - .MY_MESSAGE
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Padding to a 8kB boundary
-	include	"lib/msx/padding.asm"
+	include	"lib/msx/rom_end.asm"
 
+; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
 	include	"lib/ram.asm"
-; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
 ; lib/ram.asm automatically starts the RAM section at the proper address
 ; (either $C000 (16KB) or $E000 (8KB)) and includes everything MSXlib requires.
 
@@ -82,6 +79,6 @@ INIT:
 
 ; -----------------------------------------------------------------------------
 
-ram_end: ; (required by MSXlib)
+	include	"lib/msx/ram_end.asm"
 
 ; EOF

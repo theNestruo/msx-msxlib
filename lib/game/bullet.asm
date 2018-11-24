@@ -5,6 +5,8 @@
 ; =============================================================================
 ;
 
+	CFG_RAM_BULLET:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; Bounding box coordinates offset from the logical coordinates
 	BULLET_BOX_X_OFFSET:	equ -(CFG_BULLET_WIDTH / 2)

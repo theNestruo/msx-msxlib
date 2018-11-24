@@ -190,10 +190,10 @@ WAIT_TRIGGER_FRAMES_A:
 WAIT_TRIGGER_FRAMES:
 	push	bc ; preserves counter
 	halt
-IFDEF CFG_HOOK_READ_INPUT
-	ld	a, [input.edge]
-ELSE
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 	call	READ_INPUT
+ELSE
+	ld	a, [input.edge]
 ENDIF
 	bit	BIT_TRIGGER_A, a
 	pop	bc ; restores counter
@@ -208,10 +208,10 @@ ENDIF
 ; touches: a, bc, de, hl
 WAIT_TRIGGER:
 	halt
-IFDEF CFG_HOOK_READ_INPUT
-	ld	a, [input.edge]
-ELSE
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 	call	READ_INPUT
+ELSE
+	ld	a, [input.edge]
 ENDIF
 	bit	BIT_TRIGGER_A, a
 	jr	z, WAIT_TRIGGER

@@ -18,11 +18,11 @@
 ; MSX cartridge (ROM) header, entry point and initialization
 	include "lib/msx/cartridge.asm"
 
-; ; MSXlib splash screen
-; SPLASH_SCREENS_PACKED_TABLE:
-	; db	1
-	; dw	$ + 2
-	; incbin	"splash/msxlib.bin.zx7"
+; MSXlib splash screen
+SPLASH_SCREENS_PACKED_TABLE:
+	db	1
+	dw	$ + 2
+	incbin	"splash/msxlib.bin.zx7"
 
 ; Interrupt routine (hook)
 	include "lib/msx/hook.asm"
@@ -48,18 +48,18 @@
 	include "lib/asm/asm.asm"
 ; -----------------------------------------------------------------------------
 
-; ; -----------------------------------------------------------------------------
-; ; Unpacker routine
+; -----------------------------------------------------------------------------
+; Unpacker routine
 
-; ; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
-; ; "Standard" version (69 bytes only)
-; ; param hl: packed data source address
-; ; param de: destination buffer address
-	; UNPACK: equ dzx7_standard
-	; include	"libext/zx7/dzx7_standard.tniasm.asm"
+; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
+; "Standard" version (69 bytes only)
+; param hl: packed data source address
+; param de: destination buffer address
+	UNPACK: equ dzx7_standard
+	include	"libext/zx7/dzx7_standard.tniasm.asm"
 
-; ; Buffer size to check it actually fits before system variables
-	; CFG_RAM_RESERVE_BUFFER:	equ 2048
-; ; -----------------------------------------------------------------------------
+; Buffer size to check it actually fits before system variables
+	CFG_RAM_RESERVE_BUFFER:	equ 2048
+; -----------------------------------------------------------------------------
 
 ; EOF

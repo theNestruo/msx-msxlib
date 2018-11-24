@@ -10,15 +10,16 @@ ELSE
 ENDIF
 ram_start:
 
+; -----------------------------------------------------------------------------
 	include "lib\msx\ram.asm"
-	; include "lib\game\game.ram.asm"
+	include "lib\msx\etc\ram.asm"
+	include "lib\game\ram.asm"
+	include "lib\game\etc\ram.asm"
+; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; (for debugging purposes only)
-	dbg_ram_size:		equ ram_end - ram_start
-	dbg_ram_size_msxlib:	equ $ - ram_start
-	dbg_ram_size_game:	equ dbg_ram_size - dbg_ram_size_msxlib
-	dbg_ram_free:		equ $f380 - $
+ram_msxlib_end:
 ; -----------------------------------------------------------------------------
 
 ; EOF

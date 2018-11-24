@@ -64,27 +64,27 @@ SRCS_MSXLIB=\
 	lib\msx\symbols.asm \
 	lib\msx\cartridge.asm \
 	lib\msx\hook.asm \
-	lib\msx\padding.asm \
+	lib\msx\rom_end.asm \
 	lib\msx\ram.asm \
+	lib\msx\ram_end.asm \
 	lib\msx\io\input.asm \
 	lib\msx\io\vram.asm \
 	lib\msx\io\replayer_pt3.asm \
 	lib\msx\io\replayer_wyz.asm \
-	lib\msx\etc\vram_msx2.asm \
-	lib\msx\etc\vram_x.asm \
+	lib\msx\etc\msx2_palette.asm \
+	lib\msx\etc\vpokes.asm \
+	lib\msx\etc\spriteables.asm \
+	lib\msx\etc\attract_print.asm \
 	lib\msx\etc\ram.asm \
 	lib\asm\asm.asm \
 	lib\game\tiles.asm \
-	lib\game\collision.asm \
 	lib\game\player.asm \
-	lib\game\player.ram.asm \
 	lib\game\enemy.asm \
-	lib\game\enemy.ram.asm \
 	lib\game\bullet.asm \
-	lib\game\bullet.ram.asm \
+	lib\game\collision.asm \
 	lib\game\ram.asm \
-	lib\game\platformer\player_x.asm \
-	lib\game\platformer\enemy_x.asm \
+	lib\game\platformer\platformer_player.asm \
+	lib\game\platformer\platformer_enemy.asm \
 	lib\game\etc\password.asm \
 	lib\game\etc\ram.asm
 

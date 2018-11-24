@@ -24,17 +24,18 @@ INIT:
 ; Example:
 ;
 
-; Uses MSXlib convenience routines to LDIRVM the charset to the three banks
-	ld	hl, .MY_CHRTBL
-	call	LDIRVM_CHRTBL
-	ld	hl, .MY_CLRTBL
-	call	LDIRVM_CLRTBL
+; Uses MSXlib convenience routines
+; to unpack and LDIRVM the charset to the three banks
+	ld	hl, .MY_CHRTBL_PACKED
+	call	UNPACK_LDIRVM_CHRTBL
+	ld	hl, .MY_CLRTBL_PACKED
+	call	UNPACK_LDIRVM_CLRTBL
 	
 ; Uses BIOS to LDIRVM the sprite patterns
-	ld	hl, .MY_SPRTBL
+	ld	hl, .MY_SPRTBL_PACKED
 	ld	de, SPRTBL
-	ld	bc, .MY_SPRTBL_SIZE
-	call	LDIRVM
+	ld	bc, SPRTBL_SIZE
+	call	UNPACK_LDIRVM
 	
 ; Prepares the VRAM buffer of the NAMTBL
 	ld	hl, .MY_NAMTBL
@@ -85,34 +86,32 @@ INIT:
 	jr	.LOOP
 
 ; The shared data of the examples
-.MY_CHRTBL:
-	incbin	"examples/shared/charset.pcx.chr"
-.MY_CLRTBL:
-	incbin	"examples/shared/charset.pcx.clr"
-.MY_SPRTBL:
-	incbin	"examples/shared/sprites.pcx.spr"
-	.MY_SPRTBL_SIZE:	equ  $ - .MY_SPRTBL
+.MY_CHRTBL_PACKED:
+	incbin	"examples/shared/charset.pcx.chr.zx7"
+.MY_CLRTBL_PACKED:
+	incbin	"examples/shared/charset.pcx.clr.zx7"
+.MY_SPRTBL_PACKED:
+	incbin	"examples/shared/sprites.pcx.spr.zx7"
+
 .MY_NAMTBL:
 	incbin	"examples/shared/screen.tmx.bin"
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Padding to a 8kB boundary
-	include	"lib/msx/padding.asm"
+	include	"lib/msx/rom_end.asm"
 
+; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
 	include	"lib/ram.asm"
-; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
 ; lib/ram.asm automatically starts the RAM section at the proper address
 ; (either $C000 (16KB) or $E000 (8KB)) and includes everything MSXlib requires.
 
 ;
-; PUT YOUR VARIABLES (RAM) HERE
+; YOUR VARIABLES (RAM) START HERE
 ;
+
 ; -----------------------------------------------------------------------------
 
-ram_end: ; (required by MSXlib)
+	include	"lib/msx/ram_end.asm"
 
 ; EOF

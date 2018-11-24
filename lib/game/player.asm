@@ -5,6 +5,8 @@
 ; =============================================================================
 ;
 
+	CFG_RAM_PLAYER:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; Bounding box offset (based on the logical sprite sizes)
 	PLAYER_BOX_X_OFFSET:	equ -(CFG_PLAYER_WIDTH / 2)

@@ -6,6 +6,8 @@
 ; =============================================================================
 ;
 
+	CFG_RAM_ENEMY:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; Bounding box coordinates offset from the logical coordinates
 	ENEMY_BOX_X_OFFSET:	equ -(CFG_ENEMY_WIDTH / 2)
