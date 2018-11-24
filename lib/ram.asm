@@ -10,37 +10,15 @@ ELSE
 ENDIF
 ram_start:
 
-; -----------------------------------------------------------------------------
-; Vars for the initialization routines
-	include	"lib\msx\cartridge.ram.asm"
-
-; Vars for the Interrupt routine (H.TIMI hook)
-	include "lib\msx\hook.ram.asm"
-	
-; Vars for the input routines
-	include	"lib\msx\input.ram.asm"
-
-; NAMBTL and SPRATR buffers
-	include	"lib\msx\vram.ram.asm"
-	
-; Replayer vars and buffers
-	include "lib\msx\replayer.ram.asm"
-; -----------------------------------------------------------------------------
+	include "lib\msx\ram.asm"
+	; include "lib\game\game.ram.asm"
 
 ; -----------------------------------------------------------------------------
-; Player vars
-	include	"lib\game\player.ram.asm"
-
-; Enemies array
-	include	"lib\game\enemy.ram.asm"
-	
-; Bullet array
-	include	"lib\game\bullet.ram.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Password encoding/decoding vars
-	include "lib\etc\password.ram.asm"
+; (for debugging purposes only)
+	dbg_ram_size:		equ ram_end - ram_start
+	dbg_ram_size_msxlib:	equ $ - ram_start
+	dbg_ram_size_game:	equ dbg_ram_size - dbg_ram_size_msxlib
+	dbg_ram_free:		equ $f380 - $
 ; -----------------------------------------------------------------------------
 
 ; EOF

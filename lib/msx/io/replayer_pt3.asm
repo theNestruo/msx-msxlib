@@ -1,20 +1,20 @@
 
-	CFG_REPLAYER_PT3:	equ 1
-
 ; =============================================================================
 ; 	Replayer routines: PT3-based implementation
 ; =============================================================================
 
+	CFG_RAM_REPLAYER_PT3:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; Initializes the replayer
 REPLAYER.RESET:	; equ REPLAYER.STOP
-IFEXIST CFG_REPLAYER_AYFX
+IFEXIST ayFX_SETUP
 	call	REPLAYER.STOP
 	ld	hl, SOUND_BANK
 	jp	ayFX_SETUP
-ELSE ; IFEXIST CFG_REPLAYER_AYFX
+ELSE ; IFEXIST ayFX_SETUP
 	; REPLAYER.RESET: equ REPLAYER.STOP ; falls through
-ENDIF ; IFEXIST CFG_REPLAYER_AYFX
+ENDIF ; IFEXIST ayFX_SETUP
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -83,12 +83,12 @@ REPLAYER.FRAME:
 ; Plays the actual frame
 	call	PT3_ROUT
 	
-IFEXIST CFG_REPLAYER_AYFX
+IFEXIST ayFX_PLAY
 ; Prepares both PT3 and ayFX next frame
 	call	.PT3
 	jp	ayFX_PLAY
 .PT3:
-ENDIF ; CFG_REPLAYER_AYFX
+ENDIF ; IFEXIST ayFX_PLAY
 
 ; Prepares PT3 next frame
 ; Checks if the end of the song has been reached
@@ -108,5 +108,6 @@ ENDIF ; CFG_REPLAYER_AYFX
 ; PT3 replayer by Dioniso/MSX-KUN/SapphiRe
 	include	"libext/pt3/PT3-ROM.tniasm.ASM"
 ; -----------------------------------------------------------------------------
+
 
 ; EOF

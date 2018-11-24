@@ -3,19 +3,25 @@
 ; 	MSX cartridge (ROM) header, entry point and initialization
 ; =============================================================================
 
+	CFG_RAM_CARTRIDGE:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; Cartridge header
 	org	$4000, $bfff
-ROM_START:
+CARTRIDGE_HEADER:
 	db	"AB"		; ID ("AB")
-	dw	.INIT		; INIT
-	ds	$4010 - $, $00	; STATEMENT, DEVICE, TEXT, Reserved
+	dw	CARTRIDGE_INIT	; INIT
+	dw	$0000		; STATEMENT
+	dw	$0000		; DEVICE
+	dw	$0000		; TEXT
+.RESERVED:
+	ds	$4010 - $, $00	; Reserved
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Cartridge entry point
 ; System initialization: stack pointer, slots, RAM, CPU, VDP, PSG, etc.
-.INIT:
+CARTRIDGE_INIT:
 ; Ensures interrupt mode and stack pointer
 ; (perhaps this ROM is not the first thing to be loaded)
 	di
@@ -130,7 +136,7 @@ ENDIF ; IFEXIST SPLASH_SCREENS_PACKED_TABLE
 ; screen ,2
 	call	DISSCR
 	ld	hl, RG1SAV
-	set	1, [hl] ; (ENASCR will apply to VDP)
+	set	1, [hl] ; (first call to ENASCR will actually apply to the VDP)
 ; screen ,,0
 	xor	a
 	ld	[CLIKSW], a
@@ -139,23 +145,23 @@ IFEXIST SET_PALETTE
 ; MSX2 VDP: Custom palette
 	ld	a, [MSXID3]
 	or	a
-	jr	z, .PALETTE_OK
+	jr	z, .PALETTE_OK ; not MSX2
 ; Is the 1 key or 2 key down?
 	xor	a ; 7 6 5 4 3 2 1 0
 	call	SNSMAT
-	ld	hl, .TMS_APPROXIMATE_PALETTE
+	ld	hl, DEFAULT_PALETTE.TMS_APPROXIMATE
 	bit	1, a
-	jr	z, .PALETTE_HL_OK ; Yes (1 key): TMS approximate
-	ld	hl, .DEFAULT_MSX2_PALETTE
+	jr	z, .SET_PALETTE ; Yes (1 key): TMS approximate
+	ld	hl, DEFAULT_PALETTE.MSX2
 	bit	2, a
-	jr	z, .PALETTE_HL_OK ; Yes (2 key): Default MSX2 palette
+	jr	z, .SET_PALETTE ; Yes (2 key): Default MSX2 palette
 ; no: sets custom palette
 IFEXIST CFG_CUSTOM_PALETTE
 	ld	hl, CFG_CUSTOM_PALETTE
 ELSE
-	ld	hl, .COOL_COLORS_PALETTE
+	ld	hl, DEFAULT_PALETTE.COOL_COLORS
 ENDIF
-.PALETTE_HL_OK:
+.SET_PALETTE:
 	call	SET_PALETTE
 .PALETTE_OK:
 ENDIF
@@ -190,29 +196,7 @@ IFEXIST HOOK.INSTALL
 ENDIF
 
 ; Skips to the game entry point
-	jp	MAIN_INIT
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Data
-
-IFEXIST SET_PALETTE
-; TMS approximate (Wolf's Polka)
-.TMS_APPROXIMATE_PALETTE:
-	dw	$0000, $0000, $0522, $0623, $0326, $0337, $0261, $0637
-	dw	$0272, $0373, $0561, $0674, $0520, $0355, $0666, $0777
-; Default MSX2 palette
-.DEFAULT_MSX2_PALETTE:
-	dw	$0000, $0000, $0611, $0733, $0117, $0327, $0151, $0627
-	dw	$0171, $0373, $0661, $0664, $0411, $0265, $0555, $0777
-IFEXIST CFG_CUSTOM_PALETTE
-ELSE
-; CoolColors (c) Fabio R. Schmidlin, 1997
-.COOL_COLORS_PALETTE:
-	dw	$0000, $0000, $0523, $0634, $0215, $0326, $0251, $0537
-	dw	$0362, $0472, $0672, $0774, $0412, $0254, $0555, $0777
-ENDIF ; CFG_CUSTOM_PALETTE
-ENDIF ; SET_PALETTE
+	jp	INIT
 ; -----------------------------------------------------------------------------
 
 ; EOF

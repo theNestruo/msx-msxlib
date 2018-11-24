@@ -1,35 +1,5 @@
 
 ; -----------------------------------------------------------------------------
-IFDEF LDIRVM_NAMTBL
-
-; NAMTBL buffer in RAM
-namtbl_buffer:
-	rb	NAMTBL_SIZE
-
-ENDIF
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-IFDEF LDIRVM_SPRATR
-
-; SPRATR buffer in RAM
-spratr_buffer:
-	rb	SPRATR_SIZE
-.end:
-	rb	1 ; to store one SPAT_END when the buffer is full
-	
-IFDEF CFG_SPRITES_FLICKER
-; (extra space for the flickering routine)
-	rb	SPRATR_SIZE -CFG_SPRITES_NO_FLICKER *4 -16
-; Offset used by the flickering routine
-.flicker_offset:
-	rb	1
-ENDIF
-
-ENDIF
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 IFDEF CFG_ATTRACT_PRINT
 
 ; Vars for attract-mode text-printing routines

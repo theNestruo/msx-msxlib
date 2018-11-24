@@ -3,6 +3,8 @@
 ; 	Interrupt routine (H.TIMI hook)
 ; =============================================================================
 
+	CFG_RAM_HOOK:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; Installs the H.TIMI hook in the interruption
 HOOK.INSTALL:
@@ -60,15 +62,18 @@ IFEXIST REPLAYER.FRAME
 ENDIF ; REPLAYER.FRAME
 
 ; Reads the inputs
-IFEXIST CFG_HOOK_READ_INPUT
-	call	READ_INPUT
+IFEXIST CFG_HOOK_DISABLE_AUTO_INPUT
+
+IFEXIST CFG_HOOK_KEEP_BIOS_KEYINT
+ELSE ; NOT CFG_HOOK_KEEP_BIOS_KEYINT
 ; Tricks BIOS' KEYINT to skip keyboard scan, TRGFLG, OLDKEY/NEWKEY, ON STRIG...
-IFEXIST CFG_HOOK_KEEP_BIOS_INPUT
-ELSE
 	xor	a
 	ld	[SCNCNT], a
-ENDIF ; IFEXIST CFG_HOOK_KEEP_BIOS_INPUT
-ENDIF ; IFEXIST CFG_HOOK_READ_INPUT
+ENDIF ; IFEXIST CFG_HOOK_KEEP_BIOS_KEYINT
+
+ELSE ; NOT CFG_HOOK_DISABLE_AUTO_INPUT
+	call	READ_INPUT
+ENDIF ; CFG_HOOK_KEEP_BIOS_KEYINT
 
 ; Invokes the previously existing hook
 	pop	af ; Restores VDP status register S#0 (a)

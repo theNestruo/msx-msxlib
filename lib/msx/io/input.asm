@@ -1,7 +1,9 @@
 
 ; =============================================================================
-;	Input, timing & pause routines (BIOS-based)
+;	Input routines (BIOS-based)
 ; =============================================================================
+
+	CFG_RAM_INPUT:	equ 1
 
 ; -----------------------------------------------------------------------------
 ; Bits read by READ_INPUT and stored in input.edge and input.level
@@ -23,14 +25,12 @@
 ; ret a / [input.edge]: bits that went from off to on (edge)
 ; ret b / [input.level]: current bit map (level)
 READ_INPUT:
-IFDEF CFG_HOOK_READ_INPUT
-ELSE
+; Reads joystick #1
+
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 ; Disables interrupts if this routine is to be called manually
 	di
 ENDIF
-
-; Reads joystick #1
-
 ; Reads PSG register #15
 	ld	a, 15
 	call	RDPSG
@@ -46,6 +46,10 @@ ENDIF
 	and	$3f ; a = 00BARLDU
 ; Preserves input value in b
 	ld	b, a
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
+; Enables interrupts if this routine is to be called manually
+	ei
+ENDIF
 	
 ; Reads keyboard
 
@@ -108,12 +112,6 @@ ENDIF
 	ld	[hl], b ; saves current
 	inc	hl ; hl = input.edge
 	ld	[hl], a ; saves edge
-
-IFDEF CFG_HOOK_READ_INPUT
-ELSE
-; Enables interrupts if this routine is to be called manually
-	ei
-ENDIF
 
 	ret
 ; -----------------------------------------------------------------------------

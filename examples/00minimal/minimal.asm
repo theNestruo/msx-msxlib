@@ -8,27 +8,23 @@
 ; -----------------------------------------------------------------------------
 ; MSX symbolic constants
 	include	"lib/msx/symbols.asm"
-; -----------------------------------------------------------------------------
-
-; =============================================================================
-;	ROM
-; =============================================================================
-
-; -----------------------------------------------------------------------------
+	
 ; MSX cartridge (ROM) header, entry point and initialization
 	include "lib/msx/cartridge.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Game entry point
-MAIN_INIT:
+INIT:
 
 ; At this point, the cartridge is init, the RAM zeroed,
 ; The screen mode 2 with 16x16 unmagnified sprites,
 ; the keyboard click is muted, and the screen is disabled.
 
 ;
-; PUT YOUR CODE (ROM) HERE
+; YOUR CODE (ROM) START HERE
+;
+; Example:
 ;
 
 ; In screen mode 2 we need to set up a charset
@@ -49,9 +45,9 @@ MAIN_INIT:
 	ld	hl, NAMTBL
 	ld	bc, NAMTBL_SIZE
 	call	FILVRM
-	ld	hl, .MESSAGE
+	ld	hl, .MY_MESSAGE
 	ld	de, NAMTBL
-	ld	bc, .MESSAGE_SIZE
+	ld	bc, .MY_MESSAGE_SIZE
 	call	LDIRVM
 	
 ; Re-enables the screen so we can see the results
@@ -63,23 +59,15 @@ MAIN_INIT:
 	jr	.LOOP
 
 ; The message to print
-.MESSAGE:
+.MY_MESSAGE:
 	db	"Hello, World!"
-	.MESSAGE_SIZE:	equ $ - .MESSAGE
+	.MY_MESSAGE_SIZE:	equ $ - .MY_MESSAGE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Padding to a 8kB boundary
-PADDING:
-	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
-	.SIZE:	equ $ - PADDING
-; -----------------------------------------------------------------------------
+	include	"lib/msx/padding.asm"
 
-; =============================================================================
-;	RAM
-; =============================================================================
-
-; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
 	include	"lib/ram.asm"
 ; -----------------------------------------------------------------------------
@@ -89,19 +77,11 @@ PADDING:
 ; (either $C000 (16KB) or $E000 (8KB)) and includes everything MSXlib requires.
 
 ;
-; PUT YOUR VARIABLES (RAM) HERE
+; YOUR VARIABLES (RAM) START HERE
 ;
 
-ram_end: ; (required by MSXlib)
 ; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; (for debugging purposes only)
-	dbg_rom_size_bytes:	equ PADDING - ROM_START
-	dbg_rom_free_bytes:	equ PADDING.SIZE
-	
-	dbg_ram_size_bytes:	equ $ - ram_start
-	dbg_ram_free_bytes:	equ $f380 - $
-; -----------------------------------------------------------------------------
+ram_end: ; (required by MSXlib)
 
 ; EOF

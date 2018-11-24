@@ -3,28 +3,18 @@
 # current game name
 #
 
-GAME=template
+EXAMPLES_PATH=\
+	examples
 
-GAME_PATH=\
-	games\$(GAME)
-
-SRCS=\
-	$(GAME_PATH)\$(GAME).asm \
-	$(GAME_PATH)\$(GAME).code.asm \
-	$(GAME_PATH)\$(GAME).data.asm \
-	$(GAME_PATH)\$(GAME).ram.asm
-
-DATAS=\
-	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
-
-DATAS_INTERMEDIATE=\
-	$(GAME_PATH)\charset.pcx.chr \
-	$(GAME_PATH)\charset.pcx.clr \
-	$(GAME_PATH)\sprites.pcx.spr \
-	$(GAME_PATH)\screen.tmx.bin
+SHARED_DATAS=\
+	$(EXAMPLES_PATH)\shared\charset.pcx.chr \
+	$(EXAMPLES_PATH)\shared\charset.pcx.chr.$(PACK_EXTENSION) \
+	$(EXAMPLES_PATH)\shared\charset.pcx.clr \
+	$(EXAMPLES_PATH)\shared\charset.pcx.clr.$(PACK_EXTENSION) \
+	$(EXAMPLES_PATH)\shared\sprites.pcx.spr \
+	$(EXAMPLES_PATH)\shared\sprites.pcx.spr.$(PACK_EXTENSION) \
+	$(EXAMPLES_PATH)\shared\screen.tmx.bin \
+	$(EXAMPLES_PATH)\shared\screen.tmx.bin.$(PACK_EXTENSION)
 
 #
 # tools
@@ -60,43 +50,50 @@ RENAME=cmd /c ren
 # paths and file lists
 #
 	
-TEMPLATE_PATH=\
-	games\template
-
-ROM=\
-	roms\$(GAME).rom
+ROMS=\
+	$(EXAMPLES_PATH)\00minimal\minimal.rom \
+	$(EXAMPLES_PATH)\01basic\basic.rom
 	
-ROM_INTERMEDIATE=\
-	$(GAME_PATH)\$(GAME).rom
-	
-SYM_INTERMEDIATE=\
-	$(GAME_PATH)\$(GAME).sym
+SYMS=\
+	$(EXAMPLES_PATH)\00minimal\minimal.sym \
+	$(EXAMPLES_PATH)\01basic\basic.sym
 
 SRCS_MSXLIB=\
+	lib\rom-default.asm \
 	lib\ram.asm \
-	lib\asm.asm \
 	lib\msx\symbols.asm \
 	lib\msx\cartridge.asm \
-	lib\msx\cartridge.ram.asm \
-	lib\msx\input.asm \
-	lib\msx\input.ram.asm \
-	lib\msx\vram.asm \
-	lib\msx\vram_msx2.asm \
-	lib\msx\vram_x.asm \
-	lib\msx\vram.ram.asm \
+	lib\msx\hook.asm \
+	lib\msx\padding.asm \
+	lib\msx\ram.asm \
+	lib\msx\io\input.asm \
+	lib\msx\io\vram.asm \
+	lib\msx\io\replayer_pt3.asm \
+	lib\msx\io\replayer_wyz.asm \
+	lib\msx\etc\vram_msx2.asm \
+	lib\msx\etc\vram_x.asm \
+	lib\msx\etc\ram.asm \
+	lib\asm\asm.asm \
 	lib\game\tiles.asm \
 	lib\game\collision.asm \
 	lib\game\player.asm \
-	lib\game\player_x.asm \
 	lib\game\player.ram.asm \
 	lib\game\enemy.asm \
-	lib\game\enemy_x.asm \
 	lib\game\enemy.ram.asm \
 	lib\game\bullet.asm \
-	lib\game\bullet.ram.asm
+	lib\game\bullet.ram.asm \
+	lib\game\ram.asm \
+	lib\game\platformer\player_x.asm \
+	lib\game\platformer\enemy_x.asm \
+	lib\game\etc\password.asm \
+	lib\game\etc\ram.asm
 
 SRCS_LIBEXT=\
+	libext\ayFX-replayer\ayFX-ROM.tniasm.asm \
+	libext\ayFX-replayer\ayFX-RAM.tniasm.asm \
 	libext\pletter05c\pletter05c-unpackRam.tniasm.asm \
+	libext\pt3\PT3-ROM.tniasm.asm \
+	libext\pt3\PT3-RAM.tniasm.asm \
 	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
 	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
 	libext\zx7\dzx7_standard.tniasm.asm
@@ -109,45 +106,35 @@ SRCS_LIBEXT=\
 default: compile
 
 clean:
-	$(REMOVE) $(ROM_INTERMEDIATE)
-	$(REMOVE) $(SYM_INTERMEDIATE) tniasm.sym tniasm.tmp
+	$(REMOVE) $(ROMS)
+	$(REMOVE) $(SYMS) tniasm.sym tniasm.tmp
 
 cleandata:
-	$(REMOVE) $(DATAS) $(DATAS_INTERMEDIATE)
+	$(REMOVE) $(SHARED_DATAS)
 
 cleanall: clean cleandata
 
-compile: $(ROM_INTERMEDIATE)
+compile: $(ROMS)
 
-test: $(ROM_INTERMEDIATE)
-	$(EMULATOR) $<
+# test: $(ROMS)
+# 	$(EMULATOR) $<
 
-debug: $(ROM_INTERMEDIATE) $(SYM_INTERMEDIATE)
-	$(DEBUGGER) $<
+# debug: $(ROMS) $(SYMS)
+# 	$(DEBUGGER) $<
 
-deploy: $(ROM)
-
-# secondary targets
-.secondary: $(DATAS_INTERMEDIATE)
+# deploy: $(ROM)
 
 #
 # main targets
 #
 	
-$(GAME_PATH):
-	$(MKDIR) $@
-	$(COPY) $(TEMPLATE_PATH) $@
-	$(RENAME) $(GAME_PATH)\template.asm $(GAME).asm
-	
-$(ROM_INTERMEDIATE) tniasm.sym: $(GAME_PATH)\$(GAME).asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(GFXS) $(SPRS) $(DATAS)
+$(EXAMPLES_PATH)\00minimal\minimal.rom: $(EXAMPLES_PATH)\00minimal\minimal.asm $(SRCS_MSXLIB)
 	$(ASM) $< $@
-	cmd /c findstr /b /i "bytes_" tniasm.sym | sort
-
-$(SYM_INTERMEDIATE): tniasm.sym
-	$(COPY) $< $@
-
-$(ROM): $(ROM_INTERMEDIATE)
-	$(COPY) $< $@
+	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
+	
+$(EXAMPLES_PATH)\01basic\basic.rom: $(EXAMPLES_PATH)\01basic\basic.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
+	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
 	
 #
 # GFXs targets

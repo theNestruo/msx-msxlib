@@ -205,14 +205,18 @@
 	SPRTBL:	equ $3800 ; Sprite pattern table
 
 ; VDP symbolic constants
+	CHRTBL_SIZE:	equ 256 * 8
+	NAMTBL_SIZE:	equ 32 * 24
+	CLRTBL_SIZE:	equ 256 * 8
+	SPRATR_SIZE:	equ 32 * 4
+	SPRTBL_SIZE:	equ 32 * 64
+	
 	SCR_WIDTH:	equ 32
 	SCR_HEIGHT:	equ 24
+	
 	SPRITE_WIDTH:	equ 16
 	SPRITE_HEIGHT:	equ 16
-	NAMTBL_SIZE:	equ 32 * 24
-	CHRTBL_SIZE:	equ 256 * 8
-	SPRTBL_SIZE:	equ 32 * 64
-	SPRATR_SIZE:	equ 32 * 4
+	
 	SPAT_END:	equ $d0 ; Sprite attribute table end marker
 	SPAT_OB:	equ $d1 ; Sprite out of bounds marker (not standard)
 	SPAT_EC:	equ $80 ; Early clock bit (32 pixels)

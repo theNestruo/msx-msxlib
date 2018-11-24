@@ -6,6 +6,8 @@
 ;	Logical coordinates sprite routines
 ; =============================================================================
 
+	CFG_RAM_VRAM:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; TO DO list:
 ;	Support for CFG_SPRITES_EC_AWARE in MOVE_SPRITE[S]
@@ -66,18 +68,18 @@ UNPACK_LDIRVM:
 UNPACK_LDIRVM_CHRTBL:
 	ld	de, unpack_buffer
 	call	UNPACK
-	; jr	LDIRVM_CHRTBL ; falls through
+	; jr	LDIRVM_UNPACKED_CHRTBL ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; LDIRVM the decompresison buffer to the three CHRTBL banks
-LDIRVM_CHRTBL:
+LDIRVM_UNPACKED_CHRTBL:
 	ld	de, CHRTBL
-	call	LDIRVM_CHRTBL_BANK
+	call	LDIRVM_UNPACKED_CHRTBL_BANK
 	ld	de, CHRTBL + CHRTBL_SIZE
-	call	LDIRVM_CHRTBL_BANK
+	call	LDIRVM_UNPACKED_CHRTBL_BANK
 	ld	de, CHRTBL + CHRTBL_SIZE + CHRTBL_SIZE
-	jr	LDIRVM_CHRTBL_BANK
+	jr	LDIRVM_UNPACKED_CHRTBL_BANK
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -86,28 +88,68 @@ LDIRVM_CHRTBL:
 UNPACK_LDIRVM_CLRTBL:
 	ld	de, unpack_buffer
 	call	UNPACK
-	; jr	LDIRVM_CLRTBL ; falls through
+	; jr	LDIRVM_UNPACKED_CLRTBL ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; LDIRVM the decompresison buffer to the three CLRTBL banks
-LDIRVM_CLRTBL:
+LDIRVM_UNPACKED_CLRTBL:
 	ld	de, CLRTBL
-	call	LDIRVM_CLRTBL_BANK
+	call	LDIRVM_UNPACKED_CLRTBL_BANK
 	ld	de, CLRTBL + CHRTBL_SIZE
-	call	LDIRVM_CLRTBL_BANK
+	call	LDIRVM_UNPACKED_CLRTBL_BANK
 	ld	de, CLRTBL + CHRTBL_SIZE + CHRTBL_SIZE
-	; jr	LDIRVM_CLRTBL_BANK
+	; jr	LDIRVM_UNPACKED_CLRTBL_BANK
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; LDIRVM the decompresison buffer to one CHRTBL or CLRTBL bank
 ; param de: VRAM destination address
-LDIRVM_CHRTBL_BANK:
-LDIRVM_CLRTBL_BANK:
+LDIRVM_UNPACKED_CHRTBL_BANK:
+LDIRVM_UNPACKED_CLRTBL_BANK:
 	ld	hl, unpack_buffer
 	ld	bc, CHRTBL_SIZE
 	jp	LDIRVM
+; -----------------------------------------------------------------------------
+
+ELSE ; IFEXIST UNPACK
+
+; -----------------------------------------------------------------------------
+; LDIRVMs CHRTBL to the three banks
+; param hl: data source address
+LDIRVM_CHRTBL:
+	ld	de, CHRTBL
+	call	LDIRVM_CXRTBL.KEEP_HL
+	ld	de, CHRTBL + CHRTBL_SIZE
+	call	LDIRVM_CXRTBL.KEEP_HL
+	ld	de, CHRTBL + CHRTBL_SIZE + CHRTBL_SIZE
+	jr	LDIRVM_CXRTBL
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; LDIRVMs CLRTBL to the three banks
+; param hl: data source address
+LDIRVM_CLRTBL:
+	ld	de, CLRTBL
+	call	LDIRVM_CXRTBL.KEEP_HL
+	ld	de, CLRTBL + CLRTBL_SIZE
+	call	LDIRVM_CXRTBL.KEEP_HL
+	ld	de, CLRTBL + CLRTBL_SIZE + CLRTBL_SIZE
+	; jp	LDIRVM_CXRTBL ; falls through
+; ------VVVV----falls through--------------------------------------------------
+	
+; -----------------------------------------------------------------------------
+; LDIRVMs CHRTBL or CLRTBL to one of the banks
+; param hl: data source address
+; param de: VRAM destination address
+LDIRVM_CXRTBL:
+	ld	bc, CLRTBL_SIZE
+	jp	LDIRVM
+.KEEP_HL:
+	push	hl ; (preserves data source address)
+	call	LDIRVM_CXRTBL
+	pop	hl ; (restores data source address)
+	ret
 ; -----------------------------------------------------------------------------
 
 ENDIF ; IFEXIST UNPACK
@@ -343,6 +385,26 @@ ENDIF ; IFDEF CFG_FADE_TYPE_DOUBLE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Clears just a column of the NAMTBL
+; param a: the column to LDIRVM (0..31)
+; tocuhes af, b, de, hl
+WRTVRM_NAMTBL_COLUMN_OUT:
+; Calculates the destination address
+	ld	hl, NAMTBL
+	call	ADD_HL_A
+; For each char...
+	ld	de, SCR_WIDTH
+	ld	b, SCR_HEIGHT
+	ld	a, $20 ; " " ASCII
+.CHAR:
+; Erases the character
+	call	WRTVRM
+	add	hl, de
+	djnz	.CHAR
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; LDIRVM the NAMTBL and SPRATR buffers and enables the screen
 ENASCR_NO_FADE:
 ; LDIRVM the NAMTBL and SPRATR buffers
@@ -422,26 +484,6 @@ ELSE
 	djnz	.COL
 ENDIF ; IFDEF CFG_FADE_TYPE_DOUBLE
 
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Clears just a column of the NAMTBL
-; param a: the column to LDIRVM (0..31)
-; tocuhes af, b, de, hl
-WRTVRM_NAMTBL_COLUMN_OUT:
-; Calculates the destination address
-	ld	hl, NAMTBL
-	call	ADD_HL_A
-; For each char...
-	ld	de, SCR_WIDTH
-	ld	b, SCR_HEIGHT
-	ld	a, $20 ; " " ASCII
-.CHAR:
-; Erases the character
-	call	WRTVRM
-	add	hl, de
-	djnz	.CHAR
 	ret
 ; -----------------------------------------------------------------------------
 
