@@ -2,6 +2,14 @@
 
 TO BE WRITTEN
 
+## Getting started
+
+* [Getting started](doc/gettingStarted.md)
+
+## Reference documentation
+
+TO BE WRITTEN
+
 ## External libraries
 
 * [ayFX Replayer v1.31] by SapphiRe

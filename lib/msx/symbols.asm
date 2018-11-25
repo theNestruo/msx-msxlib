@@ -205,17 +205,17 @@
 	SPRTBL:	equ $3800 ; Sprite pattern table
 
 ; VDP symbolic constants
-	CHRTBL_SIZE:	equ 256 * 8
-	NAMTBL_SIZE:	equ 32 * 24
-	CLRTBL_SIZE:	equ 256 * 8
-	SPRATR_SIZE:	equ 32 * 4
-	SPRTBL_SIZE:	equ 32 * 64
+	CHRTBL_SIZE:	equ 256 * 8 ; Size of the pattern table (in bytes)
+	NAMTBL_SIZE:	equ 32 * 24 ; Size of the name table (in bytes)
+	CLRTBL_SIZE:	equ 256 * 8 ; Size of the color table (in bytes)
+	SPRATR_SIZE:	equ 32 * 4 ; Size of the sprite attributes table (in bytes)
+	SPRTBL_SIZE:	equ 32 * 64 ; Size of the sprite pattern table (in bytes)
 	
-	SCR_WIDTH:	equ 32
-	SCR_HEIGHT:	equ 24
+	SCR_WIDTH:	equ 32 ; Width of the screen (in characters)
+	SCR_HEIGHT:	equ 24 ; Height of the screen (in characters)
 	
-	SPRITE_WIDTH:	equ 16
-	SPRITE_HEIGHT:	equ 16
+	SPRITE_WIDTH:	equ 16 ; Width of a sprite (in pixels)
+	SPRITE_HEIGHT:	equ 16 ; Height of a sprite (in pixels)
 	
 	SPAT_END:	equ $d0 ; Sprite attribute table end marker
 	SPAT_OB:	equ $d1 ; Sprite out of bounds marker (not standard)
