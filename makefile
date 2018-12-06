@@ -52,11 +52,13 @@ RENAME=cmd /c ren
 	
 ROMS=\
 	$(EXAMPLES_PATH)\00minimal\minimal.rom \
-	$(EXAMPLES_PATH)\01basic\basic.rom
+	$(EXAMPLES_PATH)\01basic\basic.rom \
+	$(EXAMPLES_PATH)\02snake\snake.rom
 	
 SYMS=\
 	$(EXAMPLES_PATH)\00minimal\minimal.sym \
-	$(EXAMPLES_PATH)\01basic\basic.sym
+	$(EXAMPLES_PATH)\01basic\basic.sym \
+	$(EXAMPLES_PATH)\02snake\snake.sym
 
 SRCS_MSXLIB=\
 	lib\rom-default.asm \
@@ -133,6 +135,10 @@ $(EXAMPLES_PATH)\00minimal\minimal.rom: $(EXAMPLES_PATH)\00minimal\minimal.asm $
 	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
 	
 $(EXAMPLES_PATH)\01basic\basic.rom: $(EXAMPLES_PATH)\01basic\basic.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
+	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
+	
+$(EXAMPLES_PATH)\02snake\snake.rom: $(EXAMPLES_PATH)\02snake\snake.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
 	$(ASM) $< $@
 	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
 	
