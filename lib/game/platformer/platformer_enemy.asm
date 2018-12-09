@@ -53,7 +53,6 @@ IFEXIST ENEMY_TYPE_KILLED
 	call	CAN_ENEMY_FLY
 	ret	nz ; no
 	jp	KILL_ENEMY ; yes: kills the enemy
-.NOT_TRAPPED:
 ELSE
 	jp	TURN_ENEMY ; yes: turns around
 ENDIF ; IFEXIST ENEMY_TYPE_KILLED
@@ -267,9 +266,16 @@ ENEMY_TYPE_PACER:
 .DEFAULT_HANDLER:
 ; Checks floor (or wall)
 	call	CAN_ENEMY_WALK
-	jp	z, TURN_ENEMY ; no: turns around
-; yes: moves the enemy
-	jp	MOVE_ENEMY
+	jp	nz, MOVE_ENEMY ; yes: moves the enemy
+IFEXIST ENEMY_TYPE_KILLED
+	call	TURN_ENEMY ; no: turns around
+; Is the enemy trapped?
+	call	CAN_ENEMY_WALK
+	ret	nz ; no
+	jp	KILL_ENEMY ; yes: kills the enemy
+ELSE
+	jp	TURN_ENEMY ; no: turns around
+ENDIF ; IFEXIST ENEMY_TYPE_KILLED
 	
 ; The enemy walks ahead a number of pixels along the ground
 ; or until a wall is hit, the end of the platform is reached

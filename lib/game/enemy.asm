@@ -396,6 +396,7 @@ WAIT_ENEMY_HANDLER:
 ; ret z/nz: z if the wait has finished (the player is overlapping), nz otherwise
 .PLAYER_AT_Y:
 ; Is the player overlapping y coordinates?
+	ld	c, PLAYER_ENEMY_Y_OFFSET
 	call	CHECK_PLAYER_COLLISION.Y
 	jp	nc, RET_NOT_ZERO ; no
 ; ret z

@@ -154,6 +154,34 @@ GET_ARRAY_IX:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Executes a routine for every element of an array
+; param ix: array.count address (byte size)
+; param bc: size of each array element
+; param hl: routine to execute on every element (param ix: address of the element)
+FOR_EACH_ARRAY_IX:
+; Checks array size
+	ld	a, [ix]
+	or	a
+	ret	z ; no elements
+; For every item in the array
+	inc	ix ; ix = actual array
+.LOOP:
+	push	af ; preserves the counter
+	push	bc ; preserves the size of the array element 
+	push	hl ; preserves the routine address
+	call	JP_HL
+	pop	hl ; restores the routine address
+; Next element
+.NEXT:
+	pop	bc ; restores the size of the array element 
+	add	ix, bc
+	pop	af ; restores the counter
+	dec	a
+	jr	nz, .LOOP
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Convenience routine to return 0 and the z flag;
 ; (to be used in comparisons only; inline otherwise)
 ; ret a: 0

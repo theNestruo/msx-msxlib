@@ -7,17 +7,20 @@
 
 ; -----------------------------------------------------------------------------
 ; Symbolic constants for spriteables
+	MASK_SPRITEABLE_STATUS:		equ $f0 ; actual status
+	MASK_SPRITEABLE_DIRECTION:	equ $70 ; direction (inside status)
 	MASK_SPRITEABLE_PENDING:	equ $0f ; pending movement (in pixels)
-	MASK_SPRITEABLE_DIRECTION:	equ $70 ; movement direction
+	BIT_SPRITEABLE_DISABLED:	equ 7
 
-	SPRITEABLE_PENDING_0:		equ 7 ; 8 pixels (= 1 tile)
+	SPRITEABLE_PENDING_0:		equ 8 ; 8 pixels (= 1 tile)
 
-	SPRITEABLE_IDLE:		equ $00 ; no movement (can be moved)
-	SPRITEABLE_DIR_UP:		equ $10
-	SPRITEABLE_DIR_DOWN:		equ $20
-	SPRITEABLE_DIR_RIGHT:		equ $30
-	SPRITEABLE_DIR_LEFT:		equ $40
-	SPRITEABLE_STOPPED:		equ $80 ; no further movement (locked)
+	SPRITEABLE_IDLE:		equ $00 ; no movement, but can be moved
+	SPRITEABLE_MOVING_UP:		equ $10
+	SPRITEABLE_MOVING_DOWN:		equ $20
+	SPRITEABLE_MOVING_RIGHT:	equ $30
+	SPRITEABLE_MOVING_LEFT:		equ $40
+	SPRITEABLE_STOPPING:		equ $70 ; marker direction value for "stopping in this frame"
+	SPRITEABLE_DISABLED:		equ $80 ; no movement, and cannot be moved
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -109,115 +112,6 @@ GET_SPRITEABLE_OFFSET:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Updates the spriteables
-UPDATE_SPRITEABLES:
-; Checks array size
-	ld	ix, spriteables.count
-	ld	a, [ix]
-	or	a
-	ret	z ; no elements
-; Updates the spriteables
-	ld	b, a ; counter in b
-	inc	ix ; ix = spriteables.array
-.LOOP:
-	push	bc ; preserves the counter
-; Checks movement direction
-	ld	a, [ix + _SPRITEABLE_STATUS]
-	ld	b, a ; preserves status
-	and	MASK_SPRITEABLE_DIRECTION
-	jr	z, .NEXT ; no direction
-; Checks pending movement
-	ld	a, MASK_SPRITEABLE_PENDING
-	and	b
-	jr	z, .STOP ; no pending movement
-; Decreases the pending movement and shows the sprite
-	dec	[ix + _SPRITEABLE_STATUS]
-	call	PUT_SPRITEABLE_SPRITE
-	jr	.NEXT
-
-; Stops the spriteable (for the next frame)
-.STOP:
-	ld	a, SPRITEABLE_STOPPED ; (keeps the "stopped" flag only)
-	and	b
-	ld	[ix + _SPRITEABLE_STATUS], a
-; "vpokes" the spriteable foreground
-	call	VPOKE_SPRITEABLE_FOREGROUND
-
-; Next element
-.NEXT:
-	ld	bc, SPRITEABLE_SIZE
-	add	ix, bc
-	pop	bc ; restores the counter
-	djnz	.LOOP
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Shows the spriteable sprite
-; param ix: pointer to the current spriteable
-PUT_SPRITEABLE_SPRITE:
-; Reads physical sprite coordinates at the end of the movement
-	ld	e, [ix +_SPRITEABLE_OFFSET_L]
-	ld	d, [ix +_SPRITEABLE_OFFSET_H]
-	call	OFFSET_TO_COORDS
-; Translates (y, x) into (x, y) (i.e.: swaps d and e)
-	ld	a, e
-	ld	e, d
-	ld	d, a
-	dec	e ; (y pixel adjust)
-; Checks pending movement
-	ld	a, [ix +_SPRITEABLE_STATUS]
-	ld	b, a ; preserves status
-	and	MASK_SPRITEABLE_PENDING
-	jr	z, .DE_OK ; no
-
-; Coordinates adjust depending on the direction
-	ld	c, a ; preserves pending movement
-	ld	a, b ; restores status
-	and	MASK_SPRITEABLE_DIRECTION
-	cp	SPRITEABLE_DIR_RIGHT
-	jr	c, .UP_OR_DOWN ; direction < RIGHT, ergo UP or DOWN
-; direction >= RIGHT, ergo RIGHT or LEFT
-	cp	SPRITEABLE_DIR_LEFT
-	jr	c, .RIGHT
-
-; left: x += pending movement
-	ld	a, d
-	add	c
-	ld	d, a
-	jr	.DE_OK
-
-.RIGHT:
-; right: x -= pending movement
-	ld	a, d
-	sub	c
-	ld	d, a
-	jr	.DE_OK
-
-.UP_OR_DOWN:
-	cp	SPRITEABLE_DIR_DOWN
-	jr	c, .UP
-
-; down: y -= pending movement
-	ld	a, e
-	sub	c
-	ld	e, a
-	jr	.DE_OK
-
-.UP:
-; up: y += pending movement
-	ld	a, e
-	add	c
-	ld	e, a
-	; jr	.DE_OK ; falls through
-
-.DE_OK:
-	ld	c, [ix + _SPRITEABLE_PATTERN]
-	ld	b, [ix + _SPRITEABLE_COLOR]
-	jp	PUT_SPRITE_NO_OFFSET
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; (convenience routine to optimize size)
 ; Sets new status, removes the spriteable from the NAMTBL (both VRAM and buffer),
 ; and reads the NAMTBL offset
@@ -225,10 +119,20 @@ PUT_SPRITEABLE_SPRITE:
 ; param a: new status
 ; ret hl: NAMTBL offset
 MOVE_SPRITEABLE_1:
+; Reads the old status in b
+	ld	b, [ix +_SPRITEABLE_STATUS]
+	
 ; Sets new status
 	ld	[ix +_SPRITEABLE_STATUS], a
-; Removes the spriteable from the NAMTBL (both VRAM and buffer)
-	call	VPOKE_SPRITEABLE_BACKGROUND
+	
+; If the spriteable already had a direction, it was already moving:
+; the foreground is not actually in the NAMTBL, so there is no need to erase it
+; Otherwise, erases the spriteable from the NAMTBL (VPOKEs)
+	ld	a, b ; (restores the old status)
+	or	a
+	call	z, VPOKE_SPRITEABLE_BACKGROUND ; erases the spriteable from the NAMTBL
+
+; Removes the spriteable from the NAMTBL buffer
 	call	NAMTBL_BUFFER_SPRITEABLE_BACKGROUND
 ; Updates NAMTBL offset
 	ld	l, [ix +_SPRITEABLE_OFFSET_L]
@@ -242,7 +146,7 @@ MOVE_SPRITEABLE_1:
 ; param ix: pointer to the current spriteable
 MOVE_SPRITEABLE_DOWN:
 ; Sets new status, removes the spriteable from NAMTBL VRAM and buffer
-	ld	a, SPRITEABLE_DIR_DOWN OR SPRITEABLE_PENDING_0
+	ld	a, SPRITEABLE_MOVING_DOWN OR SPRITEABLE_PENDING_0
 	call	MOVE_SPRITEABLE_1
 ; Updates NAMTBL offset
 	ld	bc, SCR_WIDTH
@@ -257,7 +161,7 @@ MOVE_SPRITEABLE_DOWN:
 ; param ix: pointer to the current spriteable
 MOVE_SPRITEABLE_RIGHT:
 ; Sets new status, removes the spriteable from NAMTBL VRAM and buffer
-	ld	a, SPRITEABLE_DIR_RIGHT OR SPRITEABLE_PENDING_0
+	ld	a, SPRITEABLE_MOVING_RIGHT OR SPRITEABLE_PENDING_0
 	call	MOVE_SPRITEABLE_1
 ; Updates NAMTBL offset
 	inc	hl
@@ -271,7 +175,7 @@ MOVE_SPRITEABLE_RIGHT:
 ; param ix: pointer to the current spriteable
 MOVE_SPRITEABLE_LEFT:
 ; Sets new status, removes the spriteable from NAMTBL VRAM and buffer
-	ld	a, SPRITEABLE_DIR_LEFT OR SPRITEABLE_PENDING_0
+	ld	a, SPRITEABLE_MOVING_LEFT OR SPRITEABLE_PENDING_0
 	call	MOVE_SPRITEABLE_1
 ; Updates NAMTBL offset
 	dec	hl
@@ -290,36 +194,8 @@ MOVE_SPRITEABLE_2:
 	ld	[ix +_SPRITEABLE_OFFSET_L], l
 	ld	[ix +_SPRITEABLE_OFFSET_H], h
 ; Puts the spriteable back in the NAMTBL buffer (only)
-	jp	NAMTBL_BUFFER_SPRITEABLE_FOREGROUND
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Sets the spriteable background in the NAMTBL buffer (only)
-; (i.e.: removes the spriteable characters)
-; param ix: pointer to the current spriteable
-NAMTBL_BUFFER_SPRITEABLE_BACKGROUND:
-	ld	l, [ix +_SPRITEABLE_OFFSET_L]
-	ld	h, [ix +_SPRITEABLE_OFFSET_H]
-	ld	de, namtbl_buffer
-	add	hl, de ; NAMTBL buffer pointer in hl
-; Upper left character
-	ld	a, [ix +_SPRITEABLE_BACKGROUND +0]
-	ld	[hl], a
-; Upper right character
-	inc	hl
-	ld	a, [ix +_SPRITEABLE_BACKGROUND +1]
-	ld	[hl], a
-; Lower left character
-	ld	de, SCR_WIDTH -1
-	add	hl, de
-	ld	a, [ix +_SPRITEABLE_BACKGROUND +2]
-	ld	[hl], a
-; Lower right character
-	inc	hl
-	ld	a, [ix +_SPRITEABLE_BACKGROUND +3]
-	ld	[hl], a
-	ret
-; -----------------------------------------------------------------------------
+	; jp	NAMTBL_BUFFER_SPRITEABLE_FOREGROUND ; falls through
+; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Puts back the spriteable in the NAMTBL buffer (only),
@@ -358,27 +234,156 @@ NAMTBL_BUFFER_SPRITEABLE_FOREGROUND:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Sets the spriteable background in the NAMTBL (VRAM only)
+; Sets the spriteable background in the NAMTBL buffer (only)
+; (i.e.: removes the spriteable characters)
 ; param ix: pointer to the current spriteable
-VPOKE_SPRITEABLE_BACKGROUND:
-; Upper left character
+NAMTBL_BUFFER_SPRITEABLE_BACKGROUND:
 	ld	l, [ix +_SPRITEABLE_OFFSET_L]
 	ld	h, [ix +_SPRITEABLE_OFFSET_H]
+	ld	de, namtbl_buffer
+	add	hl, de ; NAMTBL buffer pointer in hl
+; Upper left character
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +0]
-	call	VPOKE_SPRITEABLE_FIRST
+	ld	[hl], a
 ; Upper right character
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +1]
-	call	VPOKE_SPRITEABLE_NEXT
+	ld	[hl], a
 ; Lower left character
 	ld	de, SCR_WIDTH -1
 	add	hl, de
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +2]
-	call	VPOKE_SPRITEABLE_NEXT
+	ld	[hl], a
 ; Lower right character
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_BACKGROUND +3]
-	jr	VPOKE_SPRITEABLE_NEXT
+	ld	[hl], a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Updates the spriteables in movement
+UPDATE_SPRITEABLES:
+; For each spriteable
+	ld	ix, spriteables.count
+	ld	bc, SPRITEABLE_SIZE
+	ld	hl, .ROUTINE
+	jp	FOR_EACH_ARRAY_IX
+	
+; param ix: pointer to the current spriteable
+.ROUTINE:
+; Checks direction
+	ld	a, [ix + _SPRITEABLE_STATUS]
+	ld	b, a ; preserves status
+	and	MASK_SPRITEABLE_DIRECTION
+	ret	z ; no direction
+; Checks pending movement
+	ld	a, b ; restores status
+	and	MASK_SPRITEABLE_PENDING
+	jr	z, .STOP ; no pending movement
+; Pending movement: decreases the counter
+	dec	[ix + _SPRITEABLE_STATUS]
+	ret
+
+; No pending movement	
+.STOP:
+; Sets the marker value
+	ld	a, b ; restores status
+	or	SPRITEABLE_STOPPING ; "stopping in this frame"
+	ld	[ix + _SPRITEABLE_STATUS], a
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Draws the updated spriteables, either as sprites or as foreground VPOKEs
+DRAW_SPRITEABLES:
+; For each spriteable
+	ld	ix, spriteables.count
+	ld	bc, SPRITEABLE_SIZE
+	ld	hl, .ROUTINE
+	jp	FOR_EACH_ARRAY_IX
+	
+; param ix: pointer to the current spriteable
+.ROUTINE:
+; Is the spriteable still moving?
+	ld	a, [ix + _SPRITEABLE_STATUS]
+	ld	b, a ; (preserves the status)
+	and	MASK_SPRITEABLE_DIRECTION
+	ret	z ; no: idle or disabled
+; yes: Is the spriteable stopping in this frame?
+	cp	SPRITEABLE_STOPPING ; (checks marker value)
+	jp	nz, PUT_SPRITEABLE_SPRITE ; no: puts the sprite
+; yes: Stops the spriteable
+	ld	a, b ; (restores the status)
+	and	SPRITEABLE_DISABLED ; either $00 (idle) or $80 (disabled)
+	ld	[ix + _SPRITEABLE_STATUS], a
+; VPOKEs the foreground
+	jp	VPOKE_SPRITEABLE_FOREGROUND
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Shows the spriteable sprite
+; param ix: pointer to the current spriteable
+PUT_SPRITEABLE_SPRITE:
+; Reads physical sprite coordinates at the end of the movement
+	ld	e, [ix +_SPRITEABLE_OFFSET_L]
+	ld	d, [ix +_SPRITEABLE_OFFSET_H]
+	call	OFFSET_TO_COORDS
+; Translates (y, x) into (x, y) (i.e.: swaps d and e)
+	ld	a, e
+	ld	e, d
+	ld	d, a
+	dec	e ; (y pixel adjust)
+; Checks pending movement
+	ld	a, [ix +_SPRITEABLE_STATUS]
+	ld	b, a ; preserves status
+	and	MASK_SPRITEABLE_PENDING
+	jr	z, .DE_OK ; no
+
+; Coordinates adjust depending on the direction
+	ld	c, a ; preserves pending movement
+	ld	a, b ; restores status
+	and	MASK_SPRITEABLE_DIRECTION
+	cp	SPRITEABLE_MOVING_RIGHT
+	jr	c, .UP_OR_DOWN ; direction < RIGHT, ergo UP or DOWN
+; direction >= RIGHT, ergo RIGHT or LEFT
+	cp	SPRITEABLE_MOVING_LEFT
+	jr	c, .RIGHT
+
+; left: x += pending movement
+	ld	a, d
+	add	c
+	ld	d, a
+	jr	.DE_OK
+
+.RIGHT:
+; right: x -= pending movement
+	ld	a, d
+	sub	c
+	ld	d, a
+	jr	.DE_OK
+
+.UP_OR_DOWN:
+	cp	SPRITEABLE_MOVING_DOWN
+	jr	c, .UP
+
+; down: y -= pending movement
+	ld	a, e
+	sub	c
+	ld	e, a
+	jr	.DE_OK
+
+.UP:
+; up: y += pending movement
+	ld	a, e
+	add	c
+	ld	e, a
+	; jr	.DE_OK ; falls through
+
+.DE_OK:
+	ld	c, [ix + _SPRITEABLE_PATTERN]
+	ld	b, [ix + _SPRITEABLE_COLOR]
+	jp	PUT_SPRITE_NO_OFFSET
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -402,6 +407,30 @@ VPOKE_SPRITEABLE_FOREGROUND:
 ; Lower right character
 	inc	hl
 	ld	a, [ix +_SPRITEABLE_FOREGROUND +3]
+	jr	VPOKE_SPRITEABLE_NEXT
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Sets the spriteable background in the NAMTBL (VRAM only)
+; param ix: pointer to the current spriteable
+VPOKE_SPRITEABLE_BACKGROUND:
+; Upper left character
+	ld	l, [ix +_SPRITEABLE_OFFSET_L]
+	ld	h, [ix +_SPRITEABLE_OFFSET_H]
+	ld	a, [ix +_SPRITEABLE_BACKGROUND +0]
+	call	VPOKE_SPRITEABLE_FIRST
+; Upper right character
+	inc	hl
+	ld	a, [ix +_SPRITEABLE_BACKGROUND +1]
+	call	VPOKE_SPRITEABLE_NEXT
+; Lower left character
+	ld	de, SCR_WIDTH -1
+	add	hl, de
+	ld	a, [ix +_SPRITEABLE_BACKGROUND +2]
+	call	VPOKE_SPRITEABLE_NEXT
+; Lower right character
+	inc	hl
+	ld	a, [ix +_SPRITEABLE_BACKGROUND +3]
 	jr	VPOKE_SPRITEABLE_NEXT
 ; -----------------------------------------------------------------------------
 
