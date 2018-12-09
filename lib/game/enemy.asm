@@ -220,8 +220,8 @@ PUT_ENEMY_SPRITE_ANIMATE:
 	cp	CFG_ENEMY_ANIMATION_DELAY
 	jr	nz, .DONT_ANIMATE
 ; Toggles the animation flag
-	ld	a, FLAG_ENEMY_PATTERN_ANIM
-	xor	[ix + enemy.pattern]
+	ld	a, [ix + enemy.pattern]
+	xor	FLAG_ENEMY_PATTERN_ANIM
 	ld	[ix + enemy.pattern], a
 ; Resets animation counter
 	xor	a
@@ -263,8 +263,8 @@ PUT_ENEMY_SPRITE_ANIM:
 ; param ix: pointer to the current enemy
 TURN_ENEMY:
 ; Toggles the left flag
-	ld	a, FLAG_ENEMY_PATTERN_LEFT
-	xor	[ix + enemy.pattern]
+	ld	a, [ix + enemy.pattern]
+	xor	FLAG_ENEMY_PATTERN_LEFT
 	ld	[ix + enemy.pattern], a
 	ret
 ; -----------------------------------------------------------------------------
@@ -470,7 +470,6 @@ WAIT_ENEMY_HANDLER:
 ; Trigger state handler: pauses until the enemy can shoot again
 ; param ix: pointer to the current enemy
 ; ret z/nz: z if the wait has finished (the enemy can shoot again), nz otherwise
-; ret a: continue (2) if the wait has finished, halt (0) otherwise
 TRIGGER_ENEMY_HANDLER:
 ; Has the pause finished?
 	ld	a, [ix + enemy.trigger_frame_counter]
@@ -492,6 +491,8 @@ TRIGGER_ENEMY_HANDLER:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Removes the current enemy, using the marker value to free the slot
+; param ix: pointer to the current enemy
 REMOVE_ENEMY:
 	xor	a ; (marker value: y = 0)
 	ld	[ix + enemy.y], a
@@ -509,8 +510,8 @@ IFEXIST CFG_SOUND_ENEMY_KILLED
 	call	ayFX_INIT
 ENDIF
 ; Makes the enemy non-lethal and non-solid
-	ld	a, $ff AND NOT (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH)
-	and	[ix + enemy.flags]
+	ld	a, [ix + enemy.flags]
+	and	($ff AND NOT (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH))
 	ld	[ix + enemy.flags], a
 ; Sets the enemy the behaviour when killed
 	ld	hl, ENEMY_TYPE_KILLED
@@ -532,10 +533,9 @@ ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 ; ret a: tile flags
 GET_ENEMY_TILE_FLAGS:
 ; Enemy coordinates
-	ld	a, [ix + enemy.y]
-	dec	a
-	ld	e, a
+	ld	e, [ix + enemy.y]
 	ld	d, [ix + enemy.x]
+	dec	e ; (one pixel above)
 ; Reads the tile flags
 	jp	GET_TILE_FLAGS
 ; -----------------------------------------------------------------------------
@@ -573,8 +573,8 @@ GET_ENEMY_V_TILE_FLAGS:
 	add	d
 	ld	d, a
 ; y += ENEMY_BOX_Y_OFFSET
-	ld	a, ENEMY_BOX_Y_OFFSET
-	add	e
+	ld	a, e
+	add	ENEMY_BOX_Y_OFFSET
 	ld	e, a
 ; Enemy height
 	ld	b, CFG_ENEMY_HEIGHT

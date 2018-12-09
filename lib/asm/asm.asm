@@ -10,9 +10,8 @@
 ADD_HL_A:
 	add	l
 	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	ret	nc
+	inc	h
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -23,9 +22,8 @@ ADD_HL_A:
 ADD_DE_A:
 	add	e
 	ld	e, a
-	adc	d
-	sub	e
-	ld	d, a
+	ret	nc
+	inc	d
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -38,9 +36,9 @@ ADD_DE_A:
 GET_HL_A_BYTE:
 	add	l ; hl += a
 	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	jr	nc, .HL_OK
+	inc	h
+.HL_OK:
 	ld	a, [hl] ; a = [hl]
 	ret
 ; -----------------------------------------------------------------------------
@@ -53,9 +51,9 @@ GET_HL_A_BYTE:
 GET_HL_A_WORD:
 	add	l ; hl += a
 	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	jr	nc, .HL_OK
+	inc	h
+.HL_OK:
 	; jr	LD_HL_HL ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -86,9 +84,9 @@ JP_TABLE:
 JP_TABLE_2:
 	add	l ; hl += a
 	ld	l, a
-	adc	h
-	sub	l
-	ld	h, a
+	jr	nc, .HL_OK
+	inc	h
+.HL_OK:
 	; jr	JP_HL_INDIRECT ; (falls through)
 ; ------VVVV----falls through--------------------------------------------------
 
@@ -157,7 +155,8 @@ GET_ARRAY_IX:
 ; Executes a routine for every element of an array
 ; param ix: array.count address (byte size)
 ; param bc: size of each array element
-; param hl: routine to execute on every element (param ix: address of the element)
+; param hl: routine to execute on every element,
+;	that will receive the address of the element in ix
 FOR_EACH_ARRAY_IX:
 ; Checks array size
 	ld	a, [ix]

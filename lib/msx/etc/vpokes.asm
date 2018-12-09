@@ -59,23 +59,28 @@ VPOKE_NAMTBL_ADDRESS:
 ; Executes the "vpokes" and resets the array
 EXECUTE_VPOKES:
 ; Checks array size
-	ld	ix, vpokes.count
-	ld	a, [ix]
+	ld	hl, vpokes.count
+	ld	a, [hl]
 	or	a
 	ret	z ; no elements
 ; Executes the "vpokes"
 	ld	b, a ; counter in b
-	inc	ix ; ix = vpokes.array
+	inc	hl ; hl = vpokes.array
 .LOOP:
 	push	bc ; preserves the counter
+; Prepares the "vpoke"
+	ld	e, [hl] ; VPOKE.L
+	inc	hl
+	ld	d, [hl] ; VPOKE.H
+	inc	hl
+	ld	a, [hl] ; VPOKE.A
+	inc	hl
+	push	hl ; preserves the updated pointer
 ; Executes the "vpoke"
-	ld	l, [ix + VPOKE.L]
-	ld	h, [ix + VPOKE.H]
-	ld	a, [ix + VPOKE.A]
+	ex	de, hl
 	call	WRTVRM
 ; Next element
-	ld	bc, VPOKE.SIZE
-	add	ix, bc
+	pop	hl ; restores the pointer
 	pop	bc ; restores the counter
 	djnz	.LOOP
 ; ------VVVV----falls through--------------------------------------------------
