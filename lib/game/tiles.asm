@@ -42,9 +42,9 @@ COORDS_TO_OFFSET:
 ; ret de: pixel coordinates (y, x) (CAUTION: order is reversed)
 ; touches: a, hl
 NAMTBL_POINTER_TO_COORDS:
-	ld	de, -namtbl_buffer + $10000 ; de = hl -namtbl_buffer +SCR_WIDTH
-	add	hl, de
-	ex	de, hl
+	ld	a, -(namtbl_buffer >> 8) ; (namtbl_buffer is aligned to $xx00)
+	add	h
+	ex	de, hl ; de = hl -namtbl_buffer
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -110,10 +110,9 @@ ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 	
 ; no: visible screen
 	call	COORDS_TO_OFFSET ; NAMTBL offset in hl
-	push	bc
-	ld	bc, namtbl_buffer
-	add	hl, bc ; NAMTBL buffer pointer in hl
-	pop	bc
+	ld	a, namtbl_buffer >> 8 ; (namtbl_buffer is aligned to $xx00)
+	add	h
+	ld	h, a ; NAMTBL buffer pointer in hl
 ; reads the tile index (value)
 	ld	a, [hl]
 	ret

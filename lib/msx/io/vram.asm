@@ -492,14 +492,12 @@ ENDIF ; IFDEF CFG_FADE_TYPE_DOUBLE
 ; param a: the column to LDIRVM (0..31)
 ; tocuhes af, b, de, hl
 LDIRVM_NAMTBL_COLUMN:
-; Calculates the origin address
-	ld	hl, NAMTBL
-	push	af ; preserves the column
-	call	ADD_HL_A
-	pop	af ; restores the column
-; Calculates the destination address
-	ld	de, namtbl_buffer
-	call	ADD_DE_A
+; Calculates the origin address (NAMTBL is aligned to $xx00)
+	ld	h, NAMTBL >> 8
+	ld	l, a
+; Calculates the destination address (namtbl_buffer is aligned to $xx00)
+	ld	d, namtbl_buffer >> 8
+	ld	e, a
 ; For each char...
 	ld	b, SCR_HEIGHT
 .CHAR:
