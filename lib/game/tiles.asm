@@ -42,7 +42,7 @@ COORDS_TO_OFFSET:
 ; ret de: pixel coordinates (y, x) (CAUTION: order is reversed)
 ; touches: a, hl
 NAMTBL_POINTER_TO_COORDS:
-	ld	a, -(namtbl_buffer >> 8) ; (namtbl_buffer is aligned to $xx00)
+	ld	a, (($100 - (namtbl_buffer >> 8)) AND $FF) ; (namtbl_buffer is aligned to $xx00)
 	add	h
 	ex	de, hl ; de = hl -namtbl_buffer
 ; ------VVVV----falls through--------------------------------------------------

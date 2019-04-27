@@ -197,6 +197,13 @@ RET_ZERO:
 ; ret nz
 RET_NOT_ZERO:
 	or	-1
+	; ret	; (falls through)
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Convenience routine to return;
+; (to be used in jump tables only; inline otherwise)
+RET:
 	ret
 ; -----------------------------------------------------------------------------
 
