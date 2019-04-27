@@ -1,0 +1,20 @@
+{
+	"editor.insertSpaces": false,
+	"editor.minimap.maxColumn": 80,
+	"editor.tabSize": 8,
+	"editor.rulers": [
+		80
+	],
+	"files.exclude": {
+		"tniasm.out": true,
+		"tniasm.sym": true,
+		"tniasm.tmp": true,
+		"**/*.bin": { "when": "$(basename)" },
+		"**/*.chr": { "when": "$(basename)" },
+		"**/*.clr": { "when": "$(basename)" },
+		"**/*.hl": { "when": "$(basename)" },
+		"**/*.nam": { "when": "$(basename)" },
+		"**/*.spr": { "when": "$(basename)" },
+		"**/*.zx7": { "when": "$(basename)" },
+	}
+}

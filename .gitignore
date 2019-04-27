@@ -1,0 +1,8 @@
+
+*.chr
+*.zx7
+*.clr
+*.bin
+*.spr
+tniasm.sym
+tniasm.tmp
