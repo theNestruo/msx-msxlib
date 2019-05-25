@@ -170,7 +170,7 @@ ENDIF
 	ld	hl, ram_start
 	ld	de, ram_start +1
 	ld	bc, ram_end - ram_start  -1
-	ld	[hl], 0
+	ld	[hl], l ; l = $00
 	ldir
 	
 ; PSG: silence
@@ -191,8 +191,19 @@ ENDIF
 	ld	[frame_rate], hl
 	
 ; Installs the H.TIMI hook in the interruption
-IFEXIST HOOK.INSTALL
-	call	HOOK.INSTALL
+IFEXIST HOOK
+; Preserves the existing hook
+	ld	hl, HTIMI
+	ld	de, old_htimi_hook
+	ld	bc, HOOK_SIZE
+	ldir
+; Install the interrupt routine
+	di
+	ld	a, $c3 ; opcode for "JP nn"
+	ld	[HTIMI], a
+	ld	hl, HOOK
+	ld	[HTIMI +1], hl
+	ei
 ENDIF
 
 ; Skips to the game entry point

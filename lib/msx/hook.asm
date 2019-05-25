@@ -6,36 +6,12 @@
 	CFG_RAM_HOOK:	equ 1
 
 ; -----------------------------------------------------------------------------
-; Installs the H.TIMI hook in the interruption
-HOOK.INSTALL:
-; Preserves the existing hook
-	ld	hl, HTIMI
-	ld	de, old_htimi_hook
-	ld	bc, HOOK_SIZE
-	ldir
-; Install the replayer hook
-	di
-	ld	hl, HOOK
-	ld	de, HTIMI
-	ld	bc, HOOK_SIZE
-	ldir
-	ei
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; H.TIMI hook
 ; 1. Invokes the replayer
 ; 2. Reads the inputs
 ; 3. Tricks BIOS' KEYINT to skip keyboard scan, TRGFLG, OLDKEY/NEWKEY, ON STRIG...
 ; 4. Invokes the previously existing hook
 HOOK:
-	jp	.ACTUAL_HOOK
-	; ret	; (padding, unnecesary)
-	; ret	; (padding, unnecesary)
-
-; Actual interrupt routine (H.TIMI hook):
-.ACTUAL_HOOK:
 	push	af ; Preserves VDP status register S#0 (a)
 	
 ; Invokes the replayer
