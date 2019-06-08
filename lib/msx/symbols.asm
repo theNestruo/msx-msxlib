@@ -183,6 +183,7 @@
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
 	INTFLG:	equ $fc9b ; STOP flag (0 = none, 3 = CTRL+STOP, 4 = STOP)
 	JIFFY:	equ $fc9e ; Software clock; each VDP interrupt gets increased by 1
+	INTCNT:	equ $fca2 ; ON INTERVAL counter (counts backwards)
 	SCRMOD: equ $fcaf ; Screen mode.
 	EXPTBL:	equ $fcc1 ; Set to $80 during power-up if Primary Slot is expanded (4b)
 	SLTTBL:	equ $fcc5 ; Mirror of the four possible Secondary Slot Registers (4b)
