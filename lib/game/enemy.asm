@@ -1,7 +1,7 @@
 ;
 ; =============================================================================
 ;	Enemies related routines (generic)
-;	Convenience enemy state handlers (generic)
+;	Generic enemy state handlers (generic)
 ;	Enemy-tile helper routines
 ; =============================================================================
 ;
@@ -108,7 +108,7 @@ UPDATE_ENEMIES:
 	jp	z, .NEXT ; yes
 ; no: update enemy
 
-IFEXIST CFG_ENEMY_DYING_PATTERN
+IFEXIST KILL_ENEMY
 IFEXIST BIT_ENEMY_SOLID
 ; Reads the tile flags at the enemy coordinates
 	call	GET_ENEMY_TILE_FLAGS
@@ -135,7 +135,7 @@ IFEXIST BIT_ENEMY_SOLID
 	
 .NOT_KILLED:
 ENDIF ; IFEXIST BIT_WORLD_SOLID
-ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
+ENDIF ; IFEXIST KILL_ENEMY
 
 ; Dereferences the state pointer of the current enemy
 	ld	l, [ix + enemy.state_l]
@@ -155,7 +155,7 @@ ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 
 ;
 ; =============================================================================
-;	Convenience enemy state handlers (generic)
+;	Generic enemy state handlers (generic)
 ; =============================================================================
 ;
 
@@ -259,246 +259,6 @@ PUT_ENEMY_SPRITE_ANIM:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Toggles the left flag of the enemy
-; param ix: pointer to the current enemy
-TURN_ENEMY:
-; Toggles the left flag
-	ld	a, [ix + enemy.pattern]
-	xor	FLAG_ENEMY_PATTERN_LEFT
-	ld	[ix + enemy.pattern], a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Toggles the left flag of both the current enemy and the respawning data
-; (usually used to allow enemies that start looking in the opposite direction)
-; param ix: pointer to the current enemy
-.RESPAWN_AWARE:
-; Toggles the left flag
-	call	TURN_ENEMY
-; Toggles the left flag in the respawning data
-	ld	[ix + enemy.respawn_data + enemy.pattern], a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Turns the enemy towards the player
-; This function can be used as an enemy state handler
-; param ix: pointer to the current enemy
-.TOWARDS_PLAYER:
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jr	nc, .RIGHT
-	; jp	.LEFT ; falls through
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Turns the enemy left
-; This function can be used as an enemy state handler
-; param ix: pointer to the current enemy
-.LEFT:
-	set	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	ret
-; -----------------------------------------------------------------------------
-	
-; -----------------------------------------------------------------------------
-; Turns the enemy right
-; This function can be used as an enemy state handler
-; param ix: pointer to the current enemy
-.RIGHT:
-	res	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: wait a number of frames
-; param ix: pointer to the current enemy
-; param b: number of frames
-; ret z/nz: z if the wait has finished, nz otherwise
-WAIT_ENEMY_HANDLER:
-; increases frame counter and compares with argument
-	ld	a, [ix + enemy.frame_counter]
-	inc	[ix + enemy.frame_counter]
-; ret z/nz
-	cp	b
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: wait a number of frames, turning around
-; param ix: pointer to the current enemy
-; param b: ttffffff:
-; - f the frames to wait before each turn
-; - t the times to turn minus 1 (0 = 1 time, 1 = 2 times, etc.)
-; ret z/nz: z if the wait has finished, nz otherwise
-.TURNING:
-; compares frame counter with frames
-	ld	a, [ix + enemy.frame_counter]
-	ld	c, a ; preserves frame counter in c
-	xor	b
-	and	$3f ; masks the ffffff part
-	jr	z, .DO_TURN
-; increases frame counter
-	inc	[ix + enemy.frame_counter]
-	ret	; nz
-	
-.DO_TURN:
-	call	TURN_ENEMY
-; compares frame counter with times
-	ld	a, c ; restores frame counter in a
-	cp	b
-	ret	z
-; resets frame part of frame counter and increases times counter
-	and	$c0
-	add	$40
-	ld	[ix + enemy.frame_counter], a
-	ret	; nz
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is ahead of the enemy
-; param ix: pointer to the current enemy
-; ret z/nz: z if the wait has finished (the player is ahead), nz otherwise
-.PLAYER_AHEAD:
-	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, .PLAYER_RIGHT
-	; jr	.PLAYER_LEFT ; falls through
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is left of the enemy
-; param ix: pointer to the current enemy
-; ret z/nz: z if the wait has finished (the player is left), nz otherwise
-.PLAYER_LEFT:
-; Is the player to the left?
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	jp	nc, RET_NOT_ZERO ; no (ret nz)
-	jr	.PLAYER_AT_Y
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is right of the enemy
-; param ix: pointer to the current enemy
-; ret z/nz: z if the wait has finished (the player is right), nz otherwise
-.PLAYER_RIGHT:
-; Is the player to the right?
-	ld	a, [player.x]
-	cp	[ix + enemy.x]
-	ret	c ; no (ret nz)
-	; jr	.PLAYER_AT_Y ; falls through
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is overlapping y coordinates
-; param ix: pointer to the current enemy
-; param h: vertical maximum distance
-; ret z/nz: z if the wait has finished (the player is overlapping), nz otherwise
-.PLAYER_AT_Y:
-; Is the player overlapping y coordinates?
-	ld	c, PLAYER_ENEMY_Y_OFFSET
-	call	CHECK_PLAYER_COLLISION.Y
-	jp	nc, RET_NOT_ZERO ; no
-; ret z
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is above the enemy
-; param ix: pointer to the current enemy
-; ret z/nz: z if the wait has finished (the player is above), nz otherwise
-.PLAYER_ABOVE_DEFAULT:
-; Default horizontal maximum distance
-IFEXIST CFG_ENEMY_ADVANCE_COLLISION
-	ld	l, PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
-ELSE
-	ld	l, PLAYER_ENEMY_X_SIZE
-ENDIF
-	; jr	.PLAYER_ABOVE ; falls through
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is above the enemy
-; param ix: pointer to the current enemy
-; param l: horizontal maximum distance
-; ret z/nz: z if the wait has finished (the player is above), nz otherwise
-.PLAYER_ABOVE:
-; Is the player above?
-	ld	a, [player.y]
-	cp	[ix + enemy.y]
-	jp	nc, RET_NOT_ZERO ; no (ret nz)
-	jr	.PLAYER_AT_X
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is below the enemy
-; param ix: pointer to the current enemy
-; ret z/nz: z if the wait has finished (the player is below), nz otherwise
-.PLAYER_BELOW_DEFAULT:
-; Default horizontal maximum distance
-IFEXIST CFG_ENEMY_ADVANCE_COLLISION
-	ld	l, PLAYER_ENEMY_X_SIZE + CFG_ENEMY_ADVANCE_COLLISION * 2
-ELSE
-	ld	l, PLAYER_ENEMY_X_SIZE
-ENDIF
-	; jr	.PLAYER_BELOW : falls through
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is below the enemy
-; param ix: pointer to the current enemy
-; param l: horizontal maximum distance
-; ret z/nz: z if the wait has finished (the player is below), nz otherwise
-.PLAYER_BELOW:
-; Is the player below?
-	ld	a, [player.y]
-	dec	a ; (avoids false positive due player.y == enemy.y)
-	cp	[ix + enemy.y]
-	ret	c ; no (ret nz)
-	; jr	.PLAYER_X : falls through
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Wait state handler: waits until the player is overlapping x coordinates
-; param ix: pointer to the current enemy
-; param l: horizontal maximum distance
-; ret z/nz: z if the wait has finished (the player is overlapping), nz otherwise
-.PLAYER_AT_X:
-; Is the player overlapping x coordinates?
-	call	CHECK_PLAYER_COLLISION.X
-	jp	nc, RET_NOT_ZERO ; no
-; ret z
-	xor	a
-	ret
-; -----------------------------------------------------------------------------
-
-
-; -----------------------------------------------------------------------------
-; Trigger state handler: pauses until the enemy can shoot again
-; param ix: pointer to the current enemy
-; ret z/nz: z if the wait has finished (the enemy can shoot again), nz otherwise
-TRIGGER_ENEMY_HANDLER:
-; Has the pause finished?
-	ld	a, [ix + enemy.trigger_frame_counter]
-	or	a
-	ret	z ; yes
-; no
-	dec	[ix + enemy.trigger_frame_counter]
-	ret	; (ret nz)
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Trigger state handler reset: restarts the trigger frame counter
-; param ix: pointer to the current enemy
-; param a: number of frames to wait between shoots
-.RESET:
-; resets trigger frame counter
-	ld	[ix + enemy.trigger_frame_counter], a
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Removes the current enemy, using the marker value to free the slot
 ; param ix: pointer to the current enemy
 REMOVE_ENEMY:
@@ -506,27 +266,6 @@ REMOVE_ENEMY:
 	ld	[ix + enemy.y], a
 	ret
 ; -----------------------------------------------------------------------------
-
-IFEXIST CFG_ENEMY_DYING_PATTERN
-; -----------------------------------------------------------------------------
-; Kills the enemy
-; param ix: pointer to the current enemy
-KILL_ENEMY:
-IFEXIST CFG_SOUND_ENEMY_KILLED
-	ld	a, CFG_SOUND_ENEMY_KILLED
-	ld	c, 8
-	call	ayFX_INIT
-ENDIF
-; Makes the enemy non-lethal and non-solid
-	ld	a, [ix + enemy.flags]
-	and	($ff AND NOT (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH))
-	ld	[ix + enemy.flags], a
-; Sets the enemy the behaviour when killed
-	ld	hl, ENEMY_TYPE_KILLED
-	jp	SET_ENEMY_STATE
-; -----------------------------------------------------------------------------
-ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
-
 	
 ;
 ; =============================================================================
@@ -588,58 +327,5 @@ GET_ENEMY_V_TILE_FLAGS:
 	ld	b, CFG_ENEMY_HEIGHT
 	jp	GET_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
-
-
-;
-; =============================================================================
-;	Default enemy types (generic)
-; =============================================================================
-;
-
-IFEXIST CFG_ENEMY_DYING_PATTERN
-; -----------------------------------------------------------------------------
-; Killed: the enemy has been killed. Shows the dying animation
-; and respawns the enemy after a pause
-ENEMY_TYPE_KILLED:
-; Shows the dying pattern
-	ld	c, CFG_ENEMY_DYING_PATTERN
-	call	PUT_ENEMY_SPRITE_PATTERN
-	ld	b, CFG_ENEMY_PAUSE_S ; short pause
-	call	WAIT_ENEMY_HANDLER
-	ret	nz ; (end)
-; Then
-	call	SET_ENEMY_STATE.NEXT
-; Pause
-	ld	b, CFG_ENEMY_PAUSE_L ; long wait
-	call	WAIT_ENEMY_HANDLER
-	ret	nz ; (end)
-; (restores the coordinates from the respawning data)
-	ld	c, [ix + enemy.respawn_data + enemy.y]
-	ld	b, [ix + enemy.respawn_data + enemy.x]
-	ld	a, CFG_ENEMY_RESPAWN_PATTERN
-	ld	[ix + enemy.y], c
-	ld	[ix + enemy.x], b
-	ld	[ix + enemy.pattern], a
-; Then
-	call	SET_ENEMY_STATE.NEXT
-; Shows the respawning animation
-	call	PUT_ENEMY_SPRITE_ANIMATE
-	ld	b, CFG_ENEMY_PAUSE_L ; long wait
-	call	WAIT_ENEMY_HANDLER
-	ret	nz ; (end)
-; Then respawns the enemy
-; (restores the respawning data as the current data)
-	push	ix ; hl = ix
-	pop	hl
-	ld	d, h ; de = hl
-	ld	e, l
-	ld	a, enemy.respawn_data ; hl += .respawn_data
-	call	ADD_HL_A
-	ld	bc, enemy.RESPAWN_SIZE 
-	ldir
-; Resets the animation delay and the frame counter for the next frame
-	jp	SET_ENEMY_STATE.RESET_FRAME_COUNTERS
-; -----------------------------------------------------------------------------
-ENDIF ; IFEXIST CFG_ENEMY_DYING_PATTERN
 
 ; EOF

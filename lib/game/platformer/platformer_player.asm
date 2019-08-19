@@ -34,7 +34,7 @@ UPDATE_PLAYER:
 	srl	a
 	ld	hl, PLAYER_UPDATE_TABLE
 	call	JP_TABLE
-	
+
 ; Finished?
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
@@ -53,7 +53,7 @@ IFEXIST ON_PLAYER_WALK_ON
 	bit	BIT_WORLD_WALK_ON, a
 	call	nz, ON_PLAYER_WALK_ON ; yes
 ENDIF
-	
+
 IFEXIST ON_PLAYER_WIDE_ON
 ; Reads the AND-ed flags of the tiles at the player coordinates
 	call	GET_PLAYER_TILE_FLAGS_WIDE
@@ -61,7 +61,7 @@ IFEXIST ON_PLAYER_WIDE_ON
 	bit	BIT_WORLD_WIDE_ON, a
 	call	nz, ON_PLAYER_WIDE_ON ; yes
 ENDIF
-	
+
 IFEXIST ON_PLAYER_WALK_OVER
 ; Reads the OR-ed flags of the tiles under the player
 	call	GET_PLAYER_TILE_FLAGS_UNDER
@@ -78,7 +78,7 @@ ENDIF
 SET_PLAYER_FLOOR.LANDING:
 IFEXIST CFG_SOUND_PLAYER_LAND
 	ld	a, CFG_SOUND_PLAYER_LAND
-	ld	c, 15
+	ld	c, 15 ; lowest priority
 	call	ayFX_INIT
 ENDIF
 
@@ -109,27 +109,27 @@ UPDATE_PLAYER_FLOOR:
 	ld	hl, input.edge
 	bit	CFG_PLAYER_JUMP_INPUT, [hl]
 	jp	nz, SET_PLAYER_JUMPING ; yes
-	
+
 ; Moves horizontally with animation
 	call	MOVE_PLAYER_LR_ANIMATE
-	
+
 ; Is there floor under the player?
 	call	GET_PLAYER_TILE_FLAGS_UNDER
 	bit	BIT_WORLD_FLOOR, a
 	jp	z, SET_PLAYER_FALLING ; no
-; yes	
+; yes
 	ret
-	
+
 .CHECK_UPSTAIRS:
 ; Trying to get on stairs upstairs
 	call	GET_PLAYER_TILE_FLAGS_WIDE
 	jr	.CHECK_STAIRS
-	
+
 .CHECK_DOWNSTAIRS:
 ; Trying to get on stairs downstairs
 	call	GET_PLAYER_TILE_FLAGS_WIDE_UNDER
 	; jr	.CHECK_STAIRS ; falls through
-	
+
 .CHECK_STAIRS:
 ; Are there stairs? (i.e.: stairs flags, but not solid flag)
 	and	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_STAIRS)
@@ -138,14 +138,14 @@ UPDATE_PLAYER_FLOOR:
 ; yes
 	; jr	SET_PLAYER_STAIRS ; falls through
 ; ------VVVV----falls through--------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; Set the player on stairs in the next frame
 SET_PLAYER_STAIRS:
 ; Sets the player state
 	ld	a, PLAYER_STATE_STAIRS
 	call	SET_PLAYER_STATE
-	
+
 ; Moves horizontally and vertically
 	call	MOVE_PLAYER_LR
 	jr	UPDATE_PLAYER_STAIRS.ON
@@ -160,7 +160,7 @@ UPDATE_PLAYER_STAIRS:
 	call	GET_PLAYER_TILE_FLAGS_WIDE
 	bit	BIT_WORLD_STAIRS, a
 	jr	z, .OFF ; yes
-	
+
 .ON:
 ; Manages vertical movement
 	ld	hl, input.level
@@ -168,7 +168,7 @@ UPDATE_PLAYER_STAIRS:
 	jr	nz, .DOWN
 	bit	BIT_STICK_UP, [hl]
 	ret	z
-	
+
 .UP:
 ; Is there solid above the player?
 	call	GET_PLAYER_TILE_FLAGS_ABOVE
@@ -191,7 +191,7 @@ UPDATE_PLAYER_STAIRS:
 	ld	hl, player.y
 	inc	[hl]
 	jp	UPDATE_PLAYER_ANIMATION
-	
+
 .OFF:
 ; Is there floor under the player?
 	call	GET_PLAYER_TILE_FLAGS_UNDER
@@ -199,7 +199,7 @@ UPDATE_PLAYER_STAIRS:
 	jp	nz, SET_PLAYER_FLOOR ; yes
 	; jp	SET_PLAYER_FALLING ; no ; falls through
 ; ------VVVV----falls through--------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; Set the player to be falling in the next frame
 SET_PLAYER_FALLING:
@@ -217,7 +217,7 @@ SET_PLAYER_FALLING:
 SET_PLAYER_JUMPING:
 IFEXIST CFG_SOUND_PLAYER_JUMP
 	ld	a, CFG_SOUND_PLAYER_JUMP
-	ld	c, 8
+	ld	c, 14 ; almost lowest priority
 	call	ayFX_INIT
 ENDIF
 ; Sets the player state
@@ -233,13 +233,13 @@ ENDIF
 UPDATE_PLAYER_AIR:
 ; Moves horizontally (no animation)
 	call	MOVE_PLAYER_LR
-	
+
 ; Updates Delta-Y (dY) table index
 	; call	UPDATE_PLAYER_DY_INDEX
 	call	READ_PLAYER_DY_VALUE
 	ld	hl, player.dy_index
 	inc	[hl]
-	
+
 	or	a
 	ret	z ; (dy == 0)
 	jp	m, .UP ; (dy < 0)
@@ -253,7 +253,7 @@ UPDATE_PLAYER_AIR:
 ; no
 	ld	a, b ; restores dy in a
 	jp	MOVE_PLAYER_V
-	
+
 .UP:
 ; (dy < 0): Is there solid above the player?
 	push	af ; preserves dy
@@ -279,7 +279,7 @@ SET_PLAYER_DYING:
 	call	SET_PLAYER_STATE
 IFEXIST CFG_SOUND_PLAYER_KILLED
 	ld	a, CFG_SOUND_PLAYER_KILLED
-	ld	c, 8
+	ld	c, 0 ; highest priority
 	call	ayFX_INIT
 ENDIF
 	ret
@@ -314,7 +314,7 @@ MOVE_PLAYER_LR:
 	jr	nz, .RIGHT
 	bit	BIT_STICK_LEFT, [hl]
 	ret	z
-	
+
 .LEFT:
 ; Is there solid left to the player?
 	call	GET_PLAYER_TILE_FLAGS_LEFT
@@ -322,7 +322,7 @@ MOVE_PLAYER_LR:
 	ret	nz ; yes
 ; no
 	jp	MOVE_PLAYER_LEFT
-	
+
 .RIGHT:
 ; Is there solid right to the player?
 	call	GET_PLAYER_TILE_FLAGS_RIGHT
@@ -367,7 +367,7 @@ ENDIF
 IFEXIST ON_PLAYER_PUSH.LEFT
 ; Are there pushable tiles left to the player?
 	bit	BIT_WORLD_PUSHABLE, a
-	jp	nz, ON_PLAYER_PUSH.LEFT ; yes
+	jp	nz, ON_PLAYER_PUSH.LEFT
 ENDIF
 
 ; Is there solid left to the player?
@@ -385,11 +385,11 @@ ENDIF
 .RIGHT:
 ; Is there solid right to the player?
 	call	GET_PLAYER_TILE_FLAGS_RIGHT
-	
+
 IFEXIST ON_PLAYER_PUSH.RIGHT
 ; Are there pushable tiles right to the player?
 	bit	BIT_WORLD_PUSHABLE, a
-	jp	nz, ON_PLAYER_PUSH.RIGHT ; yes
+	jp	nz, ON_PLAYER_PUSH.RIGHT
 ENDIF
 
 ; Is there solid right to the player?
@@ -412,7 +412,7 @@ READ_PLAYER_DY_VALUE:
 	jr	c, .FROM_TABLE
 	ld	a, CFG_PLAYER_GRAVITY
 	ret
-	
+
 .FROM_TABLE:
 	ld	hl, PLAYER_DY_TABLE
 	jp	GET_HL_A_BYTE

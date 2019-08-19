@@ -13,7 +13,7 @@
 ; 4. Invokes the previously existing hook
 HOOK:
 	push	af ; Preserves VDP status register S#0 (a)
-	
+
 ; Invokes the replayer
 IFEXIST REPLAYER.FRAME
 ; Invokes the replayer (with frameskip in 60Hz machines)
@@ -21,13 +21,13 @@ IFEXIST REPLAYER.FRAME
 	cp	5
 	jr	z, .NO_FRAMESKIP ; No frameskip (50Hz machine)
 ; Checks frameskip (60Hz machine)
-	; ld	a, 6 ; (unnecesary)
+	; ld	a, 6 ; (unnecessary)
 	ld	hl, replayer.frameskip
 	inc	[hl]
-	cp	[hl]
-	jr	nz, .NO_FRAMESKIP ; No framewksip 
+	sub	[hl]
+	jr	nz, .NO_FRAMESKIP ; No framewksip
 ; Resets frameskip counter
-	xor	a
+	; xor	a ; (unnecessary)
 	ld	[hl], a
 	jr	.FRAMESKIP
 
@@ -41,7 +41,7 @@ ENDIF ; REPLAYER.FRAME
 IFEXIST CFG_HOOK_DISABLE_AUTO_INPUT
 ELSE
 	call	READ_INPUT
-ENDIF ; IFEXIST CFG_HOOK_KEEP_BIOS_KEYINT
+ENDIF ; CFG_HOOK_KEEP_BIOS_KEYINT
 
 ; Tricks BIOS' KEYINT to skip keyboard scan, TRGFLG, OLDKEY/NEWKEY, ON STRIG...
 IFEXIST CFG_HOOK_KEEP_BIOS_KEYINT
@@ -49,7 +49,7 @@ ELSE
 	xor	a
 	ld	[SCNCNT], a
 	ld	[INTCNT], a
-ENDIF ; IFEXIST CFG_HOOK_KEEP_BIOS_KEYINT
+ENDIF ; CFG_HOOK_KEEP_BIOS_KEYINT
 
 ; Invokes the previously existing hook
 	pop	af ; Restores VDP status register S#0 (a)
