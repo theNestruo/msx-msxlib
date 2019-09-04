@@ -11,10 +11,10 @@ ENDIF
 ram_start:
 
 ; -----------------------------------------------------------------------------
-	include "lib\msx\ram.asm"
-	include "lib\msx\etc\ram.asm"
-	include "lib\game\ram.asm"
-	include "lib\game\etc\ram.asm"
+	include "lib/msx/ram.asm"
+	include "lib/msx/etc/ram.asm"
+	include "lib/game/ram.asm"
+	include "lib/game/etc/ram.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

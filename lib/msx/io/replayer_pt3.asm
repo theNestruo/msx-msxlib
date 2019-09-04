@@ -43,7 +43,7 @@ ENDIF ; CFG_PT3_PACKED
 	rlca	; (moves loop flag to LSB)
 	push	af ; (preserves song index)
 	and	$fe ; (song index only = 0, 2, 4)
-	
+
 IFDEF CFG_PT3_PACKED
 ; Locates the song (2/2, packed)
 	ld	hl, SONG_TABLE
@@ -82,7 +82,7 @@ ENDIF ; CFG_PT3_PACKED
 REPLAYER.FRAME:
 ; Plays the actual frame
 	call	PT3_ROUT
-	
+
 IFEXIST ayFX_PLAY
 ; Prepares both PT3 and ayFX next frame
 	call	.PT3

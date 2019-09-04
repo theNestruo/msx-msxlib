@@ -49,12 +49,12 @@ RENAME=cmd /c ren
 #
 # paths and file lists
 #
-	
+
 ROMS=\
 	$(EXAMPLES_PATH)\00minimal\minimal.rom \
 	$(EXAMPLES_PATH)\01basic\basic.rom \
 	$(EXAMPLES_PATH)\02snake\snake.rom
-	
+
 SYMS=\
 	$(EXAMPLES_PATH)\00minimal\minimal.sym \
 	$(EXAMPLES_PATH)\01basic\basic.sym \
@@ -64,6 +64,8 @@ SRCS_MSXLIB=\
 	lib\rom-default.asm \
 	lib\ram.asm \
 	lib\msx\symbols.asm \
+	lib\msx\page0.asm \
+	lib\msx\page0_end.asm \
 	lib\msx\cartridge.asm \
 	lib\msx\hook.asm \
 	lib\msx\rom_end.asm \
@@ -73,6 +75,7 @@ SRCS_MSXLIB=\
 	lib\msx\io\vram.asm \
 	lib\msx\io\replayer_pt3.asm \
 	lib\msx\io\replayer_wyz.asm \
+	lib\msx\unpack\unpack_zx7.asm \
 	lib\msx\etc\msx2_palette.asm \
 	lib\msx\etc\vpokes.asm \
 	lib\msx\etc\spriteables.asm \
@@ -129,19 +132,19 @@ compile: $(ROMS)
 #
 # main targets
 #
-	
+
 $(EXAMPLES_PATH)\00minimal\minimal.rom: $(EXAMPLES_PATH)\00minimal\minimal.asm $(SRCS_MSXLIB)
 	$(ASM) $< $@
 	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
-	
+
 $(EXAMPLES_PATH)\01basic\basic.rom: $(EXAMPLES_PATH)\01basic\basic.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
 	$(ASM) $< $@
 	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
-	
+
 $(EXAMPLES_PATH)\02snake\snake.rom: $(EXAMPLES_PATH)\02snake\snake.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
 	$(ASM) $< $@
 	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
-	
+
 #
 # GFXs targets
 #

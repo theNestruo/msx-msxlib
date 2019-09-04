@@ -12,16 +12,16 @@ spratr_buffer:
 	rb	SPRATR_SIZE
 .end:
 	rb	1 ; to store one SPAT_END when the buffer is full
-	
+
 IFDEF CFG_SPRITES_FLICKER
 
 ; (extra space for the flickering routine)
 	rb	SPRATR_SIZE -CFG_SPRITES_NO_FLICKER *4 -16
-	
+
 ; Offset used by the flickering routine
 .flicker_offset:
 	rb	1
-	
+
 ENDIF ; IFDEF CFG_SPRITES_FLICKER
 ; -----------------------------------------------------------------------------
 ENDIF ; IFDEF CFG_RAM_VRAM
@@ -59,7 +59,7 @@ ENDIF ; IFEXIST REPLAYER.FRAME
 ; -----------------------------------------------------------------------------
 ENDIF ; IFDEF CFG_RAM_HOOK
 
-	
+
 IFDEF CFG_RAM_INPUT
 ; -----------------------------------------------------------------------------
 ; Variables for: Input routines (BIOS-based)
@@ -74,7 +74,7 @@ input:
 ENDIF ; IFDEF CFG_RAM_INPUT
 
 
-IFDEF CFG_RAM_REPLAYER_PT3	
+IFDEF CFG_RAM_REPLAYER_PT3
 ; -----------------------------------------------------------------------------
 ; Variables for: Replayer routines: PT3-based implementation
 
@@ -88,7 +88,7 @@ IFEXIST ayFX_SETUP
 
 ENDIF ; IFEXIST ayFX_SETUP
 ; -----------------------------------------------------------------------------
-ENDIF ; IFDEF CFG_RAM_REPLAYER_PT3	
+ENDIF ; IFDEF CFG_RAM_REPLAYER_PT3
 
 
 IFDEF CFG_RAM_REPLAYER_WYZ

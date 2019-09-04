@@ -29,6 +29,9 @@ SPLASH_SCREENS_PACKED_TABLE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Input, timing & pause routines (BIOS-based)
+	include "lib/msx/io/input.asm"
+
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
 ; NAMTBL buffer text routines
@@ -38,28 +41,19 @@ SPLASH_SCREENS_PACKED_TABLE:
 ; Logical-to-physical sprite coordinates offsets (pixels)
 	CFG_SPRITES_X_OFFSET:	equ -8
 	CFG_SPRITES_Y_OFFSET:	equ -17
+; -----------------------------------------------------------------------------
 
-; Input, timing & pause routines (BIOS-based)
-	include "lib/msx/io/input.asm"
+; -----------------------------------------------------------------------------
+; Unpacker routine (ZX7 decoder-based implementation)
+	include	"lib/msx/unpack/unpack_zx7.asm"
+
+; Buffer size to check it actually fits before system variables
+	CFG_RAM_RESERVE_BUFFER:	equ 2048
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Generic Z80 assembly convenience routines
 	include "lib/asm/asm.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Unpacker routine
-
-; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
-; "Standard" version (69 bytes only)
-; param hl: packed data source address
-; param de: destination buffer address
-	UNPACK: equ dzx7_standard
-	include	"libext/zx7/dzx7_standard.tniasm.asm"
-
-; Buffer size to check it actually fits before system variables
-	CFG_RAM_RESERVE_BUFFER:	equ 2048
 ; -----------------------------------------------------------------------------
 
 ; EOF

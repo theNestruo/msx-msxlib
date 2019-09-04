@@ -13,9 +13,17 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Padding to a 8kB boundary
+; Padding to a 16kB boundary with $FF (RST $38)
 PADDING:
-	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
+IFDEF CFG_INIT_ROM_SIZE
+IF CFG_INIT_ROM_SIZE < 32
+	ds	($ OR $1fff) -$ +1, $ff ; (8kB boundary to allow 8kB or 24kB ROMs)
+ELSE
+	ds	($ OR $3fff) -$ +1, $ff
+ENDIF
+ELSE ; IF CFG_INIT_ROM_SIZE < 32
+	ds	($ OR $1fff) -$ +1, $ff ; (8kB boundary to allow 8kB or 24kB ROMs)
+ENDIF ; IFDEF CFG_INIT_ROM_SIZE
 	.SIZE:	equ $ - PADDING
 ; -----------------------------------------------------------------------------
 

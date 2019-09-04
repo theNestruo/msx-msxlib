@@ -7,7 +7,16 @@
 
 ; -----------------------------------------------------------------------------
 ; Cartridge header
+IFDEF CFG_INIT_ROM_SIZE
+IF (CFG_INIT_ROM_SIZE < 32)
+	org	$4000, $4000 + (CFG_INIT_ROM_SIZE * $0400) - 1
+ELSE
 	org	$4000, $bfff
+ENDIF ; IF (CFG_INIT_ROM_SIZE < 32)
+ELSE
+	org	$4000, $7fff
+ENDIF ; IFDEF CFG_INIT_ROM_SIZE
+	
 CARTRIDGE_HEADER:
 	db	"AB"		; ID ("AB")
 	dw	CARTRIDGE_INIT	; INIT
@@ -28,7 +37,10 @@ CARTRIDGE_INIT:
 	im	1
 	ld	sp, [HIMEM]
 
-IFDEF CFG_INIT_32KB_ROM
+IFDEF CFG_INIT_ROM_SIZE
+IF CFG_INIT_ROM_SIZE > 16
+
+IF CFG_INIT_ROM_SIZE <= 32
 ; Is the game running on RAM? (e.g.: ROM Loader)
 	ld	hl, $400a ; (first reserved byte of the cartridge header)
 	ld	a, [hl]
@@ -36,7 +48,10 @@ IFDEF CFG_INIT_32KB_ROM
 	ld	[hl], a
 	xor	[hl]
 	jr	z, .RAM_OK ; yes
-; No: Reads the primary slot of the page 1
+; No:
+ENDIF ; IF (CFG_INIT_ROM_SIZE <= 32)
+
+; Reads the primary slot of the page 1
 	call    RSLREG	; a = 33221100
 	rrca
 	rrca
@@ -60,10 +75,18 @@ IFDEF CFG_INIT_32KB_ROM
 	and	$0c	; a = xxxxSSxx
 ; Define slot ID (2/2)
 	or	c	; a = ExxxSSPP
-; Enable
+
+IF CFG_INIT_ROM_SIZE > 32
+; Saves the slot of the cartridge
+	ld	[$fffe], a
+ENDIF
+
+; Enables page 2 cartridge slot/subslot at start
 	ld	h, $80 ; Bit 6 and 7: page 2 ($8000)
 	call	ENASLT
-ENDIF ; CFG_INIT_32KB_ROM
+
+ENDIF ; IF CFG_INIT_ROM_SIZE > 16
+ENDIF ; IFDEF CFG_INIT_ROM_SIZE
 
 IFDEF CFG_INIT_16KB_RAM
 ; RAM: checks availability of 16kB
@@ -83,7 +106,7 @@ IFDEF CFG_INIT_16KB_RAM
 ; halts the execution
 	di
 	halt
-	
+
 ; RAM check warning text
 .TXT:
 	db	"16KB RAM REQUIRED"
@@ -106,12 +129,12 @@ IFEXIST SPLASH_SCREENS_PACKED_TABLE
 	ld	hl, SPLASH_SCREENS_PACKED_TABLE
 	ld	b, [hl]
 	inc	hl
-	
+
 ; For each splash screen
 .SPLASH_LOOP:
 	push	bc ; preserves counter
 	push	hl ; preserves pointer
-; Unpacks the actual splash screen 
+; Unpacks the actual splash screen
 	call	LD_HL_HL
 	ld	de, $e000
 	call	UNPACK
@@ -172,7 +195,7 @@ ENDIF
 	ld	bc, ram_end - ram_start  -1
 	ld	[hl], l ; l = $00
 	ldir
-	
+
 ; PSG: silence
 	call	GICINI
 
@@ -189,7 +212,7 @@ ENDIF
 	ld	hl, 6 << 8 + 60 ; frame rate and frames per tenth for 60Hz
 .HL_OK:
 	ld	[frame_rate], hl
-	
+
 ; Installs the H.TIMI hook in the interruption
 IFEXIST HOOK
 ; Preserves the existing hook
@@ -208,6 +231,71 @@ ENDIF
 
 ; Skips to the game entry point
 	jp	INIT
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; 48kB ROM: Declares routines to set the page 0 slot/subslot and restore the bios
+IFDEF CFG_INIT_ROM_SIZE
+IF CFG_INIT_ROM_SIZE > 32
+
+SET_PAGE0:
+
+; Restores the BIOS (selects and enables the Main ROM slot/subslot in page 0)
+; Caller is responsible of disabling interruptions before invoking this routine
+; touches: a, b, c, d
+.BIOS:
+	ld	a, [MNROM]
+	jr	.DO_SET_PAGE0
+
+; Selects and enables the cartridge slot/sublot in page 0
+; Caller is responsible of enabling interruptions after invoking this routine
+; touches: a, b, c, d
+.CARTRIDGE:
+	ld	a, [$fffe]
+	; jr	.DO_SET_PAGE0 ; falls through
+
+; Selects and permanently enables the requested slot in page 0
+; param a: slot ID (ExxxSSPP)
+; touches: a, b, c, d
+.DO_SET_PAGE0:
+	ld	b, a		; b = ExxxSSPP
+	and	$03		; a = 000000PP
+	ld	c, a		; c = 000000PP
+; Computes the primary slot selection register
+	in	a, [PPI.A]	; a = P3P2P1P0
+	and	$fc		; a = P3P2P100
+	or	c		; a = P3P2P1PP
+; Is the slot expanded?
+	bit	7, b
+	jr	z, .SET_PRIMARY ; no
+; yes
+	ld	d, a ; (preserves primary slot selection register value)
+; Selects primary slot in page 3 first (to be able to access $FFFF)
+	rrc	c
+	rrc	c		; c = PP000000
+	ld	a, d		; a = P3P2P1PP
+	and	$3f		; a = 00P2P1PP
+	or	c		; a = PPP2P1PP
+	out	[PPI.A], a
+; Selects secondary slot in page 0
+	ld	a, b		; a = 1xxxSSPP
+	and	$0c		; a = 0000SS00
+	rrca
+	rrca			; a = 000000SS
+	ld	b, a		; b = 000000SS
+	ld	a, [$ffff]
+	cpl			; a = S3S2S1S0
+	and	$fc		; a = S3S2S100
+	or	b		; b = S3S2S1SS
+	ld	[$ffff], a
+; Selects primary slot in page 0
+	ld	a, d ; (restores primary slot selection register value)
+.SET_PRIMARY:
+	out	[PPI.A], a
+	ret
+
+ENDIF ; IF CFG_INIT_ROM_SIZE > 32
+ENDIF ; IFDEF CFG_INIT_ROM_SIZE
 ; -----------------------------------------------------------------------------
 
 ; EOF

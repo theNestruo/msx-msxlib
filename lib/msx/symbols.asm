@@ -146,11 +146,11 @@
 	NSTWRT:	equ $0171
 	NRDVRM:	equ $0174
 	NWRVRM:	equ $0177
-	
+
 ; MSX 2+ BIOS
 	RDBTST:	equ $017a
 	WRBTST:	equ $017d
-	
+
 ; MSX turbo R BIOS
 	CHGCPU:	equ $0180 ; Changes CPU mode
 	GETCPU:	equ $0183 ; Returns current CPU mode
@@ -186,12 +186,13 @@
 	INTCNT:	equ $fca2 ; ON INTERVAL counter (counts backwards)
 	SCRMOD: equ $fcaf ; Screen mode.
 	EXPTBL:	equ $fcc1 ; Set to $80 during power-up if Primary Slot is expanded (4b)
+	MNROM:	equ $fcc1 ; The first EXPTBL variable is also the Main ROM (BIOS) slot ID
 	SLTTBL:	equ $fcc5 ; Mirror of the four possible Secondary Slot Registers (4b)
 
 ; MSX system hooks
 	HKEYI:	equ $fd9a ; Interrupt handler
 	HTIMI:	equ $fd9f ; Interrupt handler
-	
+
 	HOOK_SIZE:	equ HTIMI - HKEYI
 ; -----------------------------------------------------------------------------
 
@@ -211,16 +212,34 @@
 	CLRTBL_SIZE:	equ 256 * 8
 	SPRATR_SIZE:	equ 32 * 4
 	SPRTBL_SIZE:	equ 32 * 64
-	
+
 	SCR_WIDTH:	equ 32
 	SCR_HEIGHT:	equ 24
-	
+
 	SPRITE_WIDTH:	equ 16
 	SPRITE_HEIGHT:	equ 16
-	
+
 	SPAT_END:	equ $d0 ; Sprite attribute table end marker
 	SPAT_OB:	equ $d1 ; Sprite out of bounds marker (not standard)
 	SPAT_EC:	equ $80 ; Early clock bit (32 pixels)
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; PPI (Programmable Peripheral Interface)
+	PPI.A: equ $a8 ; PPI port A: primary slot selection register
+		; 33221100: number of slot to select on page n
+	PPI.B: equ $a9 ; PPI port B: read the keyboard matrix row specified via the port $AA
+	PPI.C: equ $aa ; PPI port C: control keyboard CAP LED, data recorder signals, and keyboard matrix row
+		; bits 0-3: Row number of specified keyboard matrix to read via port B
+		; bit 4: Data recorder motor (reset to turn on)
+		; bit 5: Set to write on tape
+		; bit 6: Keyboard LED CAPS (reset to turn on)
+		; bit 7: 1, then 0 shortly thereafter to make a clicking sound (used for the keyboard)
+	PPI.R: equ $ab ; PPI ports control register (write only)
+		; bit 0 = Bit status to change
+		; bit 1-3 = Number of the bit to change at port C of the PPI
+		; bit 4-6 = Unused
+		; bit 7 = Must be always reset on MSX
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
