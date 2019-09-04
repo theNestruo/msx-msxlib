@@ -16,7 +16,7 @@ ENDIF ; IF (CFG_INIT_ROM_SIZE < 32)
 ELSE
 	org	$4000, $7fff
 ENDIF ; IFDEF CFG_INIT_ROM_SIZE
-	
+
 CARTRIDGE_HEADER:
 	db	"AB"		; ID ("AB")
 	dw	CARTRIDGE_INIT	; INIT
@@ -78,7 +78,8 @@ ENDIF ; IF (CFG_INIT_ROM_SIZE <= 32)
 
 IF CFG_INIT_ROM_SIZE > 32
 ; Saves the slot of the cartridge
-	ld	[$fffe], a
+	push	af ; (Reserves a byte at the bottom of the stack
+	inc	sp ; to avoid accidental overwriting)
 ENDIF
 
 ; Enables page 2 cartridge slot/subslot at start
@@ -242,21 +243,24 @@ SET_PAGE0:
 
 ; Restores the BIOS (selects and enables the Main ROM slot/subslot in page 0)
 ; Caller is responsible of disabling interruptions before invoking this routine
-; touches: a, b, c, d
+; touches: a, bc, d
 .BIOS:
 	ld	a, [MNROM]
 	jr	.DO_SET_PAGE0
 
 ; Selects and enables the cartridge slot/sublot in page 0
 ; Caller is responsible of enabling interruptions after invoking this routine
-; touches: a, b, c, d
+; touches: a, bc, d
 .CARTRIDGE:
-	ld	a, [$fffe]
+; Retrieves the slot of the cartridge from the bottom of the stack
+	ld	bc, [HIMEM]
+	dec	bc ; bc = [HIMEM] - 1
+	ld	a, [bc]
 	; jr	.DO_SET_PAGE0 ; falls through
 
 ; Selects and permanently enables the requested slot in page 0
 ; param a: slot ID (ExxxSSPP)
-; touches: a, b, c, d
+; touches: a, bc, d
 .DO_SET_PAGE0:
 	ld	b, a		; b = ExxxSSPP
 	and	$03		; a = 000000PP
@@ -270,7 +274,7 @@ SET_PAGE0:
 	jr	z, .SET_PRIMARY ; no
 ; yes
 	ld	d, a ; (preserves primary slot selection register value)
-; Selects primary slot in page 3 first (to be able to access $FFFF)
+; Selects primary slot in page 3 first (for $FFFF to refer to that slot)
 	rrc	c
 	rrc	c		; c = PP000000
 	ld	a, d		; a = P3P2P1PP
