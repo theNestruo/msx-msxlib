@@ -166,13 +166,13 @@ FOR_EACH_ARRAY_IX:
 	inc	ix ; ix = actual array
 .LOOP:
 	push	af ; preserves the counter
-	push	bc ; preserves the size of the array element 
+	push	bc ; preserves the size of the array element
 	push	hl ; preserves the routine address
 	call	JP_HL
 	pop	hl ; restores the routine address
 ; Next element
 .NEXT:
-	pop	bc ; restores the size of the array element 
+	pop	bc ; restores the size of the array element
 	add	ix, bc
 	pop	af ; restores the counter
 	dec	a
@@ -203,7 +203,7 @@ RET_NOT_ZERO:
 ; -----------------------------------------------------------------------------
 ; Convenience routine to return;
 ; (to be used in jump tables only; inline otherwise)
-RET:
+RET_:
 	ret
 ; -----------------------------------------------------------------------------
 
