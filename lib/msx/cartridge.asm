@@ -37,19 +37,27 @@ CARTRIDGE_INIT:
 	im	1
 	ld	sp, [HIMEM]
 
+; CPU: Ensures Z80 mode
+	ld	a, [MSXID3]
+	cp	3 ; 3 = MSX turbo R
+	jr	nz, .CPU_OK
+; MSX turbo R: switches to Z80 mode
+	ld	a, $80 ; also disables the LED
+	call	CHGCPU
+.CPU_OK:
+
 IFDEF CFG_INIT_ROM_SIZE
 IF CFG_INIT_ROM_SIZE > 16
 
 IF CFG_INIT_ROM_SIZE <= 32
 ; Is the game running on RAM? (e.g.: ROM Loader)
-	ld	hl, $400a ; (first reserved byte of the cartridge header)
-	ld	a, [hl]
-	cpl
-	ld	[hl], a
-	xor	[hl]
-	jr	z, .RAM_OK ; yes
+	ld	a, $18 ; opcode for "JR nn"
+	ld	[.JR_NC], a ; Replaces "JR NC,nn" by "JR nn" (if RAM)
+	scf
+.JR_NC:
+	jr	nc, .ROM_OK ; yes
 ; No:
-ENDIF ; IF (CFG_INIT_ROM_SIZE <= 32)
+ENDIF ; IF CFG_INIT_ROM_SIZE <= 32
 
 ; Reads the primary slot of the page 1
 	call    RSLREG	; a = 33221100
@@ -85,44 +93,10 @@ ENDIF
 ; Enables page 2 cartridge slot/subslot at start
 	ld	h, $80 ; Bit 6 and 7: page 2 ($8000)
 	call	ENASLT
+.ROM_OK:
 
 ENDIF ; IF CFG_INIT_ROM_SIZE > 16
 ENDIF ; IFDEF CFG_INIT_ROM_SIZE
-
-IFDEF CFG_INIT_16KB_RAM
-; RAM: checks availability of 16kB
-	ld	hl, ram_start
-	ld	a, [hl]
-	cpl
-	ld	[hl], a
-	xor	[hl]
-	jr	z, .RAM_OK ; yes (value was written)
-
-; no: screen 1 and warning text
-	call	INIT32
-	ld	hl, .TXT
-	ld	de, NAMTBL + (SCR_WIDTH-.TXT_SIZE)/2 + 11*SCR_WIDTH
-	ld	bc, 17
-	call	LDIRVM
-; halts the execution
-	di
-	halt
-
-; RAM check warning text
-.TXT:
-	db	"16KB RAM REQUIRED"
-	.TXT_SIZE:	equ $ - .TXT
-ENDIF ; CFG_INIT_16KB_RAM
-.RAM_OK:
-
-; CPU: Ensures Z80 mode
-	ld	a, [MSXID3]
-	cp	3 ; 3 = MSX turbo R
-	jr	nz, .CPU_OK
-; MSX turbo R: switches to Z80 mode
-	ld	a, $80 ; also disables the LED
-	call	CHGCPU
-.CPU_OK:
 
 ; Splash screens before further initialization
 IFEXIST SPLASH_SCREENS_PACKED_TABLE
@@ -148,6 +122,32 @@ IFEXIST SPLASH_SCREENS_PACKED_TABLE
 	pop	bc ; restores counter
 	djnz	.SPLASH_LOOP
 ENDIF ; IFEXIST SPLASH_SCREENS_PACKED_TABLE
+
+IFDEF CFG_INIT_16KB_RAM
+; RAM: checks availability of 16kB
+	ld	hl, ram_start
+	ld	de, [BOTTOM]
+	call	DCOMPR
+	jr	nc, .RAM_OK ; yes (BOTTOM is less or equal than ram_start)
+
+; no: screen 1 and warning text
+	call	INIT32
+	ld	hl, .TXT
+	ld	de, NAMTBL + (SCR_WIDTH-.TXT_SIZE)/2 + 11*SCR_WIDTH
+	ld	bc, 17
+	call	LDIRVM
+; halts the execution
+	di
+	halt
+
+; RAM check warning text
+.TXT:
+	db	"16KB RAM REQUIRED"
+	.TXT_SIZE:	equ $ - .TXT
+
+.RAM_OK:
+
+ENDIF ; CFG_INIT_16KB_RAM
 
 ; VDP: color 15,1,1
 	ld	a, 15

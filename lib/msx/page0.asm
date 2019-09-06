@@ -8,7 +8,7 @@
 	org	$0000, $3fff
 
 ; PAGE0_HEADER:
-; 	db	$00, $00 ; Avoids possible ROM/SUB-ROM Catridge ID ("AB"/"CD")
+; 	ds	$0010 - $, $00 ; (for ROM loader compatibility)
 ; -----------------------------------------------------------------------------
 
 ; EOF
