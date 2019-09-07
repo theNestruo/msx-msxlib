@@ -40,8 +40,6 @@ RESET_SPRITEABLES:
 ; param a: initial background character
 ; ret ix: address of the spriteable (to set sprite pattern and color)
 INIT_SPRITEABLE:
-	xor	a ; default background character is $00
-.USING_A:
 	push	af ; preserves background character
 	ex	de, hl ; NAMTBL buffer pointer in de
 ; Translates NAMTBL buffer pointer into NAMTBL offset
@@ -49,7 +47,7 @@ INIT_SPRITEABLE:
 	add	hl, de ; NAMTBL offset in hl
 ; Adds an element to the array
 	ld	ix, spriteables.count
-	ld	bc, SPRITEABLE_SIZE
+	ld	c, SPRITEABLE_SIZE
 	call	ADD_ARRAY_IX
 ; Sets the initial status
 	xor	a ; 0 = SPRITEABLE_IDLE
@@ -121,10 +119,10 @@ GET_SPRITEABLE_OFFSET:
 MOVE_SPRITEABLE_1:
 ; Reads the old status in b
 	ld	b, [ix +_SPRITEABLE_STATUS]
-	
+
 ; Sets new status
 	ld	[ix +_SPRITEABLE_STATUS], a
-	
+
 ; If the spriteable already had a direction, it was already moving:
 ; the foreground is not actually in the NAMTBL, so there is no need to erase it
 ; Otherwise, erases the spriteable from the NAMTBL (VPOKEs)
@@ -266,10 +264,10 @@ NAMTBL_BUFFER_SPRITEABLE_BACKGROUND:
 UPDATE_SPRITEABLES:
 ; For each spriteable
 	ld	ix, spriteables.count
-	ld	bc, SPRITEABLE_SIZE
+	ld	c, SPRITEABLE_SIZE
 	ld	hl, .ROUTINE
 	jp	FOR_EACH_ARRAY_IX
-	
+
 ; param ix: pointer to the current spriteable
 .ROUTINE:
 ; Checks direction
@@ -285,7 +283,7 @@ UPDATE_SPRITEABLES:
 	dec	[ix + _SPRITEABLE_STATUS]
 	ret
 
-; No pending movement	
+; No pending movement
 .STOP:
 ; Sets the marker value
 	ld	a, b ; restores status
@@ -299,10 +297,10 @@ UPDATE_SPRITEABLES:
 DRAW_SPRITEABLES:
 ; For each spriteable
 	ld	ix, spriteables.count
-	ld	bc, SPRITEABLE_SIZE
+	ld	c, SPRITEABLE_SIZE
 	ld	hl, .ROUTINE
 	jp	FOR_EACH_ARRAY_IX
-	
+
 ; param ix: pointer to the current spriteable
 .ROUTINE:
 ; Is the spriteable still moving?

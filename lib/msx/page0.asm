@@ -7,8 +7,8 @@
 ; Page 0 "header"
 	org	$0000, $3fff
 
-; PAGE0_HEADER:
-; 	ds	$0010 - $, $00 ; (for ROM loader compatibility)
+PAGE0_HEADER:
+	ds	$0010 - $, $00 ; (for ROM loader compatibility)
 ; -----------------------------------------------------------------------------
 
 ; EOF

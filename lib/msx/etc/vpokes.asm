@@ -45,7 +45,7 @@ VPOKE_NAMTBL_ADDRESS:
 	push	af ; preserves value to write
 ; Adds an element to the array
 	ld	ix, vpokes.count
-	ld	bc, VPOKE.SIZE
+	ld	c, VPOKE.SIZE
 	call	ADD_ARRAY_IX
 ; Sets the values of the new element
 	pop	af ; restores the value to write

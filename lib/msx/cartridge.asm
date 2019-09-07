@@ -174,11 +174,12 @@ IFEXIST SET_PALETTE
 	xor	a ; 7 6 5 4 3 2 1 0
 	call	SNSMAT
 	ld	hl, DEFAULT_PALETTE.TMS_APPROXIMATE
-	bit	1, a
-	jr	z, .SET_PALETTE ; Yes (1 key): TMS approximate
+	rra	; carry = bit 0
+	rra	; carry = bit 1
+	jr	nc, .SET_PALETTE ; Yes (1 key): TMS approximate
 	ld	hl, DEFAULT_PALETTE.MSX2
-	bit	2, a
-	jr	z, .SET_PALETTE ; Yes (2 key): Default MSX2 palette
+	rra	; carry = bit 2
+	jr	nc, .SET_PALETTE ; Yes (2 key): Default MSX2 palette
 ; no: sets custom palette
 IFEXIST CFG_CUSTOM_PALETTE
 	ld	hl, CFG_CUSTOM_PALETTE

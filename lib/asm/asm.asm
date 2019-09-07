@@ -4,6 +4,14 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
+; Emulates the instruction "hl += 2*a" (in C syntax)
+; param hl: operand
+; param a: usigned operand
+ADD_HL_A_A:
+	add	a
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Emulates the instruction "add hl, a" (or "hl += a" in C syntax)
 ; param hl: operand
 ; param a: usigned operand
@@ -16,25 +24,13 @@ ADD_HL_A:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Emulates the instruction "add de, a" (or "de += a" in C syntax)
-; param de: operand
-; param a: usigned operand
-ADD_DE_A:
-	add	e
-	ld	e, a
-	ret	nc
-	inc	d
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Reads a byte from a byte array (i.e.: "a = hl[a]" in C syntax)
 ; param hl: byte array address
 ; param a: usigned 0-based index
 ; ret hl: pointer to the byte (i.e.: hl + a)
 ; ret a: read byte
 GET_HL_A_BYTE:
-	add	l ; hl += a
+	add	l ; hl += a (inlined)
 	ld	l, a
 	jr	nc, .HL_OK
 	inc	h
@@ -49,7 +45,7 @@ GET_HL_A_BYTE:
 ; param a: unsigned 0-based index (0, 2, 4...)
 ; ret hl: read word
 GET_HL_A_WORD:
-	add	l ; hl += a
+	add	l ; hl += a (inlined)
 	ld	l, a
 	jr	nc, .HL_OK
 	inc	h
@@ -82,7 +78,7 @@ JP_TABLE:
 ; param hl: jump table address
 ; param a: unsigned 0-based index (0, 2, 4...)
 JP_TABLE_2:
-	add	l ; hl += a
+	add	l ; hl += a (inlined)
 	ld	l, a
 	jr	nc, .HL_OK
 	inc	h
@@ -95,7 +91,7 @@ JP_TABLE_2:
 ; param hl: pointer to the address
 ; touches a
 JP_HL_INDIRECT:
-	ld	a, [hl] ; hl = [hl]
+	ld	a, [hl] ; hl = [hl] (inlined)
 	inc	hl
 	ld	h, [hl]
 	ld	l, a
@@ -107,18 +103,6 @@ JP_HL_INDIRECT:
 ; param hl: address
 JP_HL:
 	jp	[hl]
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Emulates the instruction "ld bc, a"
-; param a: signed 8-bit value
-; ret bc: signed 16-bit value
-LD_BC_A:
-	ld	c, a
-	rla	; sign in accumulator
-	sbc	a, a ; either $00 or $ff
-	ld	b, a
-	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -137,24 +121,25 @@ ADD_ARRAY_IX:
 ; -----------------------------------------------------------------------------
 ; Locates an element into an array
 ; param ix: array address (skipped the size byte)
-; param bc: size of each array element
+; param c: size of each array element
 ; param a: 0-based index (0, 1, 2...)
 ; ret ix: address of the element
 GET_ARRAY_IX:
 	or	a
 	ret	z ; element reached
+	ld	b, 0
 .LOOP:
 ; Skips one element
 	add	ix, bc
 	dec	a
-	jr	nz, .LOOP
+	jp	nz, .LOOP
 	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Executes a routine for every element of an array
 ; param ix: array.count address (byte size)
-; param bc: size of each array element
+; param c: size of each array element
 ; param hl: routine to execute on every element,
 ;	that will receive the address of the element in ix
 FOR_EACH_ARRAY_IX:
@@ -164,6 +149,7 @@ FOR_EACH_ARRAY_IX:
 	ret	z ; no elements
 ; For every item in the array
 	inc	ix ; ix = actual array
+	ld	b, 0
 .LOOP:
 	push	af ; preserves the counter
 	push	bc ; preserves the size of the array element
@@ -176,7 +162,7 @@ FOR_EACH_ARRAY_IX:
 	add	ix, bc
 	pop	af ; restores the counter
 	dec	a
-	jr	nz, .LOOP
+	jp	nz, .LOOP
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -197,13 +183,6 @@ RET_ZERO:
 ; ret nz
 RET_NOT_ZERO:
 	or	-1
-	; ret	; (falls through)
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Convenience routine to return;
-; (to be used in jump tables only; inline otherwise)
-RET_:
 	ret
 ; -----------------------------------------------------------------------------
 
