@@ -12,13 +12,11 @@
 	BULLET_BOX_X_OFFSET:	equ -(CFG_BULLET_WIDTH / 2)
 	BULLET_BOX_Y_OFFSET:	equ -CFG_BULLET_HEIGHT
 
-	MASK_BULLET_SPEED:	equ $0f ; speed (in pixels / frame)
-	MASK_BULLET_DIRECTION:	equ $70 ; movement direction
+	MASK_BULLET_SPEED:	equ $fe ; speed (in pixels / frame)
+	MASK_BULLET_DIRECTION:	equ $81 ; movement direction
 
-	BULLET_DIR_UP:		equ $10
-	BULLET_DIR_DOWN:	equ $20
-	BULLET_DIR_RIGHT:	equ $30
-	BULLET_DIR_LEFT:	equ $40
+	BULLET_DIR_UD:		equ $00
+	BULLET_DIR_LR:		equ $01
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -51,7 +49,7 @@ INIT_BULLET_FROM_ENEMY:
 ; Skips to the next element of the array
 	add	hl, bc
 	jr	.LOOP
-	
+
 .INIT:
 ; Stores the logical coordinates
 	push	ix ; hl = ix, de = empy bullet slot
@@ -85,83 +83,143 @@ UPDATE_BULLETS:
 	ld	ix, bullets
 	ld	b, CFG_BULLET_COUNT
 .LOOP:
-	push	bc ; preserves counter in b
 ; Is the bullet slot empty?
 	xor	a ; (marker value: y = 0)
 	cp	[ix + bullet.y]
-	jr	z, .SKIP ; yes
+	jp	z, .SKIP ; yes
+; no: Updates the bullet
+	push	bc ; preserves counter in b
 
-; Moves the bullet
+; Moves the bullet and checks for collision
 	call	.MOVE
+; Has the bullet hit a wall?
+	bit	BIT_WORLD_SOLID, a
+	jp	z, .PUT_SPRITE ; no
+; yes: Removes the bullet (for the next frame)
+	xor	a ; (marker value: y = 0)
+	ld	[ix + bullet.y], a
 ; Puts the bullet sprite
+.PUT_SPRITE:
 	ld	e, [ix + bullet.y]
 	ld	d, [ix + bullet.x]
-	push	de ; preserves bullet coordinates
 	ld	c, [ix + bullet.pattern]
 	ld	b, [ix + bullet.color]
 	call	PUT_SPRITE
-	
-; Has the bullet hit a wall?
-	pop	de ; restores bullet coordinates
-	dec	e
-	call	GET_TILE_FLAGS
-	bit	BIT_WORLD_SOLID, a
-	jr	nz, .REMOVE ; yes
-; Checks off-screen
-	ld	a, [ix + bullet.y]
-	sub	192 -1
-	jr	c, .SKIP ; yes
-.REMOVE:
-; Removes the bullet (for the next frame)
-	xor	a ; (marker value: y = 0)
-	ld	[ix + bullet.y], a
-	; jr	.SKIP ; falls through
-	
-.SKIP:
+
 ; Skips to the next bullet
-	ld	bc, bullet.SIZE
-	add	ix, bc
 	pop	bc ; restores counter
+.SKIP:
+	ld	de, bullet.SIZE
+	add	ix, de
 	djnz	.LOOP
 	ret
 
-; Moves the bullet	
+
 .MOVE:
-; Determines bullet direction	
+; Determines bullet direction
 	ld	a, [ix + bullet.type]
-	cp	BULLET_DIR_RIGHT
-	jr	c, .UP_OR_DOWN ; direction < RIGHT, ergo UP or DOWN
-; direction >= RIGHT, ergo RIGHT or LEFT
-	cp	BULLET_DIR_LEFT
-	jr	c, .RIGHT
-	; jr	.LEFT ; falls through
+	sra	a ; UD/LR in carry flag, bullet speed in a
+	jr	nc, .UP_OR_DOWN ; 0 => BULLET_DIR_UD
+; 1 => BULLET_DIR_LR
+	bit	7, a
+	jp	p, .RIGHT
+	; jp	.LEFT ; falls through
+
 .LEFT:
-	and	MASK_BULLET_SPEED
-	neg
+; Moves the bullet left
 	add	[ix + bullet.x]
 	ld	[ix + bullet.x], a
-	ret
+; Has the bullet hit a wall?
+	ld	a, BULLET_BOX_X_OFFSET
+	jp	GET_BULLET_V_TILE_FLAGS
+
 .RIGHT:
-	and	MASK_BULLET_SPEED
+; Moves the bullet right
 	add	[ix + bullet.x]
 	ld	[ix + bullet.x], a
-	ret
+; Has the bullet hit a wall?
+	ld	a, BULLET_BOX_X_OFFSET + CFG_BULLET_WIDTH - 1
+	jp	GET_BULLET_V_TILE_FLAGS
 
 .UP_OR_DOWN:
-	cp	BULLET_DIR_DOWN
-	jr	c, .UP
-	; jr	.DOWN ; falls through
-.DOWN:
-	and	MASK_BULLET_SPEED
-	add	[ix + bullet.y]
-	ld	[ix + bullet.y], a
-	ret
+	bit	7, a
+	jp	p, .DOWN
+	; jp	.UP ; falls through
+
 .UP:
-	and	MASK_BULLET_SPEED
-	neg
+	ld	b, b
+	jr	$+2
+; Moves the bullet up
 	add	[ix + bullet.y]
 	ld	[ix + bullet.y], a
-	ret
+; Checks off-screen
+	sub	192 -1
+	ld	a, 1 << BIT_WORLD_SOLID ; (fake tile flags)
+	ret	nc ; yes
+; Has the bullet hit a wall?
+	ld	a, BULLET_BOX_Y_OFFSET
+	jp	GET_BULLET_H_TILE_FLAGS
+
+.DOWN:
+; Moves the bullet down
+	add	[ix + bullet.y]
+	ld	[ix + bullet.y], a
+; Has the bullet hit a wall?
+	xor	a
+	jp	GET_BULLET_H_TILE_FLAGS
 ; -----------------------------------------------------------------------------
+
+;
+; =============================================================================
+;	Bullet-tile helper routines
+; =============================================================================
+;
+
+; -----------------------------------------------------------------------------
+; Returns the OR-ed flags of a vertical serie of tiles
+; relative to the bullet position
+; param ix: pointer to the current bullet
+; param a: x-offset from the bullet logical coordinates
+; ret a: OR-ed tile flags
+; touches: hl, bc, de
+GET_BULLET_V_TILE_FLAGS:
+; Bullet coordinates
+	ld	e, [ix + bullet.y]
+	ld	d, [ix + bullet.x]
+; x += dx
+	add	d
+	ld	d, a
+; y += BULLET_BOX_Y_OFFSET
+	ld	a, e
+	add	BULLET_BOX_Y_OFFSET
+	ld	e, a
+; Bullet height
+	ld	b, CFG_BULLET_HEIGHT
+	jp	GET_V_TILE_FLAGS
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Returns the OR-ed flags of a vertical serie of tiles
+; relative to the bullet position
+; param ix: pointer to the current bullet
+; param a: x-offset from the bullet logical coordinates
+; ret a: OR-ed tile flags
+; touches: hl, bc, de
+GET_BULLET_H_TILE_FLAGS:
+; Bullet coordinates
+	ld	e, [ix + bullet.y]
+	ld	d, [ix + bullet.x]
+; y += dy
+	add	e
+	ld	e, a
+; x += BULLET_BOX_X_OFFSET
+	ld	a, d
+	add	BULLET_BOX_X_OFFSET
+	ld	d, a
+; Bullet width
+	ld	b, CFG_BULLET_WIDTH
+	jp	GET_H_TILE_FLAGS
+; -----------------------------------------------------------------------------
+
 
 ; EOF

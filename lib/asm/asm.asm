@@ -108,7 +108,7 @@ JP_HL:
 ; -----------------------------------------------------------------------------
 ; Adds an element to an array and returns the address of the added element
 ; param ix: array.count address (byte size)
-; param bc: size of each array element
+; param c: size of each array element
 ; ret ix: address of the new element
 ADD_ARRAY_IX:
 ; Reads the size

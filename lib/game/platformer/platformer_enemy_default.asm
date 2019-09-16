@@ -10,7 +10,7 @@
 ; Enemy flags (as bit indexes) (platformer game)
 	BIT_ENEMY_SOLID:	equ 1 ; (can be killed by solid tiles)
 	BIT_ENEMY_DEATH:	equ 2 ; (can be killed by death tiles)
-	
+
 ; Enemy flags (as flags)
 	FLAG_ENEMY_SOLID:	equ (1 << BIT_ENEMY_SOLID) ; $02
 	FLAG_ENEMY_DEATH:	equ (1 << BIT_ENEMY_DEATH) ; $04
@@ -42,7 +42,7 @@ ENEMY_TYPE_WALKER:
 ENEMY_TYPE_FLYER:
 	call	PUT_ENEMY_SPRITE_ANIMATE
 	; jp	.HANDLER ; falls through
-	
+
 .HANDLER:
 ; Checks wall
 	call	CAN_ENEMY_FLY
@@ -107,13 +107,13 @@ ENEMY_TYPE_FALLER:
 ; ret z/nz: z if the player is falling, nz otherwise
 .SOLID_HANDLER:
 	ld	b, (1 << BIT_WORLD_SOLID)
-	jr	.HANDLER
-	
+	jp	.HANDLER
+
 ; ret z/nz: z if the player is falling, nz otherwise
 .FLOOR_HANDLER:
 	ld	b, (1 << BIT_WORLD_FLOOR)
-	; jr	.HANDLER ; falls through
-	
+	; jp	.HANDLER ; falls through
+
 ; param b: mask of tile flags to check
 ; ret z/nz: z if the player is falling, nz otherwise
 .HANDLER:
@@ -149,8 +149,8 @@ ENEMY_TYPE_RISER:
 ; ret z/nz: nz if already reached the ceiling, z otherwise
 .SOLID_HANDLER:
 	ld	b, (1 << BIT_WORLD_SOLID)
-	; jr	.HANDLER ; falls through
-	
+	; jp	.HANDLER ; falls through
+
 ; param b: mask of tile flags to check
 ; ret z/nz: nz if already reached the ceiling, z otherwise
 .HANDLER:
@@ -170,19 +170,19 @@ ENEMY_TYPE_RISER:
 ENEMY_TYPE_JUMPER:
 ; The enemy bounces or jumps
 	call	PUT_ENEMY_SPRITE_ANIM
-	; jr	.DEFAULT_HANDLER ; falls through
-	
+	; jp	.DEFAULT_HANDLER ; falls through
+
 ; ret z/nz: z if the player is on the floor, nz otherwise
 .DEFAULT_HANDLER:
 	ld	b, (1 << BIT_WORLD_FLOOR)
-	; jr	.HANDLER ; falls through
-	
+	; jp	.HANDLER ; falls through
+
 ; param b: mask of tile flags to check
 ; ret z/nz: z if the player is on the floor, nz otherwise
 .HANDLER:
 	ld	a, [ix + enemy.dy_index]
 	cp	ENEMY_DY_TABLE.SIZE -1
-	jr	z, .DY_MAX ; yes
+	jp	z, .DY_MAX ; yes
 ; increases frame counter
 	inc	[ix + enemy.dy_index]
 .DY_MAX:
@@ -193,7 +193,7 @@ ENEMY_TYPE_JUMPER:
 ; Applies the dy
 	add	[ix + enemy.y]
 	ld	[ix + enemy.y], a
-; Is the enemy falling?	
+; Is the enemy falling?
 	ld	a, c ; restores dy
 	dec	a
 	jp	m, RET_NOT_ZERO ; no
@@ -276,7 +276,7 @@ IFEXIST ENEMY_TYPE_KILLED
 ELSE
 	jp	TURN_ENEMY ; no: turns around
 ENDIF ; IFEXIST ENEMY_TYPE_KILLED
-	
+
 ; The enemy walks ahead a number of pixels along the ground
 ; or until a wall is hit, the end of the platform is reached
 ; param b: distance (frames/pixels) (0 = forever)
@@ -285,7 +285,7 @@ ENDIF ; IFEXIST ENEMY_TYPE_KILLED
 ; Checks if the distance has been reached
 	call	WAIT_ENEMY_HANDLER
 	ret	z ; yes
-	; jr	.HANDLER ; falls through
+	; jp	.HANDLER ; falls through
 
 ; The enemy walks ahead along the ground,
 ; until a wall is hit or the end of the platform is reached
@@ -412,8 +412,8 @@ READ_WAVER_DY_VALUE:
 	ld	hl, .WAVER_LUT_TABLE
 ; Is the 5th bit set? (32..63)
 	bit	5, a
-	jr	z, .NEGATE ; no: negate the table value
-; yes: read the table value	
+	jp	z, .NEGATE ; no: negate the table value
+; yes: read the table value
 	and	$1f ; (0..31)
 	jp	GET_HL_A_BYTE
 .NEGATE:
@@ -423,7 +423,7 @@ READ_WAVER_DY_VALUE:
 ; and return it negated
 	neg
 	ret
-	
+
 .WAVER_LUT_TABLE:
 	db	0, 1, 0, 0,   1, 0, 1, 0,   1, 1, 1, 0,   1, 1, 1, 1
 	db	0, 1, 1, 1,   0, 1, 0, 1,   0, 0, 1, 0,   0, 0, 0, 0

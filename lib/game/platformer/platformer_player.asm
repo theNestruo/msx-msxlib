@@ -100,9 +100,9 @@ UPDATE_PLAYER_FLOOR:
 ; Trying to get on stairs?
 	ld	hl, input.level
 	bit	BIT_STICK_UP, [hl]
-	jr	nz, .CHECK_UPSTAIRS ; yes (upstairs)
+	jp	nz, .CHECK_UPSTAIRS ; yes (upstairs)
 	bit	BIT_STICK_DOWN, [hl]
-	jr	nz, .CHECK_DOWNSTAIRS ; yes (downstairs)
+	jp	nz, .CHECK_DOWNSTAIRS ; yes (downstairs)
 
 .NO_STAIRS:
 ; Jumping?
@@ -123,20 +123,20 @@ UPDATE_PLAYER_FLOOR:
 .CHECK_UPSTAIRS:
 ; Trying to get on stairs upstairs
 	call	GET_PLAYER_TILE_FLAGS_WIDE
-	jr	.CHECK_STAIRS
+	jp	.CHECK_STAIRS
 
 .CHECK_DOWNSTAIRS:
 ; Trying to get on stairs downstairs
 	call	GET_PLAYER_TILE_FLAGS_WIDE_UNDER
-	; jr	.CHECK_STAIRS ; falls through
+	; jp	.CHECK_STAIRS ; falls through
 
 .CHECK_STAIRS:
 ; Are there stairs? (i.e.: stairs flags, but not solid flag)
 	and	(1 << BIT_WORLD_SOLID) OR (1 << BIT_WORLD_STAIRS)
 	cp	(1 << BIT_WORLD_STAIRS)
-	jr	nz, .NO_STAIRS ; no
+	jp	nz, .NO_STAIRS ; no
 ; yes
-	; jr	SET_PLAYER_STAIRS ; falls through
+	; jp	SET_PLAYER_STAIRS ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -148,7 +148,7 @@ SET_PLAYER_STAIRS:
 
 ; Moves horizontally and vertically
 	call	MOVE_PLAYER_LR
-	jr	UPDATE_PLAYER_STAIRS.ON
+	jp	UPDATE_PLAYER_STAIRS.ON
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -165,7 +165,7 @@ UPDATE_PLAYER_STAIRS:
 ; Manages vertical movement
 	ld	hl, input.level
 	bit	BIT_STICK_DOWN, [hl]
-	jr	nz, .DOWN
+	jp	nz, .DOWN
 	bit	BIT_STICK_UP, [hl]
 	ret	z
 
@@ -183,7 +183,7 @@ UPDATE_PLAYER_STAIRS:
 ; Moved out of the stairs? (down)
 	call	GET_PLAYER_TILE_FLAGS_UNDER
 	bit	BIT_WORLD_STAIRS, a
-	jr	z, .OFF ; yes
+	jp	z, .OFF ; yes
 ; no: Is there solid under the player?
 	bit	BIT_WORLD_SOLID, a
 	ret	nz ; yes
@@ -311,7 +311,7 @@ MOVE_PLAYER_LR:
 ; Manages horizontal movement
 	ld	hl, input.level
 	bit	BIT_STICK_RIGHT, [hl]
-	jr	nz, .RIGHT
+	jp	nz, .RIGHT
 	bit	BIT_STICK_LEFT, [hl]
 	ret	z
 
@@ -338,9 +338,9 @@ MOVE_PLAYER_LR_ANIMATE:
 ; Manages horizontal movement
 	ld	hl, input.level
 	bit	BIT_STICK_LEFT, [hl]
-	jr	nz, .LEFT
+	jp	nz, .LEFT
 	bit	BIT_STICK_RIGHT, [hl]
-	jr	nz, .RIGHT
+	jp	nz, .RIGHT
 
 .RESET_ANIMATION:
 ; Resets the animation counter
@@ -372,7 +372,7 @@ ENDIF
 
 ; Is there solid left to the player?
 	bit	BIT_WORLD_SOLID, a
-	jr	nz, .RESET_ANIMATION ; yes
+	jp	nz, .RESET_ANIMATION ; yes
 
 ; no
 IFEXIST ON_PLAYER_PUSH
@@ -394,7 +394,7 @@ ENDIF
 
 ; Is there solid right to the player?
 	bit	BIT_WORLD_SOLID, a
-	jr	nz, .RESET_ANIMATION ; yes
+	jp	nz, .RESET_ANIMATION ; yes
 
 ; no
 IFEXIST ON_PLAYER_PUSH
@@ -409,7 +409,7 @@ ENDIF
 READ_PLAYER_DY_VALUE:
 	ld	a, [player.dy_index]
 	cp	PLAYER_DY_TABLE.SIZE
-	jr	c, .FROM_TABLE
+	jp	c, .FROM_TABLE
 	ld	a, CFG_PLAYER_GRAVITY
 	ret
 

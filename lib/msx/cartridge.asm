@@ -23,7 +23,6 @@ CARTRIDGE_HEADER:
 	dw	$0000		; STATEMENT
 	dw	$0000		; DEVICE
 	dw	$0000		; TEXT
-.RESERVED:
 	ds	$4010 - $, $00	; Reserved
 ; -----------------------------------------------------------------------------
 

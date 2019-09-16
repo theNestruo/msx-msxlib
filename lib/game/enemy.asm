@@ -12,7 +12,7 @@
 ; Bounding box coordinates offset from the logical coordinates
 	ENEMY_BOX_X_OFFSET:	equ -(CFG_ENEMY_WIDTH / 2)
 	ENEMY_BOX_Y_OFFSET:	equ -CFG_ENEMY_HEIGHT
-	
+
 ; Enemy pattern modifiers (as bit indexes)
 	BIT_ENEMY_PATTERN_ANIM:	equ 2
 	BIT_ENEMY_PATTERN_LEFT:	equ 3
@@ -23,7 +23,7 @@
 
 ; Enemy flags (as bit indexes)
 	BIT_ENEMY_LETHAL:	equ 0 ; Kills the player on collision
-	
+
 ; Enemy flags (as flags)
 	FLAG_ENEMY_LETHAL:	equ (1 << BIT_ENEMY_LETHAL) ; $01
 ; -----------------------------------------------------------------------------
@@ -58,12 +58,12 @@ INIT_ENEMY:
 ; Skips to the next element of the array
 	add	hl, bc
 	jr	.LOOP
-	
+
 .INIT:
 ; Prepares ret ix: pointer to the new enemy
 	push	hl
 	pop	ix
-	
+
 	ld	b, h ; preserves target start in bc
 	ld	c, l
 ; Stores the logical coordinates
@@ -109,32 +109,32 @@ UPDATE_ENEMIES:
 ; no: update enemy
 
 IFEXIST KILL_ENEMY
-IFEXIST BIT_ENEMY_SOLID
 ; Reads the tile flags at the enemy coordinates
 	call	GET_ENEMY_TILE_FLAGS
 
+IFEXIST BIT_ENEMY_SOLID
 ; Is the tile solid?
 	bit	BIT_WORLD_SOLID, a
-	jr	z, .NOT_SOLID ; no
+	jp	z, .NOT_SOLID ; no
 ; yes: Is the enemy solid? (the enemy has been crushed)
 	bit	BIT_ENEMY_SOLID, [ix + enemy.flags]
 	jr	nz, .KILL_ENEMY ; yes
 ; no
 .NOT_SOLID:
+ENDIF ; IFEXIST BIT_WORLD_SOLID
 
 ; Has the tile the death bit?
 	bit	BIT_WORLD_DEATH, a
-	jr	z, .NOT_KILLED ; no
+	jp	z, .NOT_KILLED ; no
 ; Can the enemy be killed by death tiles?
 	bit	BIT_ENEMY_DEATH, [ix + enemy.flags]
 	jr	z, .NOT_KILLED ; no
 ; yes
-	
+
 .KILL_ENEMY:
 	call	KILL_ENEMY
-	
+
 .NOT_KILLED:
-ENDIF ; IFEXIST BIT_WORLD_SOLID
 ENDIF ; IFEXIST KILL_ENEMY
 
 ; Dereferences the state pointer of the current enemy
@@ -167,7 +167,7 @@ ENDIF ; IFEXIST KILL_ENEMY
 SET_ENEMY_STATE.NEXT:
 	pop	hl
 	; jr	.HL_OK ; falls through
-	
+
 ; Sets an specific address of the next state as the new state
 ; param ix: pointer to the current enemy
 ; param hl: address of the next state (word)
@@ -185,7 +185,7 @@ SET_ENEMY_STATE:
 	; ld	[ix + enemy.trigger_frame_counter], a
 	ld	[ix + enemy.dy_index], a
 	ret
-	
+
 ; Sets the new state as the new state (and the respawning state)
 ; param ix: pointer to the current enemy
 ; param hl: address of the next state (word)
@@ -204,7 +204,7 @@ SET_ENEMY_STATE:
 	ld	a, enemy.respawn_data ; hl += .respawn_data
 	call	ADD_HL_A
 	ex	de, hl
-	ld	bc, enemy.RESPAWN_SIZE 
+	ld	bc, enemy.RESPAWN_SIZE
 	ldir
 	ret
 ; -----------------------------------------------------------------------------
@@ -218,7 +218,7 @@ PUT_ENEMY_SPRITE_ANIMATE:
 	ld	a, [ix + enemy.animation_delay]
 	inc	a
 	cp	CFG_ENEMY_ANIMATION_DELAY
-	jr	nz, .DONT_ANIMATE
+	jp	nz, .DONT_ANIMATE
 ; Toggles the animation flag
 	ld	a, [ix + enemy.pattern]
 	xor	FLAG_ENEMY_PATTERN_ANIM
@@ -255,7 +255,7 @@ PUT_ENEMY_SPRITE_ANIM:
 .A_OK:
 	or	FLAG_ENEMY_PATTERN_ANIM
 	ld	c, a
-	jr	PUT_ENEMY_SPRITE_PATTERN
+	jp	PUT_ENEMY_SPRITE_PATTERN
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -266,7 +266,7 @@ REMOVE_ENEMY:
 	ld	[ix + enemy.y], a
 	ret
 ; -----------------------------------------------------------------------------
-	
+
 ;
 ; =============================================================================
 ;	Enemy-tile helper routines
@@ -277,7 +277,9 @@ REMOVE_ENEMY:
 ; Reads the tile flags at the enemy coordinates
 ; (one pixel above the enemy logical coordinates)
 ; param ix: pointer to the current enemy
+; ret hl: NAMTBL buffer pointer
 ; ret a: tile flags
+; touches de
 GET_ENEMY_TILE_FLAGS:
 ; Enemy coordinates
 	ld	e, [ix + enemy.y]
@@ -293,7 +295,7 @@ GET_ENEMY_TILE_FLAGS:
 ; ret a: OR-ed tile flags
 GET_ENEMY_TILE_FLAGS_LEFT:
 	ld	a, ENEMY_BOX_X_OFFSET -1
-	jr	GET_ENEMY_V_TILE_FLAGS
+	jp	GET_ENEMY_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -302,7 +304,7 @@ GET_ENEMY_TILE_FLAGS_LEFT:
 ; ret a: OR-ed tile flags
 GET_ENEMY_TILE_FLAGS_RIGHT:
 	ld	a, ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
-	; jr	GET_ENEMY_V_TILE_FLAGS ; falls through
+	; jp	GET_ENEMY_V_TILE_FLAGS ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------

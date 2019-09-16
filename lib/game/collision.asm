@@ -20,7 +20,7 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 ; Checks collision between the player and any enemy
-; and executes 
+; and executes
 CHECK_PLAYER_ENEMIES_COLLISIONS:
 	ld	hl, PLAYER_ENEMY_YX_SIZES
 	ld	c, PLAYER_ENEMY_Y_OFFSET

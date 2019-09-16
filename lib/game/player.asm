@@ -16,7 +16,7 @@
 	BIT_STATE_ANIM:		equ 0
 	BIT_STATE_LEFT:		equ 1
 	BIT_STATE_FINISH:	equ 7 ; (special state marker: exit state)
-	
+
 ; Player state modifiers (as flags)
 	FLAG_STATE_ANIM:	equ (1 << BIT_STATE_ANIM) ; $01
 	FLAG_STATE_LEFT:	equ (1 << BIT_STATE_LEFT) ; $02
@@ -55,7 +55,7 @@ UPDATE_PLAYER_ANIMATION:
 	ld	a, [player.animation_delay]
 	inc	a
 	cp	CFG_PLAYER_ANIMATION_DELAY
-	jr	nz, .DONT_ANIMATE
+	jp	nz, .DONT_ANIMATE
 ; Toggles the animation flag
 	ld	hl, player.state
 	ld	a, FLAG_STATE_ANIM
@@ -80,7 +80,7 @@ MOVE_PLAYER_RIGHT:
 	res	BIT_STATE_LEFT, [hl]
 	ret
 ; -----------------------------------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; Moves the player one pixel to the right
 MOVE_PLAYER_LEFT:
@@ -125,7 +125,7 @@ SET_PLAYER_STATE:
 ; touches: hl
 .MASK:
 	ld	hl, player.state
-	; jr	LD_HL_A_MASK ; falls through
+	; jp	LD_HL_A_MASK ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -179,7 +179,7 @@ GET_PLAYER_TILE_FLAGS:
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_LEFT:
 	ld	a, PLAYER_BOX_X_OFFSET -1
-	jr	GET_PLAYER_V_TILE_FLAGS
+	jp	GET_PLAYER_V_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ GET_PLAYER_TILE_FLAGS_LEFT:
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_RIGHT:
 	ld	a, PLAYER_BOX_X_OFFSET + CFG_PLAYER_WIDTH
-	; jr	GET_PLAYER_V_TILE_FLAGS ; falls through
+	; jp	GET_PLAYER_V_TILE_FLAGS ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ GET_PLAYER_V_TILE_FLAGS:
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_ABOVE:
 	ld	a, PLAYER_BOX_Y_OFFSET - 1
-	jr	GET_PLAYER_H_TILE_FLAGS
+	jp	GET_PLAYER_H_TILE_FLAGS
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -241,7 +241,7 @@ GET_PLAYER_TILE_FLAGS_UNDER_FAST:
 ; ret a: OR-ed tile flags
 GET_PLAYER_TILE_FLAGS_UNDER:
 	xor	a ; dy = 0
-	; jr	GET_PLAYER_H_TILE_FLAGS ; falls through
+	; jp	GET_PLAYER_H_TILE_FLAGS ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -269,9 +269,9 @@ GET_PLAYER_H_TILE_FLAGS:
 ; (one pixel above the player logical coordinates, full width)
 GET_PLAYER_TILE_FLAGS_WIDE:
 	ld	a, -1
-	; jr	GET_PLAYER_H_TILE_FLAGS.AND ; falls through
+	; jp	GET_PLAYER_H_TILE_FLAGS.AND ; falls through
 ; ------VVVV----falls through--------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; Returns the AND-ed flags of an horizontal serie of tiles
 ; relative to the player position
@@ -297,7 +297,7 @@ GET_PLAYER_H_TILE_FLAGS.AND:
 ; ret a: AND-ed tile flags
 GET_PLAYER_TILE_FLAGS_WIDE_UNDER:
 	xor	a ; dy = 0
-	jr	GET_PLAYER_H_TILE_FLAGS.AND
+	jp	GET_PLAYER_H_TILE_FLAGS.AND
 ; -----------------------------------------------------------------------------
 
 ; EOF

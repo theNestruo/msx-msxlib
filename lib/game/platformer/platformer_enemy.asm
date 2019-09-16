@@ -12,8 +12,8 @@
 ; ret nz: yes
 CAN_ENEMY_WALK:
 	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	nz, CAN_ENEMY_WALK.LEFT
-	jr	CAN_ENEMY_WALK.RIGHT
+	jp	nz, CAN_ENEMY_WALK.LEFT
+	jp	CAN_ENEMY_WALK.RIGHT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -23,8 +23,8 @@ CAN_ENEMY_WALK:
 ; ret nz: yes
 CAN_ENEMY_FLY:
 	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	nz, CAN_ENEMY_FLY.LEFT
-	jr	CAN_ENEMY_FLY.RIGHT
+	jp	nz, CAN_ENEMY_FLY.LEFT
+	jp	CAN_ENEMY_FLY.RIGHT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -84,8 +84,8 @@ CAN_ENEMY_FLY.RIGHT:
 ; param ix: pointer to the current enemy
 MOVE_ENEMY:
 	bit	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
-	jr	z, .RIGHT
-	; jr	.LEFT ; falls through
+	jp	z, .RIGHT
+	; jp	.LEFT ; falls through
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -124,7 +124,7 @@ GET_ENEMY_TILE_FLAGS_ABOVE:
 ; ret a: tile flags
 GET_ENEMY_TILE_FLAGS_UNDER.LEFT:
 	ld	a, ENEMY_BOX_X_OFFSET -1
-	jr	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
+	jp	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ GET_ENEMY_TILE_FLAGS_UNDER.LEFT:
 ; ret a: tile flags
 GET_ENEMY_TILE_FLAGS_UNDER.RIGHT:
 	ld	a, ENEMY_BOX_X_OFFSET + CFG_ENEMY_WIDTH
-	jr	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
+	jp	GET_ENEMY_TILE_FLAGS_UNDER.A_OK
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ GET_ENEMY_TILE_FLAGS_UNDER_FAST:
 ; ret a: tile flags
 GET_ENEMY_TILE_FLAGS_UNDER:
 	xor	a
-	
+
 .A_OK:
 ; Enemy coordinates
 	ld	e, [ix + enemy.y]
@@ -179,10 +179,10 @@ GET_ENEMY_TILE_FLAGS_UNDER:
 ; param a
 READ_FALLER_ENEMY_DY_VALUE:
 	cp	ENEMY_DY_TABLE.SIZE
-	jr	c, .FROM_TABLE
+	jp	c, .FROM_TABLE
 	ld	a, CFG_ENEMY_GRAVITY
 	ret
-	
+
 .FROM_TABLE:
 	ld	hl, ENEMY_DY_TABLE
 	jp	GET_HL_A_BYTE

@@ -107,7 +107,7 @@ ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 	ld	a, e	; (0..191, 192..255)
 	cp	192	; (  c,       nc)
 	jr	nc, .OFF_SCREEN ; yes (y >= 192)
-	
+
 ; no: visible screen
 	call	COORDS_TO_OFFSET ; NAMTBL offset in hl
 	ld	a, namtbl_buffer >> 8 ; (namtbl_buffer is aligned to $xx00)
@@ -116,7 +116,7 @@ ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 ; reads the tile index (value)
 	ld	a, [hl]
 	ret
-	
+
 .OFF_SCREEN:
 ; Is over or under visible screen?
 				; (225..255, 0..192, 193..224)
@@ -148,7 +148,7 @@ GET_FIRST_TILE_FLAGS:
 	srl	a
 	inc	a ;	... +1
 	ld	b, a ; number of tiles in b
-	
+
 ; Reads the flags of the first tile
 	; jp	GET_TILE_FLAGS ; falls through
 ; ------VVVV----falls through--------------------------------------------------
@@ -178,7 +178,7 @@ GET_FLAGS_OF_TILE:
 	jr	z, .OK ; yes (equal)
 ; no
 	inc	hl ; hl = up to index (next group)
-	jr	.LOOP
+	jp	.LOOP
 
 .OK:
 	ld	a, [hl]
@@ -199,7 +199,7 @@ GET_V_TILE_FLAGS:
 ; Only one tile?
 	dec	b
 	ret	z ; yes
-	
+
 ; no: For each other tile
 .LOOP:
 	ld	c, a ; current flags in c
@@ -230,7 +230,7 @@ GET_H_TILE_FLAGS:
 ; Only one tile?
 	dec	b
 	ret	z ; yes
-	
+
 ; no: For each other tile
 .OR_LOOP:
 	ld	c, a ; current flags in c
@@ -253,7 +253,7 @@ GET_H_TILE_FLAGS:
 ; Only one tile?
 	dec	b
 	ret	z ; yes
-	
+
 ; no: For each other tile
 .AND_LOOP:
 	ld	c, a ; current flags in c

@@ -46,7 +46,7 @@ TURN_ENEMY:
 	set	BIT_ENEMY_PATTERN_LEFT, [ix + enemy.pattern]
 	ret
 ; -----------------------------------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; Turns the enemy right
 ; This function can be used as an enemy state handler
@@ -87,7 +87,7 @@ WAIT_ENEMY_HANDLER:
 ; increases frame counter
 	inc	[ix + enemy.frame_counter]
 	ret	; nz
-	
+
 .DO_TURN:
 	call	TURN_ENEMY
 ; compares frame counter with times
@@ -144,9 +144,10 @@ WAIT_ENEMY_HANDLER:
 ; Is the player overlapping y coordinates?
 	ld	c, PLAYER_ENEMY_Y_OFFSET
 	call	CHECK_PLAYER_COLLISION.Y
-	jp	nc, RET_NOT_ZERO ; no
-; ret z
-	xor	a
+; Translates c/nc to z/nz
+; (note: a = 0 implies c because of CHECK_PLAYER_COLLISION.Y internals)
+	ccf
+	sbc	a, a
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -197,9 +198,12 @@ ENDIF
 ; param l: horizontal maximum distance
 ; ret z/nz: z if the wait has finished (the player is below), nz otherwise
 .PLAYER_BELOW:
-; Is the player below?
+; Is the player on-screen (avoid false positives)?
 	ld	a, [player.y]
 	dec	a ; (avoids false positive due player.y == enemy.y)
+	cp	192
+	ret	nc ; no (ret nz)
+; Is the player below?
 	cp	[ix + enemy.y]
 	ret	c ; no (ret nz)
 	; jr	.PLAYER_X : falls through
@@ -213,9 +217,10 @@ ENDIF
 .PLAYER_AT_X:
 ; Is the player overlapping x coordinates?
 	call	CHECK_PLAYER_COLLISION.X
-	jp	nc, RET_NOT_ZERO ; no
-; ret z
-	xor	a
+; Translates c/nc to z/nz
+; (note: a = 0 implies c because of CHECK_PLAYER_COLLISION.X internals)
+	ccf
+	sbc	a, a
 	ret
 ; -----------------------------------------------------------------------------
 
