@@ -10,24 +10,10 @@
 		"showReuseMessage": true,
 		"clear": false
 	},
-	"problemMatcher" : [{
-		"source": "tniasm-preprocessor",
-		"pattern" : {
-			"regexp": "^(Warning|Error) while (.*)$",
-			"severity": 1,
-			"message": 2
-		}
-	}, {
-		"source": "tniasm",
-		"fileLocation": ["relative", "${workspaceFolder}"],
-		"pattern": {
-			"regexp": "^(Warning|Error) in line (\\d+) \\(([^)]+)\\): (.*)$",
-			"severity": 1,
-			"line": 2,
-			"file": 3,
-			"message": 4,
-		}
-	}],
+	"problemMatcher": [
+		"$errmatcher-tniasm",
+		"$errmatcher-tniasm-preprocessor"
+	],
 	"tasks": [{
 		"label": "make clean build",
 		"type": "shell",

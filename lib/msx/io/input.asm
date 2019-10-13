@@ -42,29 +42,30 @@ ENDIF
 ; Reads PSG register #14
 	ld	a, 14
 	call	RDPSG
-	cpl	
+	cpl
 	and	$3f ; a = 00BARLDU
 ; Preserves input value in b
 	ld	b, a
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
-; Enables interrupts if this routine is to be called manually
-	ei
-ENDIF
-	
+
 ; Reads keyboard
 
 ; Cursors and space key
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 	ld	a, 8 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
 	call	SNSMAT
+ELSE
+	ld	c, 8 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
+	call	SNSMAT_NO_DI_EI
+ENDIF
 	cpl
-; Introduces LEFT in input value
+; Saves LEFT in input value
 	rrca	; SPACE RIGHT DOWN UP LEFT DEL INS HOME
 	rrca	; HOME SPACE RIGHT DOWN UP LEFT DEL INS
 	ld	c, a ; (preserves rotated row)
 	and	$04 ; b |= 00000L00
 	or	b
 	ld	b, a
-; Introduces SPACE and RIGHT in input value
+; Saves SPACE and RIGHT in input value
 	ld	a, c ; (restores rotated row)
 	rrca	; INS HOME SPACE RIGHT DOWN UP LEFT DEL
 	rrca	; DEL INS HOME SPACE RIGHT DOWN UP LEFT
@@ -72,7 +73,7 @@ ENDIF
 	and	$18 ; b |= 000AR000
 	or	b
 	ld	b, a
-; Introduces DOWN and UP in input value
+; Saves DOWN and UP in input value
 	ld	a, c ; (restores rotated row)
 	rrca	; LEFT DEL INS HOME SPACE RIGHT DOWN UP
 	and	$03 ; b |= 000000DU
@@ -80,8 +81,13 @@ ENDIF
 	ld	b, a
 
 ; Trigger B (M key)
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 	ld	a, 4 ; R Q P O N M L K
 	call	SNSMAT
+ELSE
+	ld	c, 4 ; R Q P O N M L K
+	call	SNSMAT_NO_DI_EI
+ENDIF
 	bit	2, a
 	jr	nz, .NOT_TRIGGER_B
 ; Saves trigger B in current level
@@ -89,8 +95,13 @@ ENDIF
 .NOT_TRIGGER_B:
 
 ; "Select" button (SEL key)
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 	ld	a, 7 ; CR SEL BS STOP TAB ESC F5 F4
 	call	SNSMAT
+ELSE
+	ld	c, 7 ; CR SEL BS STOP TAB ESC F5 F4
+	call	SNSMAT_NO_DI_EI
+ENDIF
 	bit	6, a
 	jr	nz, .NOT_SELECT
 ; Saves "select" button in current level
@@ -113,9 +124,94 @@ ENDIF
 	inc	hl ; hl = input.edge
 	ld	[hl], a ; saves edge
 
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
+; Enables interrupts if this routine is to be called manually
+	ei
+ENDIF
+
 	ret
 ; -----------------------------------------------------------------------------
-	
+
+; -----------------------------------------------------------------------------
+IFDEF CFG_INPUT_KEYBOARD
+
+; Initializes the level values before the first READ_KEYBOARD invocation
+; ret [OLDKEY + i]: $00
+; touches: a, bc, de, hl
+RESET_KEYBOARD:
+	ld	hl, OLDKEY
+	ld	de, OLDKEY + 1
+	ld	bc, (NEWKEY - OLDKEY - 1) ; (resets all rows)
+	ld	[hl], b ; b = $00
+	ldir
+	ret
+
+; Reads the keyboard level and edge values
+; param b: number of keyboard rows to read
+; param c: first keyboard row to be read
+; ret [OLDKEY + i]: current bit map (level)
+; ret [NEWKEY + i]: bits that went from off to on (edge)
+READ_KEYBOARD:
+; Defaults to all rows
+	ld	bc, $0b00 ; ((NEWKEY - OLDKEY) << 8 + $00)
+.BC_OK:
+; Initializes pointers
+	ld	hl, OLDKEY
+	ld	de, NEWKEY
+IFEXIST SNSMAT_NO_DI_EI
+	di
+ENDIF
+.LOOP:
+	push	bc ; preserves counter
+; Reads the requested row
+IFEXIST SNSMAT_NO_DI_EI
+	call	SNSMAT_NO_DI_EI
+ELSE
+	ld	a, c
+	call	SNSMAT
+ENDIF
+	cpl	; (as a bitmap: 1/0 = on/off)
+; Computes level and edge
+	ld	c, a ; c = current
+	xor	[hl] ; a = changed bits
+	and	c ; a = edge (bits that went from off to on)
+	ld	[hl], c ; [OLDKEY + i] = level (current)
+	ld	[de], a ; [NEWKEY + i] = edge
+; Moves to the next row
+	inc	hl
+	inc	de
+	pop	bc ; restores counter
+	inc	c
+	djnz	.LOOP
+
+IFEXIST SNSMAT_NO_DI_EI
+	ei
+ENDIF
+	ret
+
+ENDIF ; IFDEF CFG_INPUT_KEYBOARD
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
+ELSE
+
+; Alternative implementation of BIOS' SNSMAT without DI and EI
+; param c: the keyboard matrix row to be read
+; ret a: the keyboard matrix row read
+SNSMAT_NO_DI_EI:
+; Initializes PPI.C value
+	in	a, (PPI.C)
+	and	$f0 ; (keep bits 4-7)
+	or	c
+; Reads the keyboard matrix row
+	out	(PPI.C), a
+	in	a, (PPI.B)
+	ret
+
+ENDIF
+; -----------------------------------------------------------------------------
+
 ; -----------------------------------------------------------------------------
 ; Four seconds pause
 ; touches: b, hl

@@ -180,6 +180,17 @@
 	SCNCNT: equ $f3f6 ; Key scan timing
 	OLDKEY:	equ $fbda ; Previous state of the keyboard matrix (11b)
 	NEWKEY:	equ $fbe5 ; Current state of the keyboard matrix (11b)
+		; $fbda, $fbe5 ; 7 6 5 4 3 2 1 0
+		; $fbdb, $fbe6 ; ; ] [ \ = - 9 8
+		; $fbdc, $fbe7 ; B A pound / . , ` '
+		; $fbdd, $fbe8 ; J I H G F E D C
+		; $fbde, $fbe9 ; R Q P O N M L K
+		; $fbdf, $fbf0 ; Z Y X W V U T S
+		; $fbe0, $fbf1 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+		; $fbe1, $fbf2 ; CR SEL BS STOP TAB ESC F5 F4
+		; $fbe2, $fbf3 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
+		; $fbe3, $fbf4 ; 4 3 2 1 0 none none none
+		; $fbe4, $fbf5 ; . , - 9 8 7 6 5
 	BOTTOM: equ $fc48 ; Address of the beginning of the available RAM area
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
 	INTFLG:	equ $fc9b ; STOP flag (0 = none, 3 = CTRL+STOP, 4 = STOP)
@@ -229,7 +240,7 @@
 ; PPI (Programmable Peripheral Interface)
 	PPI.A: equ $a8 ; PPI port A: primary slot selection register
 		; 33221100: number of slot to select on page n
-	PPI.B: equ $a9 ; PPI port B: read the keyboard matrix row specified via the port $AA
+	PPI.B: equ $a9 ; PPI port B: read the keyboard matrix row specified via the PPI port C ($AA)
 	PPI.C: equ $aa ; PPI port C: control keyboard CAP LED, data recorder signals, and keyboard matrix row
 		; bits 0-3: Row number of specified keyboard matrix to read via port B
 		; bit 4: Data recorder motor (reset to turn on)

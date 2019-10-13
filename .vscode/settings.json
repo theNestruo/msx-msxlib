@@ -17,5 +17,6 @@
 		"**/*.spr": { "when": "$(basename)" },
 		"**/*.zx7": { "when": "$(basename)" },
 	},
-	"z80-asm-meter.timing": "msx"
+	"z80-asm-meter.timing": "msx",
+	"z80-asm-meter.opcode": "instruction",
 }

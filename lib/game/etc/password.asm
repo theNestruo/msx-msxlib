@@ -8,7 +8,7 @@
 ; -----------------------------------------------------------------------------
 ; Password length (in bytes)
 	PASSWORD_SIZE:	equ 1 + CFG_PASSWORD_DATA_SIZE * 2 + 1
-	
+
 ; Salt to obfuscate sequences (000000.. becomes 05AF49..)
 	PASSWORD_SALT:		equ $05
 ; -----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ ENCODE_PASSWORD:
 ; Until all the bytes are encoded
 	inc	hl
 	djnz	.LOOP
-	
+
 ; Checksum as last digit
 	ex	af, af'
 	add	PASSWORD_SALT
@@ -116,7 +116,7 @@ DECODE_PASSWORD:
 	xor	c
 	and	$0f ; (only the lower nibble)
 	ret	nz ; invalid
-	
+
 ; Reads the random digit
 	ld	de, password
 	call	.READ_DIGIT
@@ -174,21 +174,36 @@ DECODE_PASSWORD:
 ; ret hl: digit address
 ; ret z/nz: z = no digit was read, nz = a digit was read
 INPUT_HEXADECIMAL_DIGIT:
+IFEXIST READ_KEYBOARD
+	push	hl ; preserves address
+	ld	bc, $0400 ; (only first 4 rows)
+	call	READ_KEYBOARD ; .BC_OK
+	pop	hl ; restores address
+ENDIF ; IFEXIST READ_KEYBOARD
+.KEYBOARD_READ:
 ; Checks 0..7
+IFEXIST READ_KEYBOARD
+	ld	a, [NEWKEY + 0] ; 0 = 7 6 5 4 3 2 1 0
+ELSE
 	xor	a ; a = 0 = 7 6 5 4 3 2 1 0
 	call	SNSMAT
 	cpl
+ENDIF ; IFEXIST READ_KEYBOARD
 	or	a
 	jr	z, .NOT_0_TO_7 ; no
 ; yes: computes digit (0 to 7)
 	ld	b, '0'
 	jr	.INC_LOOP
 .NOT_0_TO_7:
-	
+
 ; Checks 8..9
+IFEXIST READ_KEYBOARD
+	ld	a, [NEWKEY + 1] ; 1 = ; ] [ \ = - 9 8
+ELSE
 	inc	a ; a = 1 = ; ] [ \ = - 9 8
 	call	SNSMAT
 	cpl
+ENDIF ; IFEXIST READ_KEYBOARD
 	and	$03
 	jr	z, .NOT_8_TO_9 ; no
 ; yes: computes digit (8 or 9)
@@ -197,9 +212,13 @@ INPUT_HEXADECIMAL_DIGIT:
 .NOT_8_TO_9:
 
 ; Checks A..B
-	ld	a, 2 ; B A pound / . , ` '
+IFEXIST READ_KEYBOARD
+	ld	a, [NEWKEY + 2] ; 2 = B A pound / . , ` '
+ELSE
+	ld	a, 2 ; a = 2 = B A pound / . , ` '
 	call	SNSMAT
 	cpl
+ENDIF ; IFEXIST READ_KEYBOARD
 	and	$c0
 	jr	z, .NOT_A_TO_B ; no
 ; yes: computes digit
@@ -213,9 +232,13 @@ INPUT_HEXADECIMAL_DIGIT:
 .NOT_A_TO_B:
 
 ; Checks C..F
-	ld	a, 3 ; J I H G F E D C
+IFEXIST READ_KEYBOARD
+	ld	a, [NEWKEY + 3] ; 3 = J I H G F E D C
+ELSE
+	ld	a, 3 ; a = 3 = J I H G F E D C
 	call	SNSMAT
 	cpl
+ENDIF ; IFEXIST READ_KEYBOARD
 	and	$0f
 	ret	z ; no input
 ; yes: computes digit
