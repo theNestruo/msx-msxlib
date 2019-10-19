@@ -9,9 +9,8 @@
 	CFG_RAM_VRAM:	equ 1
 
 ; -----------------------------------------------------------------------------
-; TO DO list:
-;	Support for CFG_SPRITES_EC_AWARE in MOVE_SPRITE[S]
-;	Support for CFG_SPRITES_FLICKERING
+; TODO: Support for CFG_SPRITES_EC_AWARE in MOVE_SPRITE[S]
+; TODO: Support for CFG_SPRITES_FLICKERING
 ; -----------------------------------------------------------------------------
 
 ; =============================================================================
@@ -137,7 +136,7 @@ LDIRVM_CLRTBL:
 	ld	de, CLRTBL + CLRTBL_SIZE + CLRTBL_SIZE
 	; jp	LDIRVM_CXRTBL ; falls through
 ; ------VVVV----falls through--------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; LDIRVMs CHRTBL or CLRTBL to one of the banks
 ; param hl: data source address
@@ -230,7 +229,7 @@ ENDIF
 	jr	nc, .NO_FLICKER ; no: non-flickering LDIRVM
 ; yes
 	push	hl ; (preserves actual spratr buffer end)
-	
+
 ; Calculates flicker size (in bytes)
 IF CFG_SPRITES_NO_FLICKER != 0
 	ld	a, -CFG_SPRITES_NO_FLICKER ; c (size, bytes) = (c -CFG_SPRITES_NO_FLICKER) * 4
@@ -267,7 +266,7 @@ ENDIF
 ; Preserves the offset for the next frame
 	ld	[hl], a
 	jr	.POP_AND_NO_FLICKER ; non-flickering LDIRVM
-	
+
 .OFFSET_OK:
 ; Preserves the offset for the next frame
 	ld	[hl], a
@@ -282,7 +281,7 @@ ENDIF
 ; Appends a SPAT_END (just in case)
 	ld	a, SPAT_END
 	ld	[de], a
-	
+
 IF CFG_SPRITES_NO_FLICKER != 0
 ; LDIRVM the non-flickering sprites
 	ld	hl, spratr_buffer
@@ -297,7 +296,7 @@ ENDIF
 	ld	de, SPRATR + CFG_SPRITES_NO_FLICKER *4
 	ld	bc, SPRATR_SIZE - CFG_SPRITES_NO_FLICKER *4
 	jp	LDIRVM
-	
+
 .POP_AND_NO_FLICKER:
 	pop	hl ; (restores stack status)
 .NO_FLICKER:
@@ -422,12 +421,12 @@ ENASCR_NO_FADE:
 ; If the screen is already enabled, defaults to LDIRVM_NAMTBL_FADE_INOUT
 ENASCR_FADE_IN:
 	halt	; (sync in case screen was enabled)
-	
+
 ; Checks if the screen is already enabled
 	ld	hl, RG1SAV
 	bit	6, [hl]
 	jr	nz, LDIRVM_NAMTBL_FADE_INOUT ; yes: uses fade in/out
-	
+
 ; No: clears NAMTBL and disables sprites
 	; halt	; (sync in case screen was enabled)
 	call	DISSCR_NO_FADE.CLEAR
@@ -467,7 +466,7 @@ IFDEF CFG_FADE_TYPE_DOUBLE
 ; Moves left a position
 	pop	bc ; restores contadores
 	djnz	.COL2
-	
+
 ELSE
 ; Fade in (simple)
 	ld	b, SCR_WIDTH
@@ -636,7 +635,7 @@ PRINT_BCD:
 	ld	[de], a
 	inc	de
 	pop	af
-; Restores original [hl] value	
+; Restores original [hl] value
 	rld
 	ret
 ; -----------------------------------------------------------------------------
@@ -741,9 +740,9 @@ ENDIF
 	jr	.PATTERN_COLOR
 .NO_EC:
 	ld	[hl], a
-	
+
 .PATTERN_COLOR:
-; pattern	
+; pattern
 	inc	hl
 	ld	[hl], c
 ; color

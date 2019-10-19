@@ -4,7 +4,7 @@
 #
 
 EXAMPLES_PATH=\
-	examples
+	games\examples
 
 SHARED_DATAS=\
 	$(EXAMPLES_PATH)\shared\charset.pcx.chr \
@@ -72,6 +72,8 @@ SRCS_MSXLIB=\
 	lib\msx\ram.asm \
 	lib\msx\ram_end.asm \
 	lib\msx\io\input.asm \
+	lib\msx\io\keyboard.asm \
+	lib\msx\io\timing.asm \
 	lib\msx\io\vram.asm \
 	lib\msx\io\replayer_pt3.asm \
 	lib\msx\io\replayer_wyz.asm \

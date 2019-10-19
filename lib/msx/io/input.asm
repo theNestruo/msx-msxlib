@@ -50,14 +50,19 @@ ENDIF
 ; Reads keyboard
 
 ; Cursors and space key
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
-	ld	a, 8 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
-	call	SNSMAT
+IFEXIST SNSMAT_NO_DI_EI
+IFDEF CFG_HOOK_ENABLE_AUTO_KEYBOARD
+	ld	a, [OLDKEY + 8] ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
 ELSE
 	ld	c, 8 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
-	call	SNSMAT_NO_DI_EI
-ENDIF
+	call	SNSMAT_NO_DI_EI.C_OK
 	cpl
+ENDIF
+ELSE
+	ld	a, 8 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
+	call	SNSMAT
+	cpl
+ENDIF
 ; Saves LEFT in input value
 	rrca	; SPACE RIGHT DOWN UP LEFT DEL INS HOME
 	rrca	; HOME SPACE RIGHT DOWN UP LEFT DEL INS
@@ -81,12 +86,17 @@ ENDIF
 	ld	b, a
 
 ; Trigger B (M key)
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
-	ld	a, 4 ; R Q P O N M L K
-	call	SNSMAT
+IFEXIST SNSMAT_NO_DI_EI
+IFDEF CFG_HOOK_ENABLE_AUTO_KEYBOARD
+	ld	a, [OLDKEY + 4] ; R Q P O N M L K
+	cpl
 ELSE
 	ld	c, 4 ; R Q P O N M L K
-	call	SNSMAT_NO_DI_EI
+	call	SNSMAT_NO_DI_EI.C_OK
+ENDIF
+ELSE
+	ld	a, 4 ; R Q P O N M L K
+	call	SNSMAT
 ENDIF
 	bit	2, a
 	jr	nz, .NOT_TRIGGER_B
@@ -95,12 +105,17 @@ ENDIF
 .NOT_TRIGGER_B:
 
 ; "Select" button (SEL key)
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
-	ld	a, 7 ; CR SEL BS STOP TAB ESC F5 F4
-	call	SNSMAT
+IFEXIST SNSMAT_NO_DI_EI
+IFDEF CFG_HOOK_ENABLE_AUTO_KEYBOARD
+	ld	a, [OLDKEY + 7] ; CR SEL BS STOP TAB ESC F5 F4
+	cpl
 ELSE
 	ld	c, 7 ; CR SEL BS STOP TAB ESC F5 F4
-	call	SNSMAT_NO_DI_EI
+	call	SNSMAT_NO_DI_EI.C_OK
+ENDIF
+ELSE
+	ld	a, 7 ; CR SEL BS STOP TAB ESC F5 F4
+	call	SNSMAT
 ENDIF
 	bit	6, a
 	jr	nz, .NOT_SELECT
@@ -130,211 +145,6 @@ IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 ENDIF
 
 	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-IFDEF CFG_INPUT_KEYBOARD
-
-; Initializes the level values before the first READ_KEYBOARD invocation
-; ret [OLDKEY + i]: $00
-; touches: a, bc, de, hl
-RESET_KEYBOARD:
-	ld	hl, OLDKEY
-	ld	de, OLDKEY + 1
-	ld	bc, (NEWKEY - OLDKEY - 1) ; (resets all rows)
-	ld	[hl], b ; b = $00
-	ldir
-	ret
-
-; Reads the keyboard level and edge values
-; param b: number of keyboard rows to read
-; param c: first keyboard row to be read
-; ret [OLDKEY + i]: current bit map (level)
-; ret [NEWKEY + i]: bits that went from off to on (edge)
-READ_KEYBOARD:
-; Defaults to all rows
-	ld	bc, $0b00 ; ((NEWKEY - OLDKEY) << 8 + $00)
-.BC_OK:
-; Initializes pointers
-	ld	hl, OLDKEY
-	ld	de, NEWKEY
-IFEXIST SNSMAT_NO_DI_EI
-	di
-ENDIF
-.LOOP:
-	push	bc ; preserves counter
-; Reads the requested row
-IFEXIST SNSMAT_NO_DI_EI
-	call	SNSMAT_NO_DI_EI
-ELSE
-	ld	a, c
-	call	SNSMAT
-ENDIF
-	cpl	; (as a bitmap: 1/0 = on/off)
-; Computes level and edge
-	ld	c, a ; c = current
-	xor	[hl] ; a = changed bits
-	and	c ; a = edge (bits that went from off to on)
-	ld	[hl], c ; [OLDKEY + i] = level (current)
-	ld	[de], a ; [NEWKEY + i] = edge
-; Moves to the next row
-	inc	hl
-	inc	de
-	pop	bc ; restores counter
-	inc	c
-	djnz	.LOOP
-
-IFEXIST SNSMAT_NO_DI_EI
-	ei
-ENDIF
-	ret
-
-ENDIF ; IFDEF CFG_INPUT_KEYBOARD
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
-ELSE
-
-; Alternative implementation of BIOS' SNSMAT without DI and EI
-; param c: the keyboard matrix row to be read
-; ret a: the keyboard matrix row read
-SNSMAT_NO_DI_EI:
-; Initializes PPI.C value
-	in	a, (PPI.C)
-	and	$f0 ; (keep bits 4-7)
-	or	c
-; Reads the keyboard matrix row
-	out	(PPI.C), a
-	in	a, (PPI.B)
-	ret
-
-ENDIF
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Four seconds pause
-; touches: b, hl
-WAIT_FOUR_SECONDS:
-	call	WAIT_TWO_SECONDS
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Two seconds pause
-; touches: b, hl
-WAIT_TWO_SECONDS:
-	call	WAIT_ONE_SECOND
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; One second pause
-; touches: b, hl
-WAIT_ONE_SECOND:
-	ld	hl, frame_rate
-	ld	b, [hl]
-	; jr	WAIT_FRAMES ; (falls through)
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Pause
-; param b: pause length (in frames)
-; touches: b
-WAIT_FRAMES:
-	halt
-	djnz	WAIT_FRAMES
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Skippable four seconds pause
-; ret nz: if the trigger went from off to on (edge)
-; ret z: if the pause timed out
-; touches: a, bc, de, hl
-WAIT_TRIGGER_FOUR_SECONDS:
-	ld	a, [frame_rate]
-	add	a
-	add	a
-	jr	WAIT_TRIGGER_FRAMES_A
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Skippable one second pause
-; ret nz: if the trigger went from off to on (edge)
-; ret z: if the pause timed out
-; touches: a, bc, de, hl
-WAIT_TRIGGER_ONE_SECOND:
-	ld	a, [frame_rate]
-	; jr	TRIGGER_PAUSE_A ; (falls through)
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Skippable pause
-; param a: pause length (in frames)
-; ret nz: if the trigger went from off to on (edge)
-; ret z: if the pause timed out
-; touches: a, bc, de, hl
-WAIT_TRIGGER_FRAMES_A:
-	ld	b, a
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Skippable pause
-; param b: pause length (in frames)
-; ret nz: if the trigger went from off to on (edge)
-; ret z: if the pause timed out
-; touches: a, bc, de, hl
-WAIT_TRIGGER_FRAMES:
-	push	bc ; preserves counter
-	halt
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
-	call	READ_INPUT
-ELSE
-	ld	a, [input.edge]
-ENDIF
-	bit	BIT_TRIGGER_A, a
-	pop	bc ; restores counter
-	ret	nz ; trigger
-	djnz	WAIT_TRIGGER_FRAMES
-	ret	; no trigger (z)
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Waits for the trigger
-; ret nz always: the trigger went from off to on (edge)
-; touches: a, bc, de, hl
-WAIT_TRIGGER:
-	halt
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
-	call	READ_INPUT
-ELSE
-	ld	a, [input.edge]
-ENDIF
-	bit	BIT_TRIGGER_A, a
-	jr	z, WAIT_TRIGGER
-	ret	; trigger (nz)
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Waits until no key is pressed
-WAIT_NO_KEY:
-	halt
-; Ten lines
-	ld	b, 11
-	ld	d, $ff
-.LOOP:
-; Reads keyboard matrix line
-	ld	a, b
-	dec	a ; check lines from 10 to 0
-	call	SNSMAT
-; Aggregates (AND) the result in d
-	and	d
-	ld	d, a
-	djnz	.LOOP
-; If no keys were pressed, d will be $ff
-	; ld	a, d ; (unnecessary)
-	inc	a ; $ff becomes $00
-	ret	z
-	jr	WAIT_NO_KEY
 ; -----------------------------------------------------------------------------
 
 ; EOF

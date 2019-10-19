@@ -29,8 +29,15 @@ SPLASH_SCREENS_PACKED_TABLE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Input, timing & pause routines (BIOS-based)
+; Input routines (BIOS-based)
 	include "lib/msx/io/input.asm"
+
+; Keyboard input routines
+; (note: these routines change OLDKEY/NEWKEY semantics!)
+	include "lib/msx/io/keyboard.asm"
+
+; Timing and wait routines
+	include "lib/msx/io/timing.asm"
 
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)

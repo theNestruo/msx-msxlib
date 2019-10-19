@@ -6,13 +6,6 @@
 ;
 
 ; -----------------------------------------------------------------------------
-; Define to visually debug frame timing
-	; CFG_DEBUG_BDRCLR:
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; MSX cartridge (ROM) header, entry point and initialization
-
 ; Define if the ROM is larger than 16kB (typically, 32kB)
 ; Includes search for page 2 slot/subslot at start
 	; CFG_INIT_32KB_ROM:
@@ -21,58 +14,29 @@
 ; RAM will start at the beginning of the page 2 instead of $e000
 ; and availability will be checked at start
 	; CFG_INIT_16KB_RAM:
-	
-; MSX symbolic constants
-	include	"lib/msx/symbols.asm"
-; MSX cartridge (ROM) header, entry point and initialization
-	include "lib/msx/cartridge.asm"
-; -----------------------------------------------------------------------------
 
-; -----------------------------------------------------------------------------
-; Generic Z80 assembly convenience routines
-	include "lib/asm.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Input, timing & pause routines (BIOS-based)
-	include "lib/msx/input.asm"
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; VRAM routines (BIOS-based)
-; NAMBTL and SPRATR buffer routines (BIOS-based)
-; NAMTBL buffer text routines
-; Logical coordinates sprite routines
-	
-; Logical-to-physical sprite coordinates offsets (pixels)
-	CFG_SPRITES_X_OFFSET:	equ -8
-	CFG_SPRITES_Y_OFFSET:	equ -17
-	
 ; Number of sprites reserved at the beginning of the SPRATR buffer
 ; (i.e.: first sprite number for the "volatile" sprites)
 	CFG_SPRITES_RESERVED:	equ CFG_PLAYER_SPRITES
-	
+
 ; Define if the LDIRVM the SPRATR buffer should use flickering
 	; CFG_SPRITES_FLICKER:
-	
+
 ; Number of sprites that won't enter the flickering loop
 ; (i.e.: number of sprites that will use the most priority planes)
 	; CFG_SPRITES_NO_FLICKER:	equ CFG_PLAYER_SPRITES_INDEX + 1 ; 7
-	
+
 ; If defined, in/out fades sweep from center instead of sweeping from left to right
 	; CFG_FADE_TYPE_DOUBLE:
 
-
-; VRAM routines (BIOS-based)
-; NAMBTL and SPRATR buffer routines (BIOS-based)
-; NAMTBL buffer text routines
-; Logical coordinates sprite routines
-	include "lib/msx/vram.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Palette routines for MSX2 VDP
+; MSXlib helper: default configuration
+	include	"lib/rom-default.asm"
+; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
 ; Custom initial palette in $0GRB format (with R, G, B in 0..7).
 ; CFG_CUSTOM_PALETTE:
 ; Example: Default MSX2 palette
@@ -111,7 +75,7 @@
 
 ; Define to enable packed songs when using the PT3-based implementation
 	; CFG_PT3_PACKED:
-	
+
 ; Define to use headerless PT3 files (without first 100 bytes)
 	; CFG_PT3_HEADERLESS:
 
@@ -122,7 +86,7 @@
 
 ; Define to use relative volume version (the default is fixed volume)
 	; CFG_AYFX_RELATIVE:
-	
+
 ; ayFX REPLAYER v1.31
 	; include	"libext/ayFX-replayer/ayFX-ROM.tniasm.asm"
 ; -----------------------------------------------------------------------------
@@ -226,7 +190,7 @@ PLAYER_DY_TABLE:
 
 ; Controls if the player jumps with BIT_STRICK_UP or with BIT_TRIGGER_A/B
 	CFG_PLAYER_JUMP_INPUT:	equ BIT_TRIGGER_A
-	
+
 ; Default player control routines (platformer game)
 	include	"lib/game/player_x.asm"
 ; -----------------------------------------------------------------------------
@@ -244,7 +208,7 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_HEIGHT:		equ 16
 
 ; Enemies animation delay (frames)
-	CFG_ENEMY_ANIMATION_DELAY:	equ 8	
+	CFG_ENEMY_ANIMATION_DELAY:	equ 8
 
 ; Enemies delta-Y (dY) table for jumping and falling
 	ENEMY_DY_TABLE:			equ PLAYER_DY_TABLE
@@ -254,7 +218,7 @@ PLAYER_DY_TABLE:
 
 ; Enemies terminal falling speed (pixels/frame)
 	CFG_ENEMY_GRAVITY:		equ CFG_PLAYER_GRAVITY
-	
+
 ; Enemies related routines (generic)
 ; Convenience enemy state handlers (generic)
 ; Enemy-tile helper routines
@@ -270,11 +234,11 @@ PLAYER_DY_TABLE:
 	CFG_ENEMY_PAUSE_S:	equ 16 ; short pause (~16 frames)
 	CFG_ENEMY_PAUSE_M:	equ 40 ; medium pause (~32 frames, < 64 frames)
 	CFG_ENEMY_PAUSE_L:	equ 96 ; long pause (~64 frames, < 256 frames)
-	
+
 ; Killed/respawning patterns
 	; CFG_ENEMY_DYING_PATTERN:	equ ENEMY_DYING_PATTERN ; $c4
 	; CFG_ENEMY_RESPAWN_PATTERN:	equ ENEMY_RESPAWN_PATTERN ; $c8
-	
+
 ; Triggers will fire <n> pixels before the actual collision occurs
 	CFG_ENEMY_ADVANCE_COLLISION:	equ 0
 
@@ -306,31 +270,6 @@ PLAYER_DY_TABLE:
 	include	"lib/game/collision.asm"
 ; -----------------------------------------------------------------------------
 
-;
-; =============================================================================
-;	MSXlib external routines
-; =============================================================================
-;
-
-; -----------------------------------------------------------------------------
-; Unpacker routine
-
-; Unpack to RAM routine (optional)
-; param hl: packed data source address
-; param de: destination buffer address
-
-; Pletter (v0.5c1, XL2S Entertainment)
-	; include	"libext/pletter05c/pletter05c-unpackRam.tniasm.asm"
-
-; ZX7 decoder by Einar Saukas, Antonio Villena & Metalbrain
-; "Standard" version (69 bytes only)
-	UNPACK: equ dzx7_standard
-	include	"libext/zx7/dzx7_standard.tniasm.asm"
-
-; Buffer size to check it actually fits before system variables
-	CFG_RAM_RESERVE_BUFFER:	equ 2048
-; -----------------------------------------------------------------------------
-
 
 ;
 ; =============================================================================
@@ -347,7 +286,7 @@ MAIN_INIT:
 ; Charset (2/2: CLRTBL)
 	ld	hl, CHARSET_PACKED.CLR
 	call	UNPACK_LDIRVM_CLRTBL
-	
+
 ; Sprite pattern table (SPRTBL)
 	ld	hl, SPRTBL_PACKED
 	ld	de, SPRTBL
@@ -362,17 +301,17 @@ IF (GLOBALS_0.SIZE > 0)
 	ldir
 ENDIF
 ; ------VVVV----falls through--------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; Main menu
 MAIN_MENU:
 ; Main menu entry point and initialization
 	;	...TBD...
-	
+
 ; Main menu draw
 	call	CLS_NAMTBL
 	;	...TBD...
-	
+
 ; Fade in
 	call	ENASCR_FADE_IN
 
@@ -381,11 +320,11 @@ MAIN_MENU:
 	halt
 	;	...TBD...
 	; jr	.LOOP
-	
+
 ; Fade out
 	call	DISSCR_FADE_OUT
 ; ------VVVV----falls through--------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; New game entry point
 NEW_GAME:
@@ -401,7 +340,7 @@ NEW_GAME:
 NEW_STAGE:
 ; Prepares the "new stage" screen
 	call	CLS_NAMTBL
-	
+
 ; "STAGE 0"
 	ld	hl, TXT_STAGE
 	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_STAGE.CENTER
@@ -411,7 +350,7 @@ NEW_STAGE:
 	ld	a, [game.current_stage]
 	add	$31 ; "1"
 	ld	[de], a
-	
+
 ; "LIVES 0"
 	ld	hl, TXT_LIVES
 	ld	de, namtbl_buffer + 10 * SCR_WIDTH + TXT_LIVES.CENTER
@@ -439,7 +378,7 @@ GAME_LOOP_INIT:
 	call	GET_HL_A_WORD
 	ld	de, namtbl_buffer
 	call	UNPACK
-	
+
 ; Initializes stage vars
 IF (STAGE_0.SIZE > 0)
 	ld	hl, STAGE_0
@@ -455,19 +394,19 @@ IF (PLAYER_0.SIZE > 0)
 	ld	bc, PLAYER_0.SIZE
 	ldir
 ENDIF
-	
+
 ; Initializes sprite attribute table (SPRATR)
 	ld	hl, SPRATR_0
 	ld	de, spratr_buffer
 	ld	bc, SPRATR_SIZE
 	ldir
-	
+
 ; In-game loop preamble and initialization
 	call	RESET_SPRITES
 	call	RESET_ENEMIES
-	
+
 	call	INIT_STAGE	; (custom)
-	
+
 ; Fade in
 	call	ENASCR_FADE_IN
 ; ------VVVV----falls through--------------------------------------------------
@@ -477,7 +416,7 @@ ENDIF
 GAME_LOOP:
 ; Prepares next frame (1/2)
 	call	PUT_PLAYER_SPRITE
-	
+
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 1
 	call	SET_BDRCLR ; black: free frame time
@@ -485,7 +424,7 @@ ENDIF
 
 ; Synchronization (halt)
 	halt
-	
+
 IFDEF CFG_DEBUG_BDRCLR
 	ld	b, 4
 	call	SET_BDRCLR ; blue: VDP busy
@@ -514,12 +453,12 @@ ENDIF
 ; Game logic (2/2: interactions)
 	call	CHECK_PLAYER_ENEMIES_COLLISIONS
 	; call	CHECK_PLAYER_BULLETS_COLLISIONS
-	
+
 ; Check exit condition
 	ld	a, [player.state]
 	bit	BIT_STATE_FINISH, a
 	jr	z, GAME_LOOP ; no
-	
+
 ; yes: conditionally jump according the exit status
 	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_FINISH
@@ -544,13 +483,13 @@ STAGE_OVER:
 ; Next stage logic
 	ld	hl, game.current_stage
 	inc	[hl]
-	
+
 ; Fade out
 	call	DISSCR_FADE_OUT
 
 ; Stage over screen
 	;	...
-	
+
 ; Go to the next stage
 	jp	NEW_STAGE
 ; -----------------------------------------------------------------------------
@@ -565,7 +504,7 @@ PLAYER_OVER:
 	jr	z, GAME_OVER ; no lives left
 	dec	[hl]
 
-.SKIP:	
+.SKIP:
 ; Fade out
 	call	DISSCR_FADE_OUT
 ; Re-enter current stage
@@ -581,12 +520,12 @@ GAME_OVER:
 	ld	hl, TXT_GAME_OVER
 	ld	de, namtbl_buffer + 8 * SCR_WIDTH + TXT_GAME_OVER.CENTER
 	call	PRINT_TEXT
-	
+
 ; Fade in
 	call	LDIRVM_NAMTBL_FADE_INOUT
 	call	WAIT_TRIGGER_FOUR_SECONDS
 	call	DISSCR_FADE_OUT
-	
+
 	jp	MAIN_MENU
 ; -----------------------------------------------------------------------------
 
@@ -614,7 +553,7 @@ INIT_STAGE:
 	cpi	; inc hl, dec bc
 	ret	po
 	jr	.LOOP
-	
+
 .INIT_ELEMENT:
 ; Is it the start point?
 	sub	'0'
@@ -660,9 +599,9 @@ INIT_STAGE:
 	dw	ENEMY_TYPE_WAVER
 
 ; Rutina de conveniencia que elimina el caracter de control
-; y devuelve las coordenadas lógicas para ubicar ahí un sprite
+; y devuelve las coordenadas lï¿½gicas para ubicar ahï¿½ un sprite
 ; param hl: puntero del buffer namtbl del caracter de control
-; ret de: coordenadas lógicas del sprite
+; ret de: coordenadas lï¿½gicas del sprite
 .CLEAR_CHAR_GET_LOGICAL_COORDS:
 ; elimina el caracter de control
 	ld	[hl], 0
@@ -729,12 +668,12 @@ TXT_STAGE:
 	db	"STAGE 00", $00
 	.SIZE:		equ $ - TXT_STAGE
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	
+
 TXT_LIVES:
 	db	"0 LIVES LEFT", $00
 	.SIZE: equ $ - TXT_LIVES
 	.CENTER:	equ (SCR_WIDTH - .SIZE) /2
-	
+
 TXT_GAME_OVER:
 	db	"GAME OVER", $00
 	.SIZE: equ $ - TXT_GAME_OVER
@@ -747,7 +686,7 @@ GLOBALS_0:
 	dw	1000			; .hi_score
 	;	...			; ...
 	.SIZE:	equ $ - GLOBALS_0
-	
+
 ; Initial value of the game-scope vars
 GAME_0:
 	db	0			; .current_stage
@@ -767,7 +706,7 @@ SPRATR_0:
 	db	SPAT_OB, 0, 0, 4	; Player 1st sprite
 	db	SPAT_OB, 0, 0, 15	; Player 2nd sprite
 	db	SPAT_END		; SPAT end marker
-	
+
 ; Initial (per stage) player vars
 PLAYER_0:
 	db	0, 0			; .y, .x
@@ -786,7 +725,7 @@ NAMTBL_PACKED_TABLE:
 	dw	.SCREEN	; stage 3
 	dw	.SCREEN	; stage 5
 	;	...
-	
+
 .SCREEN:
 	incbin	"games/template/screen.tmx.bin.zx7"
 ; -----------------------------------------------------------------------------
@@ -798,13 +737,13 @@ CHARSET_PACKED:
 	incbin	"games/template/charset.pcx.chr.zx7"
 .CLR:
 	incbin	"games/template/charset.pcx.clr.zx7"
-	
+
 ; Charset-related symbolic constants
 CHARSET:
 	.ITEM_0:	equ $d8 ; First item
 	; ...
 ; -----------------------------------------------------------------------------
-	
+
 ; -----------------------------------------------------------------------------
 ; Sprites binary data (SPRTBL)
 SPRTBL_PACKED:
@@ -812,7 +751,7 @@ SPRTBL_PACKED:
 
 ; Sprite-related symbolic constants (SPRATR)
 	; ...
-	
+
 ; Sprite-related data (SPRATR)
 	; db	SPAT_OB, 0, 0, 9	; 1st player sprite
 	; db	SPAT_OB, 0, 0, 15	; 2nd player sprite
@@ -849,7 +788,7 @@ globals:
 	rw	1
 ; ...
 	; ...
-	
+
 ; Game vars (i.e.: vars from start to game over)
 game:
 
@@ -889,7 +828,7 @@ ENDIF
 
 	bytes_ram_MSXlib:	equ globals - ram_start
 	bytes_ram_game:		equ ram_end - globals
-	
+
 	bytes_total_rom:	equ PADDING - ROM_START
 	bytes_total_ram:	equ ram_end - ram_start
 
