@@ -73,11 +73,14 @@ SRCS_MSXLIB=\
 	lib\msx\ram_end.asm \
 	lib\msx\io\input.asm \
 	lib\msx\io\keyboard.asm \
+	lib\msx\io\print.asm \
+	lib\msx\io\sprites.asm \
 	lib\msx\io\timing.asm \
 	lib\msx\io\vram.asm \
 	lib\msx\io\replayer_pt3.asm \
 	lib\msx\io\replayer_wyz.asm \
 	lib\msx\unpack\unpack_zx7.asm \
+	lib\msx\etc\fade.asm \
 	lib\msx\etc\msx2_palette.asm \
 	lib\msx\etc\vpokes.asm \
 	lib\msx\etc\spriteables.asm \

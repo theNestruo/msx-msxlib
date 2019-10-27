@@ -5,6 +5,10 @@
 	"editor.rulers": [
 		80
 	],
+	"files.associations": {
+		"*.makefile": "makefile",
+		"makefile.*": "makefile"
+	},
 	"files.exclude": {
 		"tniasm.out": true,
 		"tniasm.sym": true,

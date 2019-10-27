@@ -38,12 +38,23 @@ SPLASH_SCREENS_PACKED_TABLE:
 
 ; Timing and wait routines
 	include "lib/msx/io/timing.asm"
+; -----------------------------------------------------------------------------
 
+; -----------------------------------------------------------------------------
 ; VRAM routines (BIOS-based)
 ; NAMBTL and SPRATR buffer routines (BIOS-based)
-; NAMTBL buffer text routines
-; Logical coordinates sprite routines
 	include "lib/msx/io/vram.asm"
+
+; NAMTBL buffer text and block routines
+	include "lib/msx/io/print.asm"
+
+; Additional NAMBTL and SPRATR buffer based routines
+	include "lib/msx/etc/fade.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Logical coordinates sprite routines
+	include "lib/msx/io/sprites.asm"
 
 ; Logical-to-physical sprite coordinates offsets (pixels)
 	CFG_SPRITES_X_OFFSET:	equ -8
