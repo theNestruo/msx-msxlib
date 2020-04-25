@@ -40,7 +40,7 @@ Start getting real benefits of using MSXlib.
 		- [vram](ref/msx/io/vram-0.md) (1/2): VRAM routines (BIOS-based)
 		- [vram](ref/msx/io/vram-1.md) (2/2): NAMBTL and SPRATR buffer routines (BIOS-based)
 	- etc.
-		- [fade](reference/msx/etc/fade.md): Additional NAMBTL and SPRATR buffer based routines
+		- [fade](ref/msx/etc/fade.md): Additional NAMBTL and SPRATR buffer based routines
 <!--
 		- Timing
 		- Print
