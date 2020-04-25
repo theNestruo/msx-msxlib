@@ -1,5 +1,8 @@
 # Minimal MSXlib cartridge
 
+MSXlib will help you reduce the boilerplate code and obscure technical stuff, so you can simply focus on coding your game.
+
+
 The minimal example of MSXlib-based cartridge is as follows:
 ```
 	include "lib/msx/symbols.asm"
@@ -17,9 +20,6 @@ INIT:
 
 	include	"lib/msx/ram_end.asm"
 ```
-
-MSXlib will help you reduce the boilerplate code and obscure technical stuff, so you can simply focus on coding your game.
-
 
 The first included file (`lib/msx/symbols.asm`) does not add any code to your project, but defines symbolic constants for MSX BIOS entry points, MSX system variables, VRAM addresses and symbolic constants, PPI (Programmable Peripheral Interface) ports, and some special ASCII codes. This way, you can simply type `call ENASCR` (instead of the more obscure `call $0044`).
 
@@ -62,3 +62,8 @@ If your RAM requirements are 16kB instead of 8kB, define the following for the i
 	CFG_INIT_16KB_RAM:
 	include "lib/msx/cartridge.asm"
 ```
+
+
+## Source code examples
+
+- [Minimal example](../games/examples/00minimal/minimal.asm): A "Hello, World!" in SCREEN 2.

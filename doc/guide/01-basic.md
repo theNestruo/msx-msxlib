@@ -132,11 +132,13 @@ Automatic input read in the hook can be disabled. In that case, you need to manu
 	CFG_HOOK_DISABLE_AUTO_INPUT:
 ```
 
+<!--
 If automatic input is disabled, BIOS key interruption routine can be restored by additionally defining:
 ```
 	CFG_HOOK_DISABLE_AUTO_INPUT:
 	CFG_HOOK_KEEP_BIOS_KEYINT:
 ```
+-->
 
 When blitting the SPRATR buffer, flickering can be used to compensate the 5th sprite rule by defining:
 ```
@@ -153,3 +155,8 @@ The NAMTBL buffer fades in/out from left to right. To use a centered double fade
 ```
 	CFG_FADE_TYPE_DOUBLE:
 ```
+
+## Source code examples
+
+- [Basic example](../games/examples/01basic/basic.asm): Basics on VRAM initialization helpers, VRAM buffers in RAM, and Cursors and joystick input.
+- [Snake game example](../games/examples/02snake/snake.asm): A more elaborate example using wait routines, text printing and fading routines provided by MSXlib.

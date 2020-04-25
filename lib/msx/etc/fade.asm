@@ -62,7 +62,7 @@ ENDIF ; IFDEF CFG_FADE_TYPE_DOUBLE
 ; -----------------------------------------------------------------------------
 ; Clears just a column of the NAMTBL
 ; param a: the column to LDIRVM (0..31)
-; tocuhes af, b, de, hl
+; touches af, b, de, hl
 WRTVRM_NAMTBL_COLUMN_OUT:
 ; Calculates the destination address
 	ld	hl, NAMTBL

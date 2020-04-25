@@ -19,7 +19,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Reads joystick and keyboard as a bit map
-; Important: if CFG_HOOK_READ_INPUT is defined,
+; Important: if CFG_HOOK_DISABLE_AUTO_INPUT is not defined,
 ; this routine is automatically invoked during the H.TIMI hook;
 ; and there is no need to invoke this routine manually
 ; ret a / [input.edge]: bits that went from off to on (edge)
