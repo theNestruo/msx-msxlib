@@ -240,8 +240,8 @@ ENDIF
 	and	$0f
 ; Computes the new flickering offset
 	sub	CFG_SPRITES_NO_FLICKER
-	sla	a ; a (offset, bytes) = a *4
-	sla	a
+	add	a ; a (offset, bytes) = a *4
+	add	a
 	ld	hl, spratr_buffer.flicker_offset
 	add	[hl]
 ; Is the offset beyond the actual flickering size?

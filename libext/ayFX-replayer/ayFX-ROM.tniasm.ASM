@@ -1,5 +1,5 @@
 		; --- ayFX REPLAYER v1.31 ---
-		
+
 		CFG_REPLAYER_AYFX:	equ 1
 
 		; --- v1.31	Fixed bug on previous version, only PSG channel C worked
@@ -43,7 +43,7 @@ ayFX_INIT:	; ---     INIT A NEW ayFX STREAM     ---
 		jr	nc,@@INIT_END			; ...we can't init it
 @@CHECK_PRI:	; --- Check if the new priority is lower than the current one ---
 		; ---   Remember: 0 = highest priority, 15 = lowest priority  ---
-		ld	a,b				; a:=b (new ayFX stream index)
+		; ld	a,b				; a:=b (new ayFX stream index) ; (unnecessary? removed)
 		ld	a,[ayFX_PRIORITY]		; a:=Current ayFX stream priority
 		cp	c				; If new ayFX stream priority is lower than current one...
 		ld	a,1				; a:=1 (error 1: A sample with higher priority is being played)

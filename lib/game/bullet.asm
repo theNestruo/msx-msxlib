@@ -12,8 +12,8 @@
 	BULLET_BOX_X_OFFSET:	equ -(CFG_BULLET_WIDTH / 2)
 	BULLET_BOX_Y_OFFSET:	equ -CFG_BULLET_HEIGHT
 
-	MASK_BULLET_SPEED:	equ $fe ; speed (in pixels / frame)
-	MASK_BULLET_DIRECTION:	equ $81 ; movement direction
+	MASK_BULLET_SPEED:	equ $fe ; speed (in signed pixels / frame)
+	MASK_BULLET_DIRECTION:	equ $81 ; movement direction (sign + direction)
 
 	BULLET_DIR_UD:		equ $00
 	BULLET_DIR_LR:		equ $01
@@ -82,6 +82,7 @@ UPDATE_BULLETS:
 ; For each bullet in the array
 	ld	ix, bullets
 	ld	b, CFG_BULLET_COUNT
+	ld	de, bullet.SIZE
 .LOOP:
 ; Is the bullet slot empty?
 	xor	a ; (marker value: y = 0)
@@ -94,22 +95,27 @@ UPDATE_BULLETS:
 	call	.MOVE
 ; Has the bullet hit a wall?
 	bit	BIT_WORLD_SOLID, a
+IFDEF CFG_BULLET_DYING_PATTERN
+	jr	nz, .REMOVE ; yes
+ELSE
 	jp	z, .PUT_SPRITE ; no
 ; yes: Removes the bullet (for the next frame)
 	xor	a ; (marker value: y = 0)
 	ld	[ix + bullet.y], a
+ENDIF ; IFDEF CFG_BULLET_DYING_PATTERN
 ; Puts the bullet sprite
 .PUT_SPRITE:
 	ld	e, [ix + bullet.y]
-	ld	d, [ix + bullet.x]
 	ld	c, [ix + bullet.pattern]
+.PUT_SPRITE_Y_PATTERN_OK:
+	ld	d, [ix + bullet.x]
 	ld	b, [ix + bullet.color]
 	call	PUT_SPRITE
 
 ; Skips to the next bullet
 	pop	bc ; restores counter
+	ld	de, bullet.SIZE ; restores bullet size
 .SKIP:
-	ld	de, bullet.SIZE
 	add	ix, de
 	djnz	.LOOP
 	ret
@@ -147,8 +153,6 @@ UPDATE_BULLETS:
 	; jp	.UP ; falls through
 
 .UP:
-	ld	b, b
-	jr	$+2
 ; Moves the bullet up
 	add	[ix + bullet.y]
 	ld	[ix + bullet.y], a
@@ -167,6 +171,25 @@ UPDATE_BULLETS:
 ; Has the bullet hit a wall?
 	xor	a
 	jp	GET_BULLET_H_TILE_FLAGS
+
+
+IFDEF CFG_BULLET_DYING_PATTERN
+.REMOVE:
+; Prepares the last sprite
+IF CFG_ENEMY_HEIGHT = CFG_BULLET_HEIGHT
+	ld	e, [ix + bullet.y]
+ELSE
+	ld	a, [ix + bullet.y]
+	add	(CFG_ENEMY_HEIGHT - CFG_BULLET_HEIGHT) / 2
+	ld	e, a
+ENDIF ; IF CFG_ENEMY_HEIGHT = CFG_BULLET_HEIGHT
+; Removes the bullet (for the next frame)
+	xor	a ; (marker value: y = 0)
+	ld	[ix + bullet.y], a
+; Puts the bullet sprite
+	ld	c, CFG_BULLET_DYING_PATTERN
+	jp	.PUT_SPRITE_Y_PATTERN_OK
+ENDIF ; IFDEF CFG_BULLET_DYING_PATTERN
 ; -----------------------------------------------------------------------------
 
 ;

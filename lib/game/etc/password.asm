@@ -103,8 +103,9 @@ ENCODE_PASSWORD:
 DECODE_PASSWORD:
 ; Verifies the checksum
 	ld	de, password
-	ld	b, PASSWORD_SIZE -1
-	ld	c, PASSWORD_SALT ; (start with the salt)
+	; ld	b, PASSWORD_SIZE -1
+	; ld	c, PASSWORD_SALT ; (start with the salt)
+	ld	bc, PASSWORD_SALT << 8 + (PASSWORD_SIZE -1)
 .CHECKSUM_LOOP:
 ; Reads and adds the digit
 	call	.READ_DIGIT
@@ -177,7 +178,7 @@ INPUT_HEXADECIMAL_DIGIT:
 IFEXIST READ_KEYBOARD
 	push	hl ; preserves address
 	ld	bc, $0400 ; (only first 4 rows)
-	call	READ_KEYBOARD ; .BC_OK
+	call	READ_KEYBOARD.BC_OK
 	pop	hl ; restores address
 ENDIF ; IFEXIST READ_KEYBOARD
 .KEYBOARD_READ:

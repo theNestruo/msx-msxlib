@@ -70,7 +70,7 @@ CHECK_PLAYER_BULLETS_COLLISIONS:
 ENDIF
 
 ; -----------------------------------------------------------------------------
-; Checks collision between the player and one enemy
+; Checks collision between the player and one enemy or bullet
 ; param ix: pointer to the enemy
 ; param h: vertical maximum distance
 ; param l: horizontal maximum distance
@@ -80,11 +80,12 @@ ENDIF
 ; touches: af
 CHECK_PLAYER_COLLISION:
 ; Overlapping x?
-	call	.X
+	call	.X ; (can be inlined for performance reasons)
 	ret	nc ; no
 ; Overlapping y?
 	; jr	.Y ; falls through
 
+; Checks overlapping y between the player and one enemy or bullet
 .Y:
 	ld	a, [player.y]
 	sub	[ix + enemy.y]
@@ -96,6 +97,7 @@ CHECK_PLAYER_COLLISION:
 	cp	h ; (vertical maximum distance)
 	ret	; c/nc (yes/no)
 
+; Checks overlapping x between the player and one enemy or bullet
 .X:
 	ld	a, [player.x]
 	sub	[ix + enemy.x]

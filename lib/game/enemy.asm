@@ -100,13 +100,14 @@ UPDATE_ENEMIES:
 ; For each enemy in the array
 	ld	ix, enemies
 	ld	b, CFG_ENEMY_COUNT
+	ld	de, enemy.SIZE
 .LOOP:
-	push	bc ; preserves counter in b
 ; Is the enemy slot empty?
 	xor	a ; (marker value: y = 0)
 	cp	[ix + enemy.y]
-	jp	z, .NEXT ; yes
+	jp	z, .SKIP ; yes
 ; no: update enemy
+	push	bc ; preserves counter in b
 
 IFEXIST KILL_ENEMY
 ; Reads the tile flags at the enemy coordinates
@@ -144,10 +145,11 @@ ENDIF ; IFEXIST KILL_ENEMY
 	call	JP_HL
 
 ; Continues with the next enemy
-.NEXT:
-	ld	bc, enemy.SIZE
-	add	ix, bc
 	pop	bc ; restores counter
+	ld	de, enemy.SIZE ; restores enemy size
+; Skips with the next enemy
+.SKIP:
+	add	ix, de
 	djnz	.LOOP
 	ret
 ; -----------------------------------------------------------------------------

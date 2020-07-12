@@ -13,9 +13,10 @@ IFEXIST CFG_SOUND_ENEMY_KILLED
 	ld	c, 7 ; default-high priority
 	call	ayFX_INIT
 ENDIF
+.NO_SOUND:
 ; Makes the enemy non-lethal and non-solid
 	ld	a, [ix + enemy.flags]
-	and	($ff AND NOT (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH))
+	and	($ff XOR (FLAG_ENEMY_LETHAL OR FLAG_ENEMY_SOLID OR FLAG_ENEMY_DEATH))
 	ld	[ix + enemy.flags], a
 ; Sets the enemy the behaviour when killed
 	ld	hl, ENEMY_TYPE_KILLED

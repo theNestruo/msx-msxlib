@@ -276,13 +276,14 @@ SET_PLAYER_DYING:
 	ret	z ; yes (do nothing)
 ; no: Sets the player state
 	ld	a, PLAYER_STATE_DYING
-	call	SET_PLAYER_STATE
 IFEXIST CFG_SOUND_PLAYER_KILLED
+	call	SET_PLAYER_STATE
 	ld	a, CFG_SOUND_PLAYER_KILLED
 	ld	c, 0 ; highest priority
-	call	ayFX_INIT
+	jp	ayFX_INIT
+ELSE
+	jp	SET_PLAYER_STATE
 ENDIF
-	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

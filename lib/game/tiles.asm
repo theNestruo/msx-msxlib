@@ -23,9 +23,10 @@ COORDS_TO_OFFSET:
 	add	hl, hl
 ; x part: a = x / 8
 	ld	a, d
-	srl	a
-	srl	a
-	srl	a
+	rrca
+	rrca
+	rrca
+	and	$1f
 ; hl += a
 	add	l
 	ld	l, a
@@ -99,8 +100,7 @@ IFDEF CFG_TILES_VALUE_BORDER
 	ld	a, d	; (0..7,   8..247, 248..255)
 	add	8	; (8..15, 16..255,   0..7)
 	cp	16	; (  c,     nc,       c)
-	ld	a, CFG_TILES_VALUE_BORDER
-	ret	c ; yes
+	jr	c, .BORDER ; yes
 ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 
 ; no: Checks off-screen
@@ -116,6 +116,13 @@ ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 ; reads the tile index (value)
 	ld	a, [hl]
 	ret
+
+IFDEF CFG_TILES_VALUE_BORDER
+.BORDER:
+; Screen border
+	ld	a, CFG_TILES_VALUE_BORDER
+	ret
+ENDIF ; IFDEF CFG_TILES_VALUE_BORDER
 
 .OFF_SCREEN:
 ; Is over or under visible screen?
@@ -143,9 +150,10 @@ GET_FIRST_TILE_FLAGS:
 	add	b	;     ... +height
 	dec	a	;     ... -1
 ; Calculates how many tiles to check
-	srl	a ; tiles = pixels / 8
-	srl	a
-	srl	a
+	rrca	; tiles = pixels / 8
+	rrca
+	rrca
+	and	$1f
 	inc	a ;	... +1
 	ld	b, a ; number of tiles in b
 
