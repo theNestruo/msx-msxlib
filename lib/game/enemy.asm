@@ -35,7 +35,7 @@ RESET_ENEMIES:
 	ld	hl, enemies
 	ld	de, enemies +1
 	ld	bc, enemies.SIZE -1
-	ld	[hl], 0
+	ld	[hl], b ; b = $00
 	ldir
 	ret
 ; -----------------------------------------------------------------------------

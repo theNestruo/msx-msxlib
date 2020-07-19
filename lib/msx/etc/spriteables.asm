@@ -29,7 +29,7 @@ RESET_SPRITEABLES:
 	ld	hl, spriteables
 	ld	de, spriteables +1
 	ld	bc, spriteables.SIZE -1
-	ld	[hl], 0
+	ld	[hl], b ; b = $00
 	ldir
 	ret
 ; -----------------------------------------------------------------------------
@@ -50,8 +50,7 @@ INIT_SPRITEABLE:
 	ld	c, SPRITEABLE_SIZE
 	call	ADD_ARRAY_IX
 ; Sets the initial status
-	xor	a ; 0 = SPRITEABLE_IDLE
-	ld	[ix + _SPRITEABLE_STATUS], a
+	ld	[ix + _SPRITEABLE_STATUS], 0 ; 0 = SPRITEABLE_IDLE
 ; Saves the NAMTBL offset
 	ld	[ix + _SPRITEABLE_OFFSET_L], l
 	ld	[ix + _SPRITEABLE_OFFSET_H], h
@@ -440,7 +439,7 @@ VPOKE_SPRITEABLE_BACKGROUND:
 ; ret hl: NAMTBL address
 VPOKE_SPRITEABLE_FIRST:
 ; Translates NAMTBL offset into NAMTBL address
-	ld	de, +NAMTBL
+	ld	de, NAMTBL
 	add	hl, de
 ; ------VVVV----falls through--------------------------------------------------
 

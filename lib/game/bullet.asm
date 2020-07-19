@@ -26,7 +26,7 @@ RESET_BULLETS:
 	ld	hl, bullets
 	ld	de, bullets +1
 	ld	bc, bullets.SIZE -1
-	ld	[hl], 0
+	ld	[hl], b ; b = $00
 	ldir
 	ret
 ; -----------------------------------------------------------------------------
@@ -184,8 +184,7 @@ ELSE
 	ld	e, a
 ENDIF ; IF CFG_ENEMY_HEIGHT = CFG_BULLET_HEIGHT
 ; Removes the bullet (for the next frame)
-	xor	a ; (marker value: y = 0)
-	ld	[ix + bullet.y], a
+	ld	[ix + bullet.y], 0 ; (marker value: y = 0)
 ; Puts the bullet sprite
 	ld	c, CFG_BULLET_DYING_PATTERN
 	jp	.PUT_SPRITE_Y_PATTERN_OK
