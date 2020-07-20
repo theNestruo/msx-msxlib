@@ -23,7 +23,7 @@ MSXlib will help you reduce the boilerplate code and obscure technical stuff, so
 
 ### 2. [Generic MSXlib cartridge](guide/01-basic.md)
 
-Start getting real benefits of using MSXlib.
+Start benefiting from MSXlib.
 
 - [Basic example](../games/examples/01basic/basic.asm): Basics on VRAM initialization helpers, VRAM buffers in RAM, and Cursors and joystick input.
 - [Snake game example](../games/examples/02snake/snake.asm): A more elaborate example using wait routines, text printing and fading routines provided by MSXlib.

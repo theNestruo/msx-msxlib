@@ -1,18 +1,19 @@
 # Generic MSXlib cartridge
 
-The minimal MSXlib cartridge described in the previous section reduces the boilerplate code and lets you focus on your code, but doesn't provide any help with that code. To actually start using MSXlib, use the following stub:
+The minimal MSXlib cartridge described in the previous section reduces the boilerplate code and lets you focus on your code, but doesn't provide any help with that code. To actually start benefiting of using MSXlib, use the following stub:
 ```
 	include "lib/rom-default.asm"
 
 INIT:
-; YOUR CODE (ROM) GOES HERE
-
+	;
+	; YOUR CODE (ROM) GOES HERE
+	;
 	include	"lib/msx/rom_end.asm"
 
 	include	"lib/ram.asm"
-
-; YOUR VARIABLES (RAM) GO HERE
-
+	;
+	; YOUR VARIABLES (RAM) GO HERE
+	;
 	include	"lib/msx/ram_end.asm"
 ```
 
@@ -133,10 +134,9 @@ Automatic input read in the hook can be disabled. In that case, you need to manu
 ```
 
 <!--
-If automatic input is disabled, BIOS key interruption routine can be restored by additionally defining:
+Automatic read of the keyboard level and edge values can be enabled:
 ```
-	CFG_HOOK_DISABLE_AUTO_INPUT:
-	CFG_HOOK_KEEP_BIOS_KEYINT:
+	CFG_HOOK_ENABLE_AUTO_KEYBOARD:
 ```
 -->
 

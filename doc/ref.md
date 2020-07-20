@@ -1,5 +1,9 @@
 # Reference documentation
 
+## Asm
+
+- [asm](ref/asm/asm.md): Generic Z80 assembly convenience routines
+
 ## MSX
 
 - [cartridge](ref/msx/cartridge.md): MSX cartridge (ROM) header, entry point and initialization
