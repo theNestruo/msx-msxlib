@@ -3,18 +3,28 @@
 # current game name
 #
 
-EXAMPLES_PATH=\
-	games\examples
+GAME=template
 
-SHARED_DATAS=\
-	$(EXAMPLES_PATH)\shared\charset.pcx.chr \
-	$(EXAMPLES_PATH)\shared\charset.pcx.chr.$(PACK_EXTENSION) \
-	$(EXAMPLES_PATH)\shared\charset.pcx.clr \
-	$(EXAMPLES_PATH)\shared\charset.pcx.clr.$(PACK_EXTENSION) \
-	$(EXAMPLES_PATH)\shared\sprites.pcx.spr \
-	$(EXAMPLES_PATH)\shared\sprites.pcx.spr.$(PACK_EXTENSION) \
-	$(EXAMPLES_PATH)\shared\screen.tmx.bin \
-	$(EXAMPLES_PATH)\shared\screen.tmx.bin.$(PACK_EXTENSION)
+GAME_PATH=\
+	games\$(GAME)
+
+SRCS=\
+	$(GAME_PATH)\$(GAME).asm \
+	splash\msxlib.bin.$(PACK_EXTENSION) \
+
+DATAS=
+# DATAS=\
+# 	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
+# 	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION) \
+# 	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION) \
+# 	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
+
+DATAS_INTERMEDIATE=
+# DATAS_INTERMEDIATE=\
+# 	$(GAME_PATH)\charset.pcx.chr \
+# 	$(GAME_PATH)\charset.pcx.clr \
+# 	$(GAME_PATH)\sprites.pcx.spr \
+# 	$(GAME_PATH)\screen.tmx.bin
 
 #
 # tools
@@ -50,15 +60,14 @@ RENAME=cmd /c ren
 # paths and file lists
 #
 
-ROMS=\
-	$(EXAMPLES_PATH)\00minimal\minimal.rom \
-	$(EXAMPLES_PATH)\01basic\basic.rom \
-	$(EXAMPLES_PATH)\02snake\snake.rom
+ROM=\
+	roms\$(GAME).rom
 
-SYMS=\
-	$(EXAMPLES_PATH)\00minimal\minimal.sym \
-	$(EXAMPLES_PATH)\01basic\basic.sym \
-	$(EXAMPLES_PATH)\02snake\snake.sym
+ROM_INTERMEDIATE=\
+	$(GAME_PATH)\$(GAME).rom
+
+SYM_INTERMEDIATE=\
+	$(GAME_PATH)\$(GAME).sym
 
 SRCS_MSXLIB=\
 	lib\rom-default.asm \
@@ -95,6 +104,7 @@ SRCS_MSXLIB=\
 	lib\game\ram.asm \
 	lib\game\platformer\platformer_player.asm \
 	lib\game\platformer\platformer_enemy.asm \
+	lib\game\platformer\platformer_enemy_default.asm \
 	lib\game\etc\password.asm \
 	lib\game\etc\ram.asm
 
@@ -116,39 +126,42 @@ SRCS_LIBEXT=\
 default: compile
 
 clean:
-	$(REMOVE) $(ROMS)
-	$(REMOVE) $(SYMS) tniasm.sym tniasm.tmp
+	$(REMOVE) $(ROM_INTERMEDIATE)
+	$(REMOVE) $(SYM_INTERMEDIATE) tniasm.sym tniasm.tmp
 
 cleandata:
-	$(REMOVE) $(SHARED_DATAS)
+	$(REMOVE) $(DATAS) $(DATAS_INTERMEDIATE)
 
 cleanall: clean cleandata
 
-compile: $(ROMS)
+compile: $(ROM_INTERMEDIATE)
 
-# test: $(ROMS)
-# 	$(EMULATOR) $<
+test: $(ROM_INTERMEDIATE)
+	$(EMULATOR) $<
 
-# debug: $(ROMS) $(SYMS)
-# 	$(DEBUGGER) $<
+deploy: $(ROM)
 
-# deploy: $(ROM)
+# secondary targets
+.secondary: $(DATAS_INTERMEDIATE)
 
 #
 # main targets
 #
 
-$(EXAMPLES_PATH)\00minimal\minimal.rom: $(EXAMPLES_PATH)\00minimal\minimal.asm $(SRCS_MSXLIB)
-	$(ASM) $< $@
-#	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
+$(GAME_PATH):
+	$(MKDIR) $@
+	$(COPY) $(TEMPLATE_PATH) $@
+	$(RENAME) $(GAME_PATH)\template.asm $(GAME).asm
 
-$(EXAMPLES_PATH)\01basic\basic.rom: $(EXAMPLES_PATH)\01basic\basic.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
+$(ROM_INTERMEDIATE) tniasm.sym: $(SRCS) $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(GFXS) $(SPRS) $(DATAS)
 	$(ASM) $< $@
-#	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
+	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
 
-$(EXAMPLES_PATH)\02snake\snake.rom: $(EXAMPLES_PATH)\02snake\snake.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
-	$(ASM) $< $@
-#	cmd /c findstr /b /i "dbg_" tniasm.sym | sort
+$(SYM_INTERMEDIATE): tniasm.sym
+	$(COPY) $< $@
+
+$(ROM): $(ROM_INTERMEDIATE)
+	$(COPY) $< $@
 
 #
 # GFXs targets
@@ -179,7 +192,7 @@ $(EXAMPLES_PATH)\02snake\snake.rom: $(EXAMPLES_PATH)\02snake\snake.asm $(SRCS_MS
 	$(PACK) $<
 
 %.pcx.spr: %.pcx
-	$(PCX2SPR) $<
+	$(PCX2SPR) -hl $<
 
 #
 # BINs targets
