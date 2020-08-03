@@ -77,15 +77,16 @@ WAIT_TRIGGER_FRAMES_A:
 ; ret z: if the pause timed out
 ; touches: a, bc, de, hl
 WAIT_TRIGGER_FRAMES:
+IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 	push	bc ; preserves counter
 	halt
-IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 	call	READ_INPUT
+	pop	bc ; restores counter
 ELSE
+	halt
 	ld	a, [input.edge]
 ENDIF
 	bit	BIT_TRIGGER_A, a
-	pop	bc ; restores counter
 	ret	nz ; trigger
 	djnz	WAIT_TRIGGER_FRAMES
 	ret	; no trigger (z)

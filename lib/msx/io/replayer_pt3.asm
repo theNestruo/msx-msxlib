@@ -7,9 +7,11 @@
 
 ; -----------------------------------------------------------------------------
 ; Initializes the replayer
-REPLAYER.RESET:	; equ REPLAYER.STOP
+REPLAYER.RESET:
 IFEXIST ayFX_SETUP
+; Initializes the PT3 replayer
 	call	REPLAYER.STOP
+; Initializes the ayFX replayer
 	ld	hl, SOUND_BANK
 	jp	ayFX_SETUP
 ELSE ; IFEXIST ayFX_SETUP

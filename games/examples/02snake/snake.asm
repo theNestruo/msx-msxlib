@@ -420,8 +420,7 @@ PRINT_SNAKE:
 	call	GET_HL_A_WORD	; hl = snake_buffer[head_index]
 
 ; Prints the head of the snake
-	ld	a, SNAKE_CHAR
-	ld	[hl], a
+	ld	[hl], SNAKE_CHAR
 
 ; Gets the NAMTBL pointer of the tail of the snake
 	ld	hl, snake_buffer
@@ -478,7 +477,7 @@ INC_SCORE:
 	ld	hl, score + 1
 	ld	a, [hl]
 ; Increases 1 in BCD
-	add	$01
+	inc	a ; add	$01
 	daa
 ; Saves the lower byte of the score
 	ld	[hl], a
@@ -488,7 +487,7 @@ INC_SCORE:
 	dec	hl ; hl = score
 	ld	a, [hl]
 ; Increases 1 in BCD
-	add	$01
+	inc	a ; add	$01
 	daa
 ; Saves the higher byte of the score
 	ld	[hl], a
