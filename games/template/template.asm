@@ -67,7 +67,7 @@
 
 ; "vpoke" routines (deferred WRTVRMs routines)
 ; Spriteables routines (2x2 chars that eventually become a sprite)
-	include "lib/msx/vram_x.asm"
+	include "lib/msx/etc/vpokes.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -192,7 +192,7 @@ PLAYER_DY_TABLE:
 	CFG_PLAYER_JUMP_INPUT:	equ BIT_TRIGGER_A
 
 ; Default player control routines (platformer game)
-	include	"lib/game/player_x.asm"
+	include	"lib/game/platformer/platformer_player.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -223,6 +223,7 @@ PLAYER_DY_TABLE:
 ; Convenience enemy state handlers (generic)
 ; Enemy-tile helper routines
 	include	"lib/game/enemy.asm"
+	include	"lib/game/enemy_default.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -246,7 +247,8 @@ PLAYER_DY_TABLE:
 ; Default enemy types (platformer game)
 ; Convenience enemy state handlers (platformer game)
 ; Convenience enemy helper routines (platform games)
-	include	"lib/game/enemy_x.asm"
+	include	"lib/game/platformer/platformer_enemy.asm"
+	include	"lib/game/platformer/platformer_enemy_default.asm"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -279,7 +281,7 @@ PLAYER_DY_TABLE:
 
 ; -----------------------------------------------------------------------------
 ; Game entry point
-MAIN_INIT:
+INIT:
 ; Charset (1/2: CHRTBL)
 	ld	hl, CHARSET_PACKED.CHR
 	call	UNPACK_LDIRVM_CHRTBL
@@ -463,7 +465,7 @@ ENDIF
 	and	$ff XOR FLAGS_STATE
 	cp	PLAYER_STATE_FINISH
 	jr	z, STAGE_OVER ; stage over
-	cp	PLAYER_STATE_DEAD
+	cp	PLAYER_STATE_DYING
 	jr	z, PLAYER_OVER ; player is dead
 
 ; (this should never happen)
@@ -822,14 +824,14 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 ; (for debugging purposes only)
-	bytes_rom_MSXlib_code:	equ MAIN_INIT - ROM_START
-	bytes_rom_game_code:	equ TXT_STAGE - MAIN_INIT
+	bytes_rom_MSXlib_code:	equ INIT - CARTRIDGE_HEADER
+	bytes_rom_game_code:	equ TXT_STAGE - INIT
 	bytes_rom_game_data:	equ PADDING - TXT_STAGE
 
 	bytes_ram_MSXlib:	equ globals - ram_start
 	bytes_ram_game:		equ ram_end - globals
 
-	bytes_total_rom:	equ PADDING - ROM_START
+	bytes_total_rom:	equ PADDING - CARTRIDGE_HEADER
 	bytes_total_ram:	equ ram_end - ram_start
 
 	bytes_free_rom:		equ PADDING.SIZE
