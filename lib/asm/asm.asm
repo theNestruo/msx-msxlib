@@ -6,20 +6,32 @@
 ; -----------------------------------------------------------------------------
 ; Emulates the instruction "hl += 2*a" (in C syntax)
 ; param hl: operand
-; param a: usigned operand
-ADD_HL_A_A:
+; param a: usigned operand (0..127)
+ADD_HL_2A:
 	add	a
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Emulates the instruction "add hl, a" (or "hl += a" in C syntax)
 ; param hl: operand
-; param a: usigned operand
+; param a: usigned operand (0..255)
 ADD_HL_A:
 	add	l
 	ld	l, a
 	ret	nc
 	inc	h
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Emulates the instruction "add de, a" (or "de += a" in C syntax)
+; param de: operand
+; param a: usigned operand
+ADD_DE_A:
+	add	e
+	ld	e, a
+	ret	nc
+	inc	d
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -103,6 +115,20 @@ JP_HL_INDIRECT:
 ; param hl: address
 JP_HL:
 	jp	[hl]
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Simply "jp [ix]", but can be used to emulate the instruction "call [ix]"
+; param ix: address
+JP_IX:
+	jp	[ix]
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Simply "jp [iy]", but can be used to emulate the instruction "call [iy]"
+; param iy: address
+JP_IY:
+	jp	[iy]
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

@@ -90,7 +90,8 @@ SET_PLAYER_FLOOR:
 	and	$f8 ; (aligned to char)
 	ld	[hl], a
 ; Sets the player state
-	ld	a, PLAYER_STATE_FLOOR
+	; ld	a, PLAYER_STATE_FLOOR
+	xor	a ; (optimization; assumes PLAYER_STATE_FLOOR = 0)
 	jp	SET_PLAYER_STATE
 ; -----------------------------------------------------------------------------
 
@@ -354,7 +355,8 @@ MOVE_PLAYER_LR_ANIMATE:
 IFEXIST ON_PLAYER_PUSH
 .RESET_FLOOR:
 ; Resets floor state (in case ON_PLAYER_PUSH is defined)
-	ld	a, PLAYER_STATE_FLOOR
+	; ld	a, PLAYER_STATE_FLOOR
+	xor	a ; (optimization; assumes PLAYER_STATE_FLOOR = 0)
 	ld	b, $ff XOR FLAGS_STATE
 	jp	SET_PLAYER_STATE.MASK
 ELSE
@@ -372,8 +374,10 @@ IFEXIST ON_PLAYER_PUSH.LEFT
 ENDIF
 
 ; Is there solid left to the player?
-	bit	BIT_WORLD_SOLID, a
-	jp	nz, .RESET_ANIMATION ; yes
+	; bit	BIT_WORLD_SOLID, a
+	; jp	nz, .RESET_ANIMATION ; yes
+	rra	; (optimization; assumes BIT_WORLD_SOLID = 0)
+	jr	c, .RESET_ANIMATION
 
 ; no
 IFEXIST ON_PLAYER_PUSH
@@ -394,8 +398,10 @@ IFEXIST ON_PLAYER_PUSH.RIGHT
 ENDIF
 
 ; Is there solid right to the player?
-	bit	BIT_WORLD_SOLID, a
-	jp	nz, .RESET_ANIMATION ; yes
+	; bit	BIT_WORLD_SOLID, a
+	; jp	nz, .RESET_ANIMATION ; yes
+	rra	; (optimization; assumes BIT_WORLD_SOLID = 0)
+	jr	c, .RESET_ANIMATION
 
 ; no
 IFEXIST ON_PLAYER_PUSH
