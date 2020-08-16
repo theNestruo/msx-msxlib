@@ -12,11 +12,14 @@
 	BULLET_BOX_X_OFFSET:	equ -(CFG_BULLET_WIDTH / 2)
 	BULLET_BOX_Y_OFFSET:	equ -CFG_BULLET_HEIGHT
 
-	MASK_BULLET_SPEED:	equ $fe ; speed (in signed pixels / frame)
-	MASK_BULLET_DIRECTION:	equ $81 ; movement direction (sign + direction)
+	BIT_BULLET_DYING:	equ 0 ; bit set for dying bullet
+
+	MASK_BULLET_SPEED:	equ $fc ; speed (in signed pixels / frame)
+	MASK_BULLET_DIRECTION:	equ $82 ; movement direction (sign + direction)
+	MASK_BULLET_DYING:	equ ($01 << BIT_BULLET_DYING) ; flag for dying bullet
 
 	BULLET_DIR_UD:		equ $00
-	BULLET_DIR_LR:		equ $01
+	BULLET_DIR_LR:		equ $02
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -87,43 +90,90 @@ UPDATE_BULLETS:
 ; Is the bullet slot empty?
 	xor	a ; (marker value: y = 0)
 	cp	[ix + bullet.y]
-	jp	z, .SKIP ; yes
+	jp	z, .FAST_SKIP ; yes
 ; no: Updates the bullet
 	push	bc ; preserves counter in b
 
+; Checks for dying bullet animation
+IFDEF CFG_BULLET_DYING_PATTERN
+; Is the dying bullet animation?
+	ld	a, [ix + bullet.type] ; (loaded to be reused in MOVE_BULLET.A_OK)
+	bit	BIT_BULLET_DYING, a
+	sra	a ; flag for dying bullet in carry flag
+	jp	nc, .NOT_DYING ; no
+; yes: Decreases the frame counter
+	dec	a
+	jp	z, .REMOVE ; zero: removes the bullet
+; not zero: saves frame counter
+	scf	; (restores dying bullet flag)
+	rla
+	ld	[ix + bullet.type], a
+	jp	.PUT_SPRITE
+
+; Removes the bullet
+.REMOVE:
+	; xor	a ; (unnecessary)
+	ld	[ix + bullet.y], a
+	jp	.SKIP
+
 ; Moves the bullet and checks for collision
-	call	.MOVE
+.NOT_DYING:
+	call	MOVE_BULLET.A_OK
+
+ELSE
+; Moves the bullet and checks for collision
+	call	MOVE_BULLET
+ENDIF ; IFDEF CFG_BULLET_DYING_PATTERN
+
 ; Has the bullet hit a wall?
 	bit	BIT_WORLD_SOLID, a
-IFDEF CFG_BULLET_DYING_PATTERN
-	jr	nz, .REMOVE ; yes
-ELSE
 	jp	z, .PUT_SPRITE ; no
+IFDEF CFG_BULLET_DYING_PATTERN
+; yes: Prepares the dying bullet animation
+	ld	a, CFG_BULLET_DYING_PAUSE << 1 OR MASK_BULLET_DYING
+	ld	[ix + bullet.type], a
+; Prepares the sprite
+IF CFG_ENEMY_HEIGHT != CFG_BULLET_HEIGHT
+	ld	a, [ix + bullet.y]
+	add	(CFG_ENEMY_HEIGHT - CFG_BULLET_HEIGHT) / 2
+	ld	[ix + bullet.y], a
+ENDIF ; IF CFG_ENEMY_HEIGHT = CFG_BULLET_HEIGHT
+	ld	[ix + bullet.pattern], CFG_BULLET_DYING_PATTERN
+
+ELSE
 ; yes: Removes the bullet (for the next frame)
 	xor	a ; (marker value: y = 0)
 	ld	[ix + bullet.y], a
+	jp	.SKIP
 ENDIF ; IFDEF CFG_BULLET_DYING_PATTERN
+
 ; Puts the bullet sprite
 .PUT_SPRITE:
 	ld	e, [ix + bullet.y]
 	ld	c, [ix + bullet.pattern]
-.PUT_SPRITE_Y_PATTERN_OK:
 	ld	d, [ix + bullet.x]
 	ld	b, [ix + bullet.color]
 	call	PUT_SPRITE
 
+.SKIP:
 ; Skips to the next bullet
 	pop	bc ; restores counter
 	ld	de, bullet.SIZE ; restores bullet size
-.SKIP:
+.FAST_SKIP:
 	add	ix, de
 	djnz	.LOOP
 	ret
+; -----------------------------------------------------------------------------
 
-
-.MOVE:
+; -----------------------------------------------------------------------------
+; Updates a bullet: moves the bullet
+; param ix: pointer to the current bullet
+; ret a: OR-ed tile flags
+MOVE_BULLET:
 ; Determines bullet direction
 	ld	a, [ix + bullet.type]
+	sra	a
+.A_OK:
 	sra	a ; UD/LR in carry flag, bullet speed in a
 	jr	nc, .UP_OR_DOWN ; 0 => BULLET_DIR_UD
 ; 1 => BULLET_DIR_LR
@@ -171,24 +221,6 @@ ENDIF ; IFDEF CFG_BULLET_DYING_PATTERN
 ; Has the bullet hit a wall?
 	xor	a
 	jp	GET_BULLET_H_TILE_FLAGS
-
-
-IFDEF CFG_BULLET_DYING_PATTERN
-.REMOVE:
-; Prepares the last sprite
-IF CFG_ENEMY_HEIGHT = CFG_BULLET_HEIGHT
-	ld	e, [ix + bullet.y]
-ELSE
-	ld	a, [ix + bullet.y]
-	add	(CFG_ENEMY_HEIGHT - CFG_BULLET_HEIGHT) / 2
-	ld	e, a
-ENDIF ; IF CFG_ENEMY_HEIGHT = CFG_BULLET_HEIGHT
-; Removes the bullet (for the next frame)
-	ld	[ix + bullet.y], 0 ; (marker value: y = 0)
-; Puts the bullet sprite
-	ld	c, CFG_BULLET_DYING_PATTERN
-	jp	.PUT_SPRITE_Y_PATTERN_OK
-ENDIF ; IFDEF CFG_BULLET_DYING_PATTERN
 ; -----------------------------------------------------------------------------
 
 ;
