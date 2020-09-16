@@ -37,18 +37,6 @@ COORDS_TO_OFFSET:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Translates NAMTBL buffer pointers to pixel coordinates
-; param hl: NAMTBL buffer pointer
-; ret hl: NAMTBL offset
-; ret de: pixel coordinates (y, x) (CAUTION: order is reversed)
-; touches: a, hl
-NAMTBL_POINTER_TO_COORDS:
-	ld	a, (($100 - (namtbl_buffer >> 8)) AND $FF) ; (namtbl_buffer is aligned to $xx00)
-	add	h
-	ex	de, hl ; de = hl -namtbl_buffer
-; ------VVVV----falls through--------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Translates NAMTBL offsets to pixel coordinates
 ; param de: NAMTBL offset
 ; ret de: pixel coordinates (y, x) (CAUTION: order is reversed)
@@ -72,11 +60,15 @@ OFFSET_TO_COORDS:
 ; -----------------------------------------------------------------------------
 ; Translates NAMTBL offsets to logical coordinates
 ; (i.e: below the center of the character pointed by NAMTBL offset)
-; param de: NAMTBL offset
+; param hl/de: NAMTBL offset
 ; ret de: pixel coordinates (x, y)
 ; touches: a
 NAMTBL_POINTER_TO_LOGICAL_COORDS:
-	call	NAMTBL_POINTER_TO_COORDS
+; Translates NAMTBL offsets to pixel coordinates
+.HL:
+	ex	de, hl
+.DE:
+	call	OFFSET_TO_COORDS
 ; Translates into logical coordinates (also reverses (y,x) order)
 	ex	de, hl ; coordinates in hl
 	ld	a, l ; (x += 4px, half tile right)

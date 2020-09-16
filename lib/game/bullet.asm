@@ -67,7 +67,7 @@ INIT_BULLET_FROM_ENEMY:
 	inc	de
 ; .x
 	ld	a, [hl] ; [de++] = [hl++] + b (x offset)
-	inc	hl
+	; inc	hl ; (unused)
 	add	b
 	ld	[de], a
 	inc	de
@@ -130,8 +130,7 @@ ENDIF ; IFDEF CFG_BULLET_DYING_PATTERN
 	jp	z, .PUT_SPRITE ; no
 IFDEF CFG_BULLET_DYING_PATTERN
 ; yes: Prepares the dying bullet animation
-	ld	a, CFG_BULLET_DYING_PAUSE << 1 OR MASK_BULLET_DYING
-	ld	[ix + bullet.type], a
+	ld	[ix + bullet.type], CFG_BULLET_DYING_PAUSE << 1 OR MASK_BULLET_DYING
 ; Prepares the sprite
 IF CFG_ENEMY_HEIGHT != CFG_BULLET_HEIGHT
 	ld	a, [ix + bullet.y]
