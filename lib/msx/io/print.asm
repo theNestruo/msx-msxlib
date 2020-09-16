@@ -7,7 +7,10 @@
 ; Writes a 0-terminated string centered in the NAMTBL buffer
 ; param hl: source string
 ; param de: NAMTBL buffer pointer (beginning of the line)
-; touches: a, bc, de, hl
+; ret hl: pointer to the "\0" of the printed string
+; ret de: updated NAMTBL buffer pointer
+; ret a: 0
+; touches: bc
 PRINT_CENTERED_TEXT:
 	call	LOCATE_CENTER
 	; jr	PRINT_TEXT ; falls through
@@ -17,7 +20,10 @@ PRINT_CENTERED_TEXT:
 ; Writes a 0-terminated string in the NAMTBL buffer
 ; param hl: source string
 ; param de: NAMTBL buffer pointer
-; touches: a, bc, de, hl
+; ret hl: pointer to the "\0" of the printed string
+; ret de: updated NAMTBL buffer pointer
+; ret a: 0
+; touches: bc
 PRINT_TEXT:
 	xor	a
 .LOOP:
@@ -32,7 +38,8 @@ PRINT_TEXT:
 ; param hl: source string
 ; param de: NAMTBL buffer pointer (beginning of the line)
 ; ret de: NAMTBL buffer pointer
-; touches: a, bc
+; ret a: 0
+; touches: bc
 LOCATE_CENTER:
 	push	hl ; preserves source
 ; Looks for the \0
@@ -79,12 +86,12 @@ CLEAR_LINE:
 ; param a: string index
 ; ret hl: source of the a-th string
 GET_TEXT:
-	ld	d, a ; string index in d
-	xor	a ; (looks for \0)
-; Checks the border case (d == 0)
-	cp	d
+; Checks the border case (a == 0)
+	or	a
 	ret	z ; yes: text found
 ; no: Looks for the proper text
+	ld	d, a ; string index in d
+	xor	a ; (looks for \0)
 .LOOP:
 ; Moves the pointer to the next text
 	ld	bc, SCR_WIDTH ; (at most SCR_WIDTH chars)
