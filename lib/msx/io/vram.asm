@@ -176,10 +176,32 @@ CLS_SPRATR:
 ; -----------------------------------------------------------------------------
 ; LDIRVM the NAMTBL buffer
 LDIRVM_NAMTBL:
+IFDEF CFG_LDIRVM_NAMTBL_FAST
+; Sets the VRAM pointer
+	ld	hl, NAMTBL
+	call	SETWRT
+; Initializes the OUTI loop
+	ld	hl, namtbl_buffer
+	ld	a, [VDP_DW]
+	ld	c, a
+; Uses OUTIs to blit the NAMTBL buffer
+	ld	b, 0 ; (ensures 256 bytes for the first bank)
+	call	.LOOP ; bank 0
+	call	.LOOP ; bank 1
+	; jp	.LOOP ; bank 2 ; falls through
+; OUTI loop
+.LOOP:
+	outi
+	jr	nz, .LOOP
+	ret
+
+ELSE
+; Uses BIOS' LDIRVM to blit the NAMTBL buffer
 	ld	hl, namtbl_buffer
 	ld	de, NAMTBL
 	ld	bc, NAMTBL_SIZE
 	jp	LDIRVM
+ENDIF ; IFDEF CFG_LDIRVM_NAMTBL_FAST
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

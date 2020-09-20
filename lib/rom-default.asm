@@ -63,7 +63,7 @@ SPLASH_SCREENS_PACKED_TABLE:
 
 ; -----------------------------------------------------------------------------
 ; Unpacker routine (ZX7 decoder-based implementation)
-	include	"lib/msx/unpack/unpack_zx7.asm"
+	include	"lib/unpack/unpack_zx7.asm"
 
 ; Buffer size to check it actually fits before system variables
 	CFG_RAM_RESERVE_BUFFER:	equ 2048

@@ -64,7 +64,7 @@ INIT:
 	.MY_MESSAGE_SIZE:	equ $ - .MY_MESSAGE
 ; -----------------------------------------------------------------------------
 
-	include	"lib/msx/rom_end.asm"
+	include	"lib/rom_end.asm"
 
 ; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
@@ -79,6 +79,6 @@ INIT:
 
 ; -----------------------------------------------------------------------------
 
-	include	"lib/msx/ram_end.asm"
+	include	"lib/ram_end.asm"
 
 ; EOF

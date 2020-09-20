@@ -549,7 +549,7 @@ GAME_OVER:
 	db	"GAME OVER!", ASCII_NUL ; NUL (null) = $00
 ; -----------------------------------------------------------------------------
 
-	include	"lib/msx/rom_end.asm"
+	include	"lib/rom_end.asm"
 
 ; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
@@ -589,6 +589,6 @@ high_score:
 	rw	1
 ; -----------------------------------------------------------------------------
 
-	include	"lib/msx/ram_end.asm"
+	include	"lib/ram_end.asm"
 
 ; EOF

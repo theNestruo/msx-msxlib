@@ -19,6 +19,9 @@
 ; (i.e.: first sprite number for the "volatile" sprites)
 	CFG_SPRITES_RESERVED:	equ CFG_PLAYER_SPRITES
 
+; Enable for faster LDIRVM_NAMTBL routine (for NAMTBL-blitting intensive games)
+	; CFG_LDIRVM_NAMTBL_FAST:
+
 ; Define if the LDIRVM the SPRATR buffer should use flickering
 	; CFG_SPRITES_FLICKER:
 
@@ -762,10 +765,7 @@ SPRTBL_PACKED:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Padding to a 8kB boundary
-PADDING:
-	ds	($ OR $1fff) -$ +1, $ff ; $ff = rst $38
-	.SIZE:	equ $ - PADDING
+	include	"lib/rom_end.asm"
 ; -----------------------------------------------------------------------------
 
 
@@ -812,30 +812,8 @@ stage:
 	; ...
 ; -----------------------------------------------------------------------------
 
-ram_end:
-
 ; -----------------------------------------------------------------------------
-; Unpacker routine buffer
-unpack_buffer:
-IFDEF CFG_RAM_RESERVE_BUFFER
-	rb	CFG_RAM_RESERVE_BUFFER
-ENDIF
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; (for debugging purposes only)
-	bytes_rom_MSXlib_code:	equ INIT - CARTRIDGE_HEADER
-	bytes_rom_game_code:	equ TXT_STAGE - INIT
-	bytes_rom_game_data:	equ PADDING - TXT_STAGE
-
-	bytes_ram_MSXlib:	equ globals - ram_start
-	bytes_ram_game:		equ ram_end - globals
-
-	bytes_total_rom:	equ PADDING - CARTRIDGE_HEADER
-	bytes_total_ram:	equ ram_end - ram_start
-
-	bytes_free_rom:		equ PADDING.SIZE
-	bytes_free_ram:		equ $f380 - $
+	include	"lib/ram_end.asm"
 ; -----------------------------------------------------------------------------
 
 ; EOF

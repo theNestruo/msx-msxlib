@@ -61,16 +61,16 @@ SYMS=\
 	$(EXAMPLES_PATH)\02snake\snake.sym
 
 SRCS_MSXLIB=\
+	lib\page0.asm \
+	lib\page0_end.asm \
 	lib\rom-default.asm \
+	lib\rom_end.asm \
 	lib\ram.asm \
+	lib\ram_end.asm \
 	lib\msx\symbols.asm \
-	lib\msx\page0.asm \
-	lib\msx\page0_end.asm \
 	lib\msx\cartridge.asm \
 	lib\msx\hook.asm \
-	lib\msx\rom_end.asm \
 	lib\msx\ram.asm \
-	lib\msx\ram_end.asm \
 	lib\msx\io\input.asm \
 	lib\msx\io\keyboard.asm \
 	lib\msx\io\print.asm \
@@ -79,7 +79,6 @@ SRCS_MSXLIB=\
 	lib\msx\io\vram.asm \
 	lib\msx\io\replayer_pt3.asm \
 	lib\msx\io\replayer_wyz.asm \
-	lib\msx\unpack\unpack_zx7.asm \
 	lib\msx\etc\fade.asm \
 	lib\msx\etc\msx2_palette.asm \
 	lib\msx\etc\vpokes.asm \
@@ -96,7 +95,9 @@ SRCS_MSXLIB=\
 	lib\game\platformer\platformer_player.asm \
 	lib\game\platformer\platformer_enemy.asm \
 	lib\game\etc\password.asm \
-	lib\game\etc\ram.asm
+	lib\game\etc\ram.asm \
+	lib\unpack\unpack_zx7.asm \
+	lib\unpack\ram.asm
 
 SRCS_LIBEXT=\
 	libext\ayFX-replayer\ayFX-ROM.tniasm.asm \

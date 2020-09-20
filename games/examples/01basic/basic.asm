@@ -184,7 +184,7 @@ ANIMATE_SPRITE:
 
 ; -----------------------------------------------------------------------------
 
-	include	"lib/msx/rom_end.asm"
+	include	"lib/rom_end.asm"
 
 ; -----------------------------------------------------------------------------
 ; MSXlib core and game-related variables
@@ -199,6 +199,6 @@ ANIMATE_SPRITE:
 
 ; -----------------------------------------------------------------------------
 
-	include	"lib/msx/ram_end.asm"
+	include	"lib/ram_end.asm"
 
 ; EOF

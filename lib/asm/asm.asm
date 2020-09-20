@@ -134,7 +134,7 @@ JP_IY:
 ; -----------------------------------------------------------------------------
 ; Adds an element to an array and returns the address of the added element
 ; param ix: array.count address (byte size)
-; param c: size of each array element
+; param bc: size of each array element
 ; ret ix: address of the new element
 ADD_ARRAY_IX:
 ; Reads the size
@@ -147,7 +147,7 @@ ADD_ARRAY_IX:
 ; -----------------------------------------------------------------------------
 ; Locates an element into an array
 ; param ix: array address (skipped the size byte)
-; param c: size of each array element
+; param bc: size of each array element
 ; param a: 0-based index (0, 1, 2...)
 ; ret ix: address of the element
 GET_ARRAY_IX:
@@ -165,7 +165,7 @@ GET_ARRAY_IX:
 ; -----------------------------------------------------------------------------
 ; Executes a routine for every element of an array
 ; param ix: array.count address (byte size)
-; param c: size of each array element
+; param bc: size of each array element
 ; param hl: routine to execute on every element,
 ;	that will receive the address of the element in ix
 FOR_EACH_ARRAY_IX:
