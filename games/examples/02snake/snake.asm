@@ -14,6 +14,9 @@
 	BORDER_SIDES_CHAR:	equ $94
 
 ; -----------------------------------------------------------------------------
+; Faster LDIRVM_NAMTBL routine (this example is NAMTBL-blitting intensive)
+	CFG_LDIRVM_NAMTBL_FAST:
+
 ; MSXlib helper: default configuration
 	include	"lib/rom-default.asm"
 ; -----------------------------------------------------------------------------
