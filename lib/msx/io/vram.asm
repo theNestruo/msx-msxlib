@@ -183,16 +183,18 @@ IFDEF CFG_LDIRVM_NAMTBL_FAST
 ; Initializes the OUTI loop
 	ld	hl, namtbl_buffer
 	ld	a, [VDP_DW]
-	ld	c, a
-; Uses OUTIs to blit the NAMTBL buffer
 	ld	b, 0 ; (ensures 256 bytes for the first bank)
-	call	.LOOP ; bank 0
-	call	.LOOP ; bank 1
-	; jp	.LOOP ; bank 2 ; falls through
-; OUTI loop
-.LOOP:
+	ld	c, a
+; Uses 3x256 = 768 OUTIs + JP NZs to blit the NAMTBL buffer (29 clock cycles, >= 28 clock cycles)
+.LOOP0:
 	outi
-	jr	nz, .LOOP
+	jp	nz, .LOOP0
+.LOOP1:
+	outi
+	jp	nz, .LOOP1
+.LOOP2:
+	outi
+	jp	nz, .LOOP2
 	ret
 
 ELSE
