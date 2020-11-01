@@ -14,13 +14,12 @@
 
 ; Player state modifiers (as bit indexes)
 	BIT_STATE_ANIM:		equ 0
-	BIT_STATE_LEFT:		equ 1
+	; (...)
 	BIT_STATE_FINISH:	equ 7 ; (special state marker: exit state)
 
 ; Player state modifiers (as flags)
 	FLAG_STATE_ANIM:	equ (1 << BIT_STATE_ANIM) ; $01
-	FLAG_STATE_LEFT:	equ (1 << BIT_STATE_LEFT) ; $02
-	FLAGS_STATE:		equ FLAG_STATE_LEFT OR FLAG_STATE_ANIM ; $03
+	; (...)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -69,32 +68,6 @@ UPDATE_PLAYER_ANIMATION:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Moves the player one pixel to the right
-MOVE_PLAYER_RIGHT:
-; Moves right
-	ld	hl, player.x
-	inc	[hl]
-; Resets "left" flag
-	inc	hl
-	inc	hl ; hl = player.state
-	res	BIT_STATE_LEFT, [hl]
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
-; Moves the player one pixel to the right
-MOVE_PLAYER_LEFT:
-; Moves left
-	ld	hl, player.x
-	dec	[hl]
-; Sets "left" flag
-	inc	hl
-	inc	hl ; hl = player.state
-	set	BIT_STATE_LEFT, [hl]
-	ret
-; -----------------------------------------------------------------------------
-
-; -----------------------------------------------------------------------------
 ; Moves the player n pixels up or down
 ; parm a: dy value
 ; ret a: new y coordinate (player.y)
@@ -109,12 +82,16 @@ MOVE_PLAYER_V:
 
 
 ; -----------------------------------------------------------------------------
-; Sets the player state, but keeping the "left" flag
+; Sets the player state, but keeping the flags (such as "left")
 ; param a: new player state
-; ret a: new player state with previous left flag
+; ret a: new player state with previous flags
 ; touches: hl, b
 SET_PLAYER_STATE:
-	ld	b, $ff XOR FLAG_STATE_LEFT
+IFEXIST FLAGS_STATE
+	ld	b, ($ff XOR FLAGS_STATE XOR FLAG_STATE_ANIM)
+ELSE
+	ld	b, $ff
+ENDIF ; IFEXIST FLAGS_STATE
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -150,6 +127,8 @@ LD_HL_A_MASK:
 ;	Player-tile helper routines
 ; =============================================================================
 ;
+
+IFEXIST GET_TILE_VALUE
 
 ; -----------------------------------------------------------------------------
 ; Reads the tile index (value) at the player coordinates
@@ -299,5 +278,7 @@ GET_PLAYER_TILE_FLAGS_WIDE_UNDER:
 	xor	a ; dy = 0
 	jp	GET_PLAYER_H_TILE_FLAGS.AND
 ; -----------------------------------------------------------------------------
+
+ENDIF ; IFEXIST GET_TILE_VALUE
 
 ; EOF
