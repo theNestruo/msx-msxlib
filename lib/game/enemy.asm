@@ -168,7 +168,7 @@ ENDIF ; IFEXIST KILL_ENEMY
 ; (invoke with call SET_ENEMY_STATE.NEXT)
 SET_ENEMY_STATE.NEXT:
 	pop	hl
-	; jr	.HL_OK ; falls through
+	; jr	SET_ENEMY_STATE ; falls through
 
 ; Sets an specific address of the next state as the new state
 ; param ix: pointer to the current enemy

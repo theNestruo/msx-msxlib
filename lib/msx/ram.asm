@@ -91,25 +91,4 @@ ENDIF ; IFEXIST ayFX_SETUP
 ENDIF ; IFDEF CFG_RAM_REPLAYER_PT3
 
 
-IFDEF CFG_RAM_REPLAYER_WYZ
-; -----------------------------------------------------------------------------
-; Variables for: Replayer routines: WYZPlayer v0.47c-based implementation
-
-; WYZPlayer v0.47c variables
-	include	"libext/wyzplayer/WYZPROPLAY47c_RAM.tniasm.ASM"
-
-; WYZPlayer sound buffers. Recommended at least $10 bytes per channel
-wyzplayer_buffer:
-.a:
-	rb	$20
-.b:
-	rb	$20
-.c:
-	rb	$20
-.p:
-	rb	$20
-; -----------------------------------------------------------------------------
-ENDIF ; IFDEF CFG_RAM_REPLAYER_WYZ
-
-
 ; EOF

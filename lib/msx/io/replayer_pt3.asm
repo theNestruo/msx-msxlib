@@ -53,23 +53,20 @@ IFDEF CFG_PT3_PACKED
 ; Unpacks the song
 	ld	de, unpack_buffer
 	call	UNPACK
-IFDEF CFG_PT3_HEADERLESS
-	ld	hl, unpack_buffer -100
-ELSE
 	ld	hl, unpack_buffer
-ENDIF
 
 ELSE ; CFG_PT3_PACKED
 ; Locates the song (2/2, unpacked)
 	ld	hl, SONG_TABLE
 	call	GET_HL_A_WORD
+ENDIF ; CFG_PT3_PACKED
+
+REPLAYER.PLAY_HL_OK:
+; Adjusts the song pointer
 IFDEF CFG_PT3_HEADERLESS
 	ld	bc, -100
 	add	hl, bc
 ENDIF
-
-ENDIF ; CFG_PT3_PACKED
-
 ; Initializes song
 	call	PT3_INIT
 ; Saves the configuration (the loop flag)
@@ -78,6 +75,20 @@ ENDIF ; CFG_PT3_PACKED
 	ld	[PT3_SETUP], a
 	ret
 ; -----------------------------------------------------------------------------
+
+IFDEF CFG_PT3_PACKED
+
+; -----------------------------------------------------------------------------
+; Starts the replayer over an un packed song
+; param hl: pointer to the unpacked song
+; param a: lxxxxxxx, where l (MSB) is the loop flag (0 = loop)
+REPLAYER.PLAY_UNPACKED:
+	rlca	; (moves loop flag to LSB)
+	push	af ; (preserves song index)
+	jr	REPLAYER.PLAY_HL_OK
+; -----------------------------------------------------------------------------
+
+ENDIF ; CFG_PT3_PACKED
 
 ; -----------------------------------------------------------------------------
 ; Processes a frame in the replayer

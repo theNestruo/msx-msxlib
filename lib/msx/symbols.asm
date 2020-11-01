@@ -21,8 +21,17 @@
 	ENASLT:	equ $0024 ; Enable any slot permanently
 	GETYPR:	equ $0028 ; Get BASIC operand type
 	MSXID1:	equ $002b ; Frecuency (1b), date format (3b) and charset (4b)
+		; Default interrupt frequency: 0 = 60Hz, 1 = 50Hz
+		; Date format: 0 = Y-M-D, 1 = M-D-Y, 2 = D-M-Y
+		; Character set: 0 = Japanese, 1 = International, 2=Korean
 	MSXID2:	equ $002c ; Basic version (4b) and Keybaord type (4b)
+		; Basic version: 0 = Japanese, 1 = International
+		; Keyboard type: 0 = Japanese, 1 = International, 2 = French (AZERTY), 3 = UK, 4 = German (DIN)
 	MSXID3:	equ $002d ; MSX version number
+		; 0 = MSX 1
+		; 1 = MSX 2
+		; 2 = MSX 2+
+		; 3 = MSX turbo R
 	MSXID4:	equ $002e ; Bit 0: if 1 then MSX-MIDI is present internally (MSX turbo R only)
 	MSXID5:	equ $002f ; Reserved
 	CALLF:	equ $0030 ; Call routine in any slot
