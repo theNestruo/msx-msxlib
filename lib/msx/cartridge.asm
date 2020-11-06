@@ -38,8 +38,8 @@ CARTRIDGE_INIT:
 IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 	ld	sp, [HIMEM]
 ELSE
-	ld	sp, $f380
-; Cancels the existing hooks
+	ld	sp, STACK_POINTER_INIT
+; Cancels the existing hooks (several BIOS routines re-enable interruptions)
 	ld	a, $c9 ; opcode for "RET"
 	ld	[HKEYI], a
 	ld	[HTIMI], a
@@ -269,7 +269,7 @@ IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 	dec	bc ; bc = [HIMEM] - 1
 	ld	a, [bc]
 ELSE
-	ld	a, $f380
+	ld	a, [STACK_POINTER_INIT - 1]
 ENDIF ; IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 	; jr	.DO_SET_PAGE0 ; falls through
 

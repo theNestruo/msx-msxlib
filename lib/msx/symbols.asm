@@ -168,7 +168,12 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Stack pointer initialization
+	STACK_POINTER_INIT:	equ $f380 ; As suggested by the MSX2 Technical Handbook
+
 ; MSX system variables
+	RDPRIM:	equ $f380 ; Routine that reads from a primary slot
+	WRPRIM:	equ $f385 ; Routine that writes to a primary slot
 	LINL40: equ $f3ae ; Width for SCREEN 0 (default 37)
 	LINL32: equ $f3af ; Width for SCREEN 1 (default 29)
 	LINLEN: equ $f3b0 ; Width for the current text mode
