@@ -52,9 +52,14 @@ ENDIF ; CFG_HOOK_DISABLE_AUTO_INPUT
 	ld	[SCNCNT], a
 	ld	[INTCNT], a
 
-; Invokes the previously existing hook
 	pop	af ; Restores VDP status register S#0 (a)
+
+IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
+; Invokes the previously existing hook
 	jp	old_htimi_hook
+ELSE
+	ret
+ENDIF ; IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 ; -----------------------------------------------------------------------------
 
 ; EOF

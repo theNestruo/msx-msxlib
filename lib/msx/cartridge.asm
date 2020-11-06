@@ -30,11 +30,20 @@ CARTRIDGE_HEADER:
 ; Cartridge entry point
 ; System initialization: stack pointer, slots, RAM, CPU, VDP, PSG, etc.
 CARTRIDGE_INIT:
-; Ensures interrupt mode and stack pointer
-; (perhaps this ROM is not the first thing to be loaded)
+; Ensures interrupt mode
 	di
 	im	1
+
+; Initializes stack pointer
+IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 	ld	sp, [HIMEM]
+ELSE
+	ld	sp, $f380
+; Cancels the existing hooks
+	ld	a, $c9 ; opcode for "RET"
+	ld	[HKEYI], a
+	ld	[HTIMI], a
+ENDIF ; IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 
 ; CPU: Ensures Z80 mode
 	ld	a, [MSXID3]
@@ -216,11 +225,13 @@ ENDIF
 
 ; Installs the H.TIMI hook in the interruption
 IFEXIST HOOK
+IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 ; Preserves the existing hook
 	ld	hl, HTIMI
 	ld	de, old_htimi_hook
 	ld	bc, HOOK_SIZE
 	ldir
+ENDIF ; IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 ; Install the interrupt routine
 	di
 	ld	a, $c3 ; opcode for "JP nn"
@@ -253,9 +264,13 @@ SET_PAGE0:
 ; touches: a, bc, d
 .CARTRIDGE:
 ; Retrieves the slot of the cartridge from the bottom of the stack
+IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 	ld	bc, [HIMEM]
 	dec	bc ; bc = [HIMEM] - 1
 	ld	a, [bc]
+ELSE
+	ld	a, $f380
+ENDIF ; IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 	; jr	.DO_SET_PAGE0 ; falls through
 
 ; Selects and permanently enables the requested slot in page 0

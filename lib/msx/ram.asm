@@ -45,9 +45,11 @@ IFDEF CFG_RAM_HOOK
 ; -----------------------------------------------------------------------------
 ; Variables for: Interrupt routine (H.TIMI hook)
 
+IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 ; Backup of the H.TIMI hook previous to the installation of the replayer hook
 old_htimi_hook:
 	rb	HOOK_SIZE
+ENDIF ; IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 
 IFEXIST REPLAYER.FRAME
 
