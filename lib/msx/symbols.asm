@@ -199,12 +199,12 @@
 		; $fbdc, $fbe7 ; B A pound / . , ` '
 		; $fbdd, $fbe8 ; J I H G F E D C
 		; $fbde, $fbe9 ; R Q P O N M L K
-		; $fbdf, $fbf0 ; Z Y X W V U T S
-		; $fbe0, $fbf1 ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
-		; $fbe1, $fbf2 ; CR SEL BS STOP TAB ESC F5 F4
-		; $fbe2, $fbf3 ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
-		; $fbe3, $fbf4 ; 4 3 2 1 0 none none none
-		; $fbe4, $fbf5 ; . , - 9 8 7 6 5
+		; $fbdf, $fbea ; Z Y X W V U T S
+		; $fbe0, $fbeb ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+		; $fbe1, $fbec ; CR SEL BS STOP TAB ESC F5 F4
+		; $fbe2, $fbed ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
+		; $fbe3, $fbee ; 4 3 2 1 0 none none none
+		; $fbe4, $fbef ; . , - 9 8 7 6 5
 	BOTTOM: equ $fc48 ; Address of the beginning of the available RAM area
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
 	INTFLG:	equ $fc9b ; STOP flag (0 = none, 3 = CTRL+STOP, 4 = STOP)
