@@ -1,0 +1,48 @@
+
+# commands and tools
+include config.makefile
+
+#
+# current game name
+#
+
+GAME=template
+
+GAME_PATH=\
+	games\$(GAME)
+
+ROM=\
+	$(GAME_PATH)\$(GAME).rom
+
+SYM=\
+	$(GAME_PATH)\$(GAME).sym
+
+SRCS=\
+	$(GAME_PATH)\$(GAME).asm \
+	splash\msxlib.bin.$(PACK_EXTENSION) \
+
+DATAS=\
+	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
+
+DATAS_INTERMEDIATE=\
+	$(GAME_PATH)\charset.pcx.chr \
+	$(GAME_PATH)\charset.pcx.clr \
+	$(GAME_PATH)\sprites.pcx.spr \
+	$(GAME_PATH)\screen.tmx.bin
+
+# secondary targets
+.secondary: $(DATAS_INTERMEDIATE)
+
+#
+# main targets
+#
+
+$(ROM) tniasm.sym: $(SRCS) $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(DATAS)
+	$(ASM) $< $@
+# cmd /c findstr /b /i "dbg_" tniasm.sym | sort
+
+# default targets
+include msxlib.makefile
