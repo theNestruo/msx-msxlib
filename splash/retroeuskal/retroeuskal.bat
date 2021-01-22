@@ -6,5 +6,9 @@ pcx2spr sprites.pcx
 tniasm retroeuskal_rom.asm retroeuskal.rom
 
 tniasm retroeuskal_bin.asm retroeuskal.bin
+
+if exist ..\retroeuskal.bin.zx0 del ..\retroeuskal.bin.zx0
+zx0 retroeuskal.bin ..\retroeuskal.bin.zx0
+
 if exist ..\retroeuskal.bin.zx7 del ..\retroeuskal.bin.zx7
 zx7 retroeuskal.bin ..\retroeuskal.bin.zx7

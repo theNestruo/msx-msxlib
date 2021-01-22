@@ -22,7 +22,7 @@
 SPLASH_SCREENS_PACKED_TABLE:
 	db	1
 	dw	$ + 2
-	incbin	"splash/msxlib.bin.zx7"
+	incbin	"splash/msxlib.bin.zx0"
 
 ; Interrupt routine (hook)
 	include "lib/msx/hook.asm"
@@ -62,8 +62,8 @@ SPLASH_SCREENS_PACKED_TABLE:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Unpacker routine (ZX7 decoder-based implementation)
-	include	"lib/unpack/unpack_zx7.asm"
+; Unpacker routine (ZX0 decoder-based implementation)
+	include	"lib/unpack/unpack_zx0.asm"
 
 ; Buffer size to check it actually fits before system variables
 	CFG_RAM_RESERVE_BUFFER:	equ 2048

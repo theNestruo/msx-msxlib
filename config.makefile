@@ -26,7 +26,12 @@ TMX2BIN=tmx2bin.exe
 # PACK=pletter
 # PACK_EXTENSION=plet5
 
+# Uncomment for ZX0
+# (please note that ZX0 does not overwrite output)
+PACK=zx0.exe
+PACK_EXTENSION=zx0
+
 # Uncomment for ZX7
 # (please note that ZX7 does not overwrite output)
-PACK=zx7.exe
-PACK_EXTENSION=zx7
+# PACK=zx7.exe
+# PACK_EXTENSION=zx7

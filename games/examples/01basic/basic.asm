@@ -53,7 +53,7 @@ INIT:
 	jr	.LOOP
 
 .MY_SCREEN_PACKED:
-	incbin	"games/examples/shared/screen.tmx.bin.zx7"
+	incbin	"games/examples/shared/screen.tmx.bin.zx0"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -73,11 +73,11 @@ INIT_GRAPHICS:
 
 ; The shared data of the examples
 .MY_CHRTBL_PACKED:
-	incbin	"games/examples/shared/charset.pcx.chr.zx7"
+	incbin	"games/examples/shared/charset.pcx.chr.zx0"
 .MY_CLRTBL_PACKED:
-	incbin	"games/examples/shared/charset.pcx.clr.zx7"
+	incbin	"games/examples/shared/charset.pcx.clr.zx0"
 .MY_SPRTBL_PACKED:
-	incbin	"games/examples/shared/sprites.pcx.spr.zx7"
+	incbin	"games/examples/shared/sprites.pcx.spr.zx0"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

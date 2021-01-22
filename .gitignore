@@ -1,8 +1,10 @@
 
-*.chr
-*.zx7
-*.clr
 *.bin
+*.chr
+*.clr
 *.spr
+*.zx0
+*.zx7
+tniams.out
 tniasm.sym
 tniasm.tmp

@@ -2,6 +2,9 @@
 # commands and tools
 include config.makefile
 
+# default target
+default: compile
+
 #
 # paths and file lists
 #
