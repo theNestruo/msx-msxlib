@@ -39,6 +39,7 @@ SRCS_MSXLIB=\
 	lib\game\platformer\platformer_enemy.asm \
 	lib\game\etc\password.asm \
 	lib\game\etc\ram.asm \
+	lib\unpack\unpack_zx0.asm \
 	lib\unpack\unpack_zx7.asm \
 	lib\unpack\ram.asm
 
@@ -50,6 +51,7 @@ SRCS_LIBEXT=\
 	libext\pt3\PT3-RAM.tniasm.asm \
 	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
 	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
+	libext\zx0\dzx0_standard.asm \
 	libext\zx7\dzx7_standard.tniasm.asm
 
 #
