@@ -2,6 +2,9 @@
 # commands and tools
 include config.makefile
 
+# packer; must match the included unpacker routine
+PACK_EXTENSION=zx0
+
 # default target
 default: compile
 

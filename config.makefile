@@ -22,16 +22,7 @@ PNG2MSX=png2msx.exe
 PNG2SPR=png2spr.exe
 TMX2BIN=tmx2bin.exe
 
-# Uncomment for Pletter 0.5c1
-# PACK=pletter
-# PACK_EXTENSION=plet5
-
-# Uncomment for ZX0
-# (please note that ZX0 does not overwrite output)
-PACK=zx0.exe
-PACK_EXTENSION=zx0
-
-# Uncomment for ZX7
-# (please note that ZX7 does not overwrite output)
-# PACK=zx7.exe
-# PACK_EXTENSION=zx7
+PACK_PLET5=pletter
+PACK_ZX0=zx0.exe
+PACK_ZX1=zx1.exe
+PACK_ZX7=zx7.exe

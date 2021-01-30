@@ -1,6 +1,6 @@
 
 ; =============================================================================
-; 	Unpacker routine: ZX0 decoder-based implementation
+; 	Unpacker routine: ZX1 decoder-based implementation
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
@@ -25,19 +25,19 @@ IF (CFG_INIT_ROM_SIZE > 32)
 	ret
 
 ELSE
-	; jp	dzx0_standard ; falls through
+	; jp	dzx1_standard ; falls through
 
 ENDIF ; IF (CFG_INIT_ROM_SIZE > 32)
 ELSE
-	; jp	dzx0_standard ; falls through
+	; jp	dzx1_standard ; falls through
 
 ENDIF ; IFDEF CFG_INIT_ROM_SIZE
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; ZX0 decoder by Einar Saukas
-; "Standard" version (69 bytes only)
-	include	"libext/zx0/dzx0_standard.asm"
+; ZX1 decoder by Einar Saukas
+; "Standard" version (68 bytes only)
+	include	"libext/zx1/dzx1_standard.asm"
 ; -----------------------------------------------------------------------------
 
 ; EOF

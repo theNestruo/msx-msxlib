@@ -2,8 +2,10 @@
 *.bin
 *.chr
 *.clr
+*.plet5
 *.spr
 *.zx0
+*.zx1
 *.zx7
 tniams.out
 tniasm.sym

@@ -40,6 +40,7 @@ SRCS_MSXLIB=\
 	lib\game\etc\password.asm \
 	lib\game\etc\ram.asm \
 	lib\unpack\unpack_zx0.asm \
+	lib\unpack\unpack_zx1.asm \
 	lib\unpack\unpack_zx7.asm \
 	lib\unpack\ram.asm
 
@@ -52,6 +53,7 @@ SRCS_LIBEXT=\
 	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
 	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
 	libext\zx0\dzx0_standard.asm \
+	libext\zx1\dzx1_standard.asm \
 	libext\zx7\dzx7_standard.tniasm.asm
 
 #
@@ -98,22 +100,85 @@ debug: $(ROM) $(SYMS)
 # Compressed targets
 #
 
-%.bin.$(PACK_EXTENSION): %.bin
-	$(REMOVE) $@
-	$(PACK) $<
+# Pletter 0.5c1
 
-%.chr.$(PACK_EXTENSION): %.chr
-	$(REMOVE) $@
-	$(PACK) $<
+%.bin.plet5: %.bin
+	$(PACK_PLET5) $<
 
-%.clr.$(PACK_EXTENSION): %.clr
-	$(REMOVE) $@
-	$(PACK) $<
+%.chr.plet5: %.chr
+	$(PACK_PLET5) $<
 
-%.nam.$(PACK_EXTENSION): %.nam
-	$(REMOVE) $@
-	$(PACK) $<
+%.clr.plet5: %.clr
+	$(PACK_PLET5) $<
 
-%.spr.$(PACK_EXTENSION): %.spr
+%.nam.plet5: %.nam
+	$(PACK_PLET5) $<
+
+%.spr.plet5: %.spr
+	$(PACK_PLET5) $<
+
+# ZX0
+
+%.bin.zx0: %.bin
 	$(REMOVE) $@
-	$(PACK) $<
+	$(PACK_ZX0) $<
+
+%.chr.zx0: %.chr
+	$(REMOVE) $@
+	$(PACK_ZX0) $<
+
+%.clr.zx0: %.clr
+	$(REMOVE) $@
+	$(PACK_ZX0) $<
+
+%.nam.zx0: %.nam
+	$(REMOVE) $@
+	$(PACK_ZX0) $<
+
+%.spr.zx0: %.spr
+	$(REMOVE) $@
+	$(PACK_ZX0) $<
+
+# ZX1
+
+%.bin.zx1: %.bin
+	$(REMOVE) $@
+	$(PACK_ZX1) $<
+
+%.chr.zx1: %.chr
+	$(REMOVE) $@
+	$(PACK_ZX1) $<
+
+%.clr.zx1: %.clr
+	$(REMOVE) $@
+	$(PACK_ZX1) $<
+
+%.nam.zx1: %.nam
+	$(REMOVE) $@
+	$(PACK_ZX1) $<
+
+%.spr.zx1: %.spr
+	$(REMOVE) $@
+	$(PACK_ZX1) $<
+
+# ZX7
+
+%.bin.zx7: %.bin
+	$(REMOVE) $@
+	$(PACK_ZX7) $<
+
+%.chr.zx7: %.chr
+	$(REMOVE) $@
+	$(PACK_ZX7) $<
+
+%.clr.zx7: %.clr
+	$(REMOVE) $@
+	$(PACK_ZX7) $<
+
+%.nam.zx7: %.nam
+	$(REMOVE) $@
+	$(PACK_ZX7) $<
+
+%.spr.zx7: %.spr
+	$(REMOVE) $@
+	$(PACK_ZX7) $<

@@ -1,24 +1,23 @@
 ; -----------------------------------------------------------------------------
-; ZX0 decoder by Einar Saukas
-; "Standard" version (69 bytes only)
+; ZX1 decoder by Einar Saukas
+; "Standard" version (68 bytes only)
 ; -----------------------------------------------------------------------------
 ; Parameters:
 ;   HL: source address (compressed data)
 ;   DE: destination address (decompressing)
 ; -----------------------------------------------------------------------------
 
-dzx0_standard:
+dzx1_standard:
         ld      bc, $ffff               ; preserve default offset 1
         push    bc
-        inc     bc
         ld      a, $80
-dzx0s_literals:
-        call    dzx0s_elias             ; obtain length
+dzx1s_literals:
+        call    dzx1s_elias             ; obtain length
         ldir                            ; copy literals
         add     a, a                    ; copy from last offset or new offset?
-        jr      c, dzx0s_new_offset
-        call    dzx0s_elias             ; obtain length
-dzx0s_copy:
+        jr      c, dzx1s_new_offset
+        call    dzx1s_elias             ; obtain length
+dzx1s_copy:
         ex      (sp), hl                ; preserve source, restore offset
         push    hl                      ; preserve offset
         add     hl, de                  ; calculate destination - offset
@@ -26,38 +25,38 @@ dzx0s_copy:
         pop     hl                      ; restore offset
         ex      (sp), hl                ; preserve offset, restore source
         add     a, a                    ; copy from literals or new offset?
-        jr      nc, dzx0s_literals
-dzx0s_new_offset:
-        call    dzx0s_elias             ; obtain offset MSB
-        ex      af, af'
-        pop     af                      ; discard last offset
-        xor     a                       ; adjust for negative offset
-        sub     c
-        ret     z                       ; check end marker
-        ld      b, a
-        ex      af, af'
+        jr      nc, dzx1s_literals
+dzx1s_new_offset:
+        inc     sp                      ; discard last offset
+        inc     sp
+        dec     b
         ld      c, (hl)                 ; obtain offset LSB
         inc     hl
-        rr      b                       ; last offset bit becomes first length bit
-        rr      c
+        rr      c                       ; single byte offset?
+        jr      nc, dzx1s_msb_skip
+        ld      b, (hl)                 ; obtain offset MSB
+        inc     hl
+        rr      b                       ; replace last LSB bit with last MSB bit
+        inc     b
+        ret     z                       ; check end marker
+        rl      c
+dzx1s_msb_skip:
         push    bc                      ; preserve new offset
-        ld      bc, 1                   ; obtain length
-        call    nc, dzx0s_elias_backtrack
+        call    dzx1s_elias             ; obtain length
         inc     bc
-        jr      dzx0s_copy
-dzx0s_elias:
-        inc     c                       ; interlaced Elias gamma coding
-dzx0s_elias_loop:
+        jr      dzx1s_copy
+dzx1s_elias:
+        ld      bc, 1                   ; interlaced Elias gamma coding
+dzx1s_elias_loop:        
         add     a, a
-        jr      nz, dzx0s_elias_skip
+        jr      nz, dzx1s_elias_skip    
         ld      a, (hl)                 ; load another group of 8 bits
         inc     hl
         rla
-dzx0s_elias_skip:
-        ret     c
-dzx0s_elias_backtrack:
+dzx1s_elias_skip:        
+        ret     nc
         add     a, a
         rl      c
         rl      b
-        jr      dzx0s_elias_loop
+        jr      dzx1s_elias_loop
 ; -----------------------------------------------------------------------------
