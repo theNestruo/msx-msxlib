@@ -194,6 +194,9 @@ PLAYER_DY_TABLE:
 ; Controls if the player jumps with BIT_STRICK_UP or with BIT_TRIGGER_A/B
 	CFG_PLAYER_JUMP_INPUT:	equ BIT_TRIGGER_A
 
+; Side-view player related routines (two directions: left, right)
+	include	"lib/game/player_2dir.asm"
+
 ; Default player control routines (platformer game)
 	include	"lib/game/platformer/platformer_player.asm"
 ; -----------------------------------------------------------------------------
@@ -446,9 +449,6 @@ ENDIF
 
 ; Prepares next frame (2/2)
 	call	RESET_SPRITES
-
-; Read input devices
-	call	READ_INPUT
 
 ; Game logic (1/2: updates)
 	call	UPDATE_PLAYER
