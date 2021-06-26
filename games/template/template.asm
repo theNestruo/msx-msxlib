@@ -6,9 +6,11 @@
 ;
 
 ; -----------------------------------------------------------------------------
-; Define if the ROM is larger than 16kB (typically, 32kB)
+; Define the ROM size in kB (8kB, 16kB, 24kB, 32kB, or 48kB)
 ; Includes search for page 2 slot/subslot at start
-	; CFG_INIT_32KB_ROM:
+; and declares routines to set the page 0 cartridge's slot/subslot
+; and to restore the BIOS at page 0
+	; CFG_INIT_ROM_SIZE:	equ 32
 
 ; Define if the game needs 16kB instead of 8kB
 ; RAM will start at the beginning of the page 2 instead of $e000
