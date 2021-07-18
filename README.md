@@ -4,7 +4,7 @@ MSXlib is a set of assembly libraries to create MSX videogame cartridges.
 
 MSXlib is BIOS-based, and it is divided in several libraries: MSX-related core, MSX-related optionals, games core, genre-specific (such as platformers), and generic game optionals. These libraries can be used incrementally, but are designed to work together.
 
-The [MSXlib Development Guide](doc/guide.md) will help you start creating MSX videogame cartridges.
+The [MSXlib Development Guide](doc/index.md) will help you start creating MSX videogame cartridges.
 
 ## External libraries
 
