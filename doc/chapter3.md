@@ -17,9 +17,9 @@ To include an skippable wait, use `WAIT_TRIGGER_FOUR_SECONDS`, `WAIT_TRIGGER_ONE
 
 Example:
 ```assembly
-	call	WAIT_TRIGGER_FOUR_SECONDS
-	jp	nz, GAME_START
-	jp	ATTRACT_MODE
+	call  WAIT_TRIGGER_FOUR_SECONDS
+	jp    nz, GAME_START
+	jp    ATTRACT_MODE
 ```
 
 Use `WAIT_TRIGGER` for an undefined pause. This function always returns the flag NZ (so it is interchangeable with the former routines).
@@ -32,9 +32,9 @@ Use `WAIT_TRIGGER` for an undefined pause. This function always returns the flag
 By default, MSXlib hook takes control of reading the input on every frame and conveniently saving the input status in RAM.
 For example, to check if either the joystick or the keyboard are pointing to a direction, in MSXlib you can use the following code:
 ```assembly
-	ld	a, [input.level]
-	bit	BIT_STICK_UP, a
-	jr	nz, MOVE_PLAYER_UP ; (routine provided by the developer)
+	ld   a, [input.level]
+	bit  BIT_STICK_UP, a
+	jr   nz, MOVE_PLAYER_UP ; (routine provided by the developer)
 ```
 
 The bits for `input.level` are defined as:
@@ -53,9 +53,9 @@ By default, trigger B is mapped to the `M` key, the SELECT bit to the `SELECT` k
 
 Additionaly, besides `input.level` (that returns the actual status of the bit) you can use `input.edge` to sense when a key gets pressed. This is particularly useful for firing or jumping, or for movements that are not to be repeated each frame (e.g.: moving a cursor on a menu):
 ```assembly
-	ld	a, [input.edge]
-	bit	BIT_TRIGGER_A, a
-	jr	nz, FIRE_CANNONS ; (routine provided by the developer)
+	ld  a, [input.edge]
+	bit BIT_TRIGGER_A, a
+	jr  nz, FIRE_CANNONS ; (routine provided by the developer)
 ```
 
 > If you want to perform manual input read, disable automatic reads by defining:
@@ -88,20 +88,20 @@ If you are used to BIOS, please note the different semantics of the system varia
 Example:
 ```assembly
 ; Reads all the function keys (they split into two rows)
-	ld	b, 2
-	ld	c, 6	; $06 = F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
-			; $07 = CR SEL BS STOP TAB ESC F5 F4
-	call	READ_KEYBOARD
+	ld    b, 2
+	ld    c, 6 ; $06 = F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	           ; $07 = CR SEL BS STOP TAB ESC F5 F4
+	call  READ_KEYBOARD
 
 ; Pauses the game when the player presses F1
-	ld	a, [NEWKEY + 6] ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
-	bit	5, a
-	call	nz, PAUSE_ROUTINE
+	ld    a, [NEWKEY + 6] ; F3 F2 F1 CODE CAP GRAPH CTRL SHIFT
+	bit   5, a
+	call  nz, PAUSE_ROUTINE
 
 ; Increases the energy if the player is holding F5 (cheat!)
-	ld	a, [OLDKEY + 7] ; CR SEL BS STOP TAB ESC F5 F4
-	bit	1, a
-	call	nz, CHEAT
+	ld    a, [OLDKEY + 7] ; CR SEL BS STOP TAB ESC F5 F4
+	bit   1, a
+	call  nz, CHEAT
 ```
 
 > Please note that, if `CFG_HOOK_ENABLE_AUTO_KEYBOARD` is set, this routine is automatically invoked during the MSXlib `H.TIMI` hook, so there is no need to invoke this routine manually; `OLDKEY` and `NEWKEY` will be loaded after every frame. Also please note that, in this case, the entire keyboard matrix will be read.
@@ -208,18 +208,18 @@ Example code:
 
 ```assembly
 INITIALIZE_SCREEN:
-	ld	hl, .NAMTBL_PACKED
-	ld	de, namtbl_buffer
-	call	UNPACK ; (unpack to RAM)
+	ld    hl, .NAMTBL_PACKED
+	ld    de, namtbl_buffer
+	call  UNPACK ; (unpack to RAM)
 
 ; Enables the screen, but using a fade-in effect to blit the NAMTBL buffer to the VRAM
-	jp	ENASCR_FADE_IN
+	jp    ENASCR_FADE_IN
 
 .NAMTBL_PACKED:
-	incbin	"examples/shared/screen.tmx.bin.zx7"
+	incbin "examples/shared/screen.tmx.bin.zx7"
 ```
 
-The NAMTBL buffer fades in/out from left to right by default. To use a centered double fade (from the center to the sides), define:
+> The NAMTBL buffer fades in/out from left to right by default. To use a centered double fade (from the center to the sides), define:
 > ```assembly
 > CFG_FADE_TYPE_DOUBLE:
 > ```
@@ -233,20 +233,69 @@ The NAMTBL buffer fades in/out from left to right by default. To use a centered 
 
 ## Using page 0 ($0000-$3FFF) as a compressed data storage
 
-<!-- ## `SET_PAGE0`
-Declares routines to set the page 0 slot/subslot and restore the BIOS.
+If you want to create a 48kB using MSXlib, use the following structure:
 
-This routines are optional, and will only be present if the ROM Cartridge size (`CFG_INIT_ROM_SIZE`) is configured to be larger than 32KB.
+```assembly
+; MSX symbolic constants
+	include	"lib/msx/symbols.asm"
 
-### `SET_PAGE0.BIOS`
-Restores the BIOS (selects and enables the Main ROM slot/subslot in page 0).
+; -----------------------------------------------------------------------------
+; ROM
 
-> Important: Caller is responsible of disabling interruptions before invoking this routine
+; Page 0
+	include "lib/page0.asm"
 
-### `SET_PAGE0.CARTRIDGE`
-Selects and enables the cartridge slot/sublot in page 0.
+	;
+	; YOUR DATA AT PAGE 0 (ROM) START HERE
+	;
 
-> Important: Caller is responsible of enabling interruptions after invoking this routine. -->
+	include "lib/page0_end.asm"
+
+; Define the ROM size in kB (8kB, 16kB, 24kB, 32kB, or 48kB)
+	CFG_INIT_ROM_SIZE:	equ 48
+
+; MSXlib helper: default configuration
+	include	"lib/rom-default.asm"
+
+; Game entry point
+INIT:
+	;
+	; YOUR CODE (ROM) GOES HERE
+	;
+	ret
+
+	include	"lib/msx/rom_end.asm"
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; RAM
+
+; MSXlib core and game-related variables
+	include	"lib/ram.asm"
+
+	;
+	; YOUR VARIABLES (RAM) START HERE
+	;
+
+	include	"lib/msx/ram_end.asm"
+; -----------------------------------------------------------------------------
+```
+
+This structure is not very different from the [A not-so-minimal MSXlib cartridge](chapter1.md#a-not-so-minimal-msxlib-cartridge) section of the first chapter. Changes comprises:
+* Demarcation of the page 0 by `include "lib/page0.asm"` at the beginning and `include "lib/page0_end.asm"` at the end. The page 0 must be coded:
+	* Either at the beginning of the source code (i.e.: before the `include "lib/rom-default.asm"` or the `include "lib/msx/cartridge.asm"`), which is the preferred way,
+	* or at the end of the source code (i.e.: after the `include "lib/msx/rom_end.asm"` and before the `include "lib/ram.asm"`)
+* Declare the cartridge target size as 48kB (`CFG_INIT_ROM_SIZE: equ 48`). Initialization will store the slot/subslot configuration during the search for page 2 slot/subslot to allow page 0 switching.
+
+Since the ROM cartridge size (`CFG_INIT_ROM_SIZE`) is configured to be larger than 32kB, you can make use of the following routines:
+
+* `SET_PAGE0.CARTRIDGE`: Selects and enables the cartridge slot/sublot in page 0.
+	> Important: Caller is responsible of enabling interruptions after invoking this routine.
+
+* `SET_PAGE0.BIOS`: Restores the BIOS (selects and enables the Main ROM slot/subslot in page 0).
+	> Important: Caller is responsible of disabling interruptions before invoking this routine
+
+Despite both code and data are allowed in page 0, MSXlib supports using it as a compressed data storage. If the page 0 is present, the provided [compressed data unpackers](chapter2.md#compressed-data-unpacker) will be aware of it and, if the source compressed data is in that page, will automatically select the cartridge slot/subslot in page 0 before unpacking, and restore the BIOS afterwards.
 
 
 ---

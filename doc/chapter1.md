@@ -19,9 +19,9 @@ To assemble the source code, you need a Z80 assembler. Z80 assembly is not an st
 
 Binary files (i.e.: charset graphics, sprites, screen definitions, etc.) can be generated using MSX-specific tools (such as [nMSXtiles](https://github.com/pipagerardo/nMSXtiles), [MSX Tiles devtool](https://github.com/mvac7/MSXTILESdevtool), or [spriteSX devtool](https://github.com/mvac7/spriteSXdevtool)), or use a command line interface converter (such as [PCXTools](https://github.com/theNestruo/pcxtools) or [MSX Pixel Tools](https://github.com/reidrac/msx-pixel-tools)). Either way, you should end up having binary .chr and .clr files (for the charset definition) and .spr files (for sprite pattern definitions).
 
-For compressing data, you'll need a packer with a Z80 depacker implementation available. Currently, [Pletter 0.5c1](http://www.xl2s.tk/) and [ZX7](https://github.com/z88dk/z88dk/tree/master/src/zx7) are natively supported in MSXlib.
+For compressing data, you'll need a packer with a Z80 depacker implementation available. Currently, [ZX0](https://github.com/einar-saukas/ZX0) (default and recommended), [ZX1](https://github.com/einar-saukas/ZX1), [ZX7](https://github.com/z88dk/z88dk/tree/master/src/zx7), and [Pletter 0.5c1](http://www.xl2s.tk/) are natively supported in MSXlib.
 
-The binary files of the examples have been created with PCXTools and [Tiled](http://www.mapeditor.org/), and packed with ZX7.
+The binary files of the examples have been created with PCXTools and [Tiled](http://www.mapeditor.org/), and packed with ZX0.
 
 To assemble a cartridge, you need to prepare the binary files, pack them, and then execute the assemble. To alleviate this workflow, MSXlib recommends using a `makefile`. You'll need `make`; it is most likely already installed in Linux and MacOS, but in Windows you may need to install [mingw-w64](http://mingw-w64.org/doku.php/download/mingw-builds) (or similar software) or use the Windows Subsystem for Linux (WSL). Alternatively, you can create a .bat/.sh script to do the job.
 
@@ -32,10 +32,10 @@ Note: this section assumes you are using Visual Studio Code. If you are using di
 
 Download MSXlib and open it. Visual Studio Code will suggest some extensions; install [Z80 Macro-Assembler](https://marketplace.visualstudio.com/items?itemName=mborik.z80-macroasm) at least.
 
-From a command line console, type `make`. That will run the default target of the makefile, and the output should be similar to this (blank lines added for legibility):
+From a command line console, type `make -f examples.makefile`. That will run the default target of the examples makefile, and the output should be similar to this (blank lines added for legibility):
 
 ```
-C:\dev\msx-msxlib>make
+C:\dev\msx-msxlib>make -f examples.makefile
 
 tniasm.exe games\examples\00minimal\minimal.asm games\examples\00minimal\minimal.rom
 Preprocessing...
@@ -46,25 +46,25 @@ Finished in 0.14 seconds.
 
 pcx2msx+.exe -lh games\examples\shared\charset.pcx
 
-zx7.exe games\examples\shared\charset.pcx.chr
-Optimal LZ77/LZSS compression by Einar Saukas
-File converted from 2048 to 1107 bytes!
+zx0.exe games\examples\shared\charset.pcx.chr
+ZX0 v1.2: Optimal data compressor by Einar Saukas
+File compressed from 2048 to 1065 bytes! (delta 2)
 
-zx7.exe games\examples\shared\charset.pcx.clr
-Optimal LZ77/LZSS compression by Einar Saukas
-File converted from 2048 to 437 bytes!
+zx0.exe games\examples\shared\charset.pcx.clr
+ZX0 v1.2: Optimal data compressor by Einar Saukas
+File compressed from 2048 to 405 bytes! (delta 2)
 
 pcx2spr.exe games\examples\shared\sprites.pcx
 
-zx7.exe games\examples\shared\sprites.pcx.spr
-Optimal LZ77/LZSS compression by Einar Saukas
-File converted from 1024 to 761 bytes!
+zx0.exe games\examples\shared\sprites.pcx.spr
+ZX0 v1.2: Optimal data compressor by Einar Saukas
+File compressed from 1024 to 713 bytes! (delta 2)
 
 tmx2bin.exe games\examples\shared\screen.tmx games\examples\shared\screen.tmx.bin
 
-zx7.exe games\examples\shared\screen.tmx.bin
-Optimal LZ77/LZSS compression by Einar Saukas
-File converted from 768 to 70 bytes!
+zx0.exe games\examples\shared\screen.tmx.bin
+ZX0 v1.2: Optimal data compressor by Einar Saukas
+File compressed from 768 to 68 bytes! (delta 3)
 
 tniasm.exe games\examples\01basic\basic.asm games\examples\01basic\basic.rom
 Preprocessing...
@@ -79,11 +79,13 @@ Pass 1...
 Pass 2...
 Generating Output...
 Finished in 0.06 seconds.
+
+(...)
 ```
 
-If there are errors, most likely cause is that the required tools are not available in the path. Either modify your path to include them, or edit the `makefile` file to prepend the proper path for each tool in the `# tools` section. If you prefer to keep your MSXlib installation self-contained, you can create a `bin` folder with all the required tools and edit the `makefile` file accordingly.
+If there are errors, most likely cause is that the required tools are not available in the path. Either modify your path to include them, or edit the `config.makefile` file to prepend the proper path for each tool in the `# tools` section. If you prefer to keep your MSXlib installation self-contained, you can create a `bin` folder with all the required tools and edit the `config.makefile` file accordingly.
 
-What happened here? The default target of the makefile (`default: compile`) tries to compile the example .rom files (`ROMS`, i.e.: `minimal.rom`, `basic.rom`, and `snake.rom`). Each of this files depends on it own source code, the MSXlib source code, and shared data. As the shared data files do not exist (yet), they are created from the .pcx source images following the rules defined in the makefile. Once the dependencies are satisfied, the source code is assembled.
+What happened here? The default target of the examples makefile (`default: compile`) tries to compile the example .rom files (`ROMS`, i.e.: `minimal.rom`, `basic.rom`, `snake.rom`, etc.). Each of this files depends on it own source code, the MSXlib source code, and shared data. As the shared data files do not exist (yet), they are created from the .pcx source images following the rules defined in the makefile. Once the dependencies are satisfied, the source code is assembled.
 
 If you opted for the makefile-less path, your script should be similar to this:
 
@@ -94,10 +96,10 @@ pcx2spr.exe games\examples\shared\sprites.pcx
 tmx2bin.exe games\examples\shared\screen.tmx games\examples\shared\screen.tmx.bin
 
 REM Shared binaries 2/2: packs the binaries
-zx7.exe games\examples\shared\charset.pcx.chr
-zx7.exe games\examples\shared\charset.pcx.clr
-zx7.exe games\examples\shared\sprites.pcx.spr
-zx7.exe games\examples\shared\screen.tmx.bin
+zx0.exe games\examples\shared\charset.pcx.chr
+zx0.exe games\examples\shared\charset.pcx.clr
+zx0.exe games\examples\shared\sprites.pcx.spr
+zx0.exe games\examples\shared\screen.tmx.bin
 
 REM Assembly
 tniasm.exe games\examples\00minimal\minimal.asm games\examples\00minimal\minimal.rom
@@ -159,7 +161,7 @@ Then, the second `org` directive points to $E000, within the page 3, where the M
 Of course, this rom is not particularly interesting, but at least it is a starting point. Try changing the `ret` with a `jr $` and the cartridge will stop there without returning to MSX-BASIC. Voilà! You have a place to write code that actually executes!
 
 > Symbolic constants for MSX BIOS entry points, MSX system variables, VRAM addresses and symbolic constants, PPI (Programmable Peripheral Interface) ports, and some special ASCII codes are already available by including `lib/msx/symbols.asm`:
-> ```
+> ```assembly
 > include "lib/msx/symbols.asm"
 > ```
 > This file does not add any code to your project, but allows you to type `call ENASCR` (instead of the more obscure `call $0044`). It can also be used as a reference.
@@ -169,7 +171,7 @@ Of course, this rom is not particularly interesting, but at least it is a starti
 
 ## The minimal MSXlib cartridge
 
-If you started to play around with the minimal MSX cartridge, you have probably discovered that you need to initailize things (such as BASIC `COLOR 15,1,1` and `SCREEN 2,2,0`). This initialization phase tends to become a bunch of boilerplate code that you will be copying from game to game... Let's create a minimal MSXlib cartridge:
+If you started to play around with the minimal MSX cartridge, you have probably discovered that you need to initailize things (such as BASIC `COLOR 15,0,0` and `SCREEN 2,2,0`). This initialization phase tends to become a bunch of boilerplate code that you will be copying from game to game... Let's create a minimal MSXlib cartridge:
 
 ```assembly
 ; MSX symbolic constants
@@ -208,7 +210,7 @@ INIT:
 It doesn't look very different from the minimal MSX cartridge, but the obscure directives (the orgs and the padding) are gone... But, if you assemble and execute the ROM, it will give you a black screen instead of MSX-BASIC! Actually, the file `lib/msx/cartridge.asm` includes the cartridge header and performs some initialization for you. Without other MSXlib modules present, this initialization comprises:
 * Initializes the interrupt mode and the stack pointer
 * Ensures the CPU is in Z80 mode when running in a MSX turbo R or superior
-* Initializes the screen with the ASM equivalent to BASIC `COLOR 15,1,1` and `SCREEN 2,2,0`
+* Initializes the screen with the ASM equivalent to BASIC `COLOR 15,0,0` and `SCREEN 2,2,0`
 * Disables the screen
 * Zeroes all the used RAM
 * Initializes the PSG to silence
@@ -217,11 +219,12 @@ It doesn't look very different from the minimal MSX cartridge, but the obscure d
 
 So, when the execution reaches `INIT`, everything is conveniently initialized for you.
 
-> If your cartridge is larger than 16kb (typically, 32kB), define the following for the initialization to the search for page 2 slot/subslot:
-> ```
-> CFG_INIT_32KB_ROM:
+> By default, MSXlib will create an 8kB/16kB cartridge. If you want to force an specific cartridge size, or if your cartridge is larger than 16kb, you can specify the target cartridge size. If your cartridge target size is larger than 16kb (typically, 32kB), this will cause the initialization to the search for page 2 slot/subslot:
+> ```assembly
+> CFG_INIT_ROM_SIZE:	equ 32
 > include "lib/msx/cartridge.asm"
 > ```
+> The supported cartridge target sizes are: 8kB, 16kB, 24kB, 32kB, and 48kB.
 
 At this point, the cartridge is init, the RAM zeroed, the screen mode is 2 with 16x16 unmagnified sprites, the keyboard click is muted, and the screen is disabled.
 
@@ -232,7 +235,7 @@ The `lib/msx/rom_end.asm` include marks the end of the ROM, and MSXlib automatic
 For the RAM part, always start including `lib/ram.asm`. This will define the RAM start ($E000 by default), and include the variables MSXlib requires depending on the includes you are using. Your variables can be declared after that. Don't forget to include `lib/msx/ram_end.asm` after your variables. This include lets MSXlib know where the RAM ends (to zero it during initialization).
 
 > If your RAM requirements are 16kB instead of 8kB, define the following for the initialization to check the availability of 16kB, and to make the RAM start at the beginning of the page 2 ($c000) instead of at $e000:
-> ```
+> ```assembly
 > CFG_INIT_16KB_RAM:
 > include "lib/msx/cartridge.asm"
 > ```
@@ -282,9 +285,9 @@ Not much has changed. It's actually quite similar to the previous minimal exampl
 * Includes the cartridge header and initialization, which now sets up the MSXlib hook to read input (and disables BIOS key interruption)
 * Includes the NAMTBL and SPRATR buffer routines, fade-in/out routines, text routines, logical coordinates sprites routines, timing routines, and pause routines.
 * Includes generic Z80 assembly convenience routines.
-* Includes ZX7 decoder as the unpacker routine, and reserves a buffer of 2048 bytes for it.
+* Includes ZX0 decoder as the unpacker routine, and reserves a buffer of 2048 bytes for it.
 
-The cartridge initialization described in the previous section included the statement "without other MSXlib modules present". In MSXlib, modules designed to work cohesively automatically detect each other. `lib/msx/cartridge.asm` is one of them, hence the initialization of the MSXlib hook. Also, `lib/ram.asm` automatically reserves space for the variables required by the active MSXlib modules. `lib\msx\unpack\unpack_zx7.asm` allows other modules to work with compressed data.
+The cartridge initialization described in the previous section included the statement "without other MSXlib modules present". In MSXlib, modules designed to work cohesively automatically detect each other. `lib/msx/cartridge.asm` is one of them, hence the initialization of the MSXlib hook. Also, `lib/ram.asm` automatically reserves space for the variables required by the active MSXlib modules. `lib\msx\unpack\unpack_zx0.asm` allows other modules to work with compressed data.
 
 The game entry point must be named `INIT`.
 
