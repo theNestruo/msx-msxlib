@@ -16,7 +16,7 @@ INIT_ATTRACT_PRINT:
 .NEXT_LINE:
 	xor	a
 	ld	[attract_print.framecounter], a
-; Locates the actual destination	
+; Locates the actual destination
 	ld	hl, [attract_print.source]
 	ld	de, [attract_print.target_line]
 	call	LOCATE_CENTER
@@ -37,15 +37,20 @@ ATTRACT_PRINT_CHAR:
 	ret	nz
 	; xor	a ; unnecessary
 	ld	[hl], a
+.IMMEDIATE:
+; Checks if there are more characters
+	call	.IS_END
+	ret	z
 ; Prints one character
-	ld	hl, [attract_print.source]
 	ld	de, [attract_print.target_char]
 	ldi
 ; (preserves updated pointers)
 	ld	[attract_print.source], hl
 	ld	[attract_print.target_char], de
 ; Is the end of the string?
+.IS_END:
 	xor	a
+	ld	hl, [attract_print.source]
 	cp	[hl]
 	ret	; z = yes, nz = no
 ; -----------------------------------------------------------------------------

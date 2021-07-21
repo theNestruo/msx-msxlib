@@ -209,6 +209,13 @@ RET_ZERO:
 ; ret nz
 RET_NOT_ZERO:
 	or	-1
+	; ret	; (falls through)
+; ------VVVV----falls through--------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Convenience routine that just rets (actually, any )
+; (mainly to be used in no-op entries of jump tables; unnecessary otherwise)
+RET_:
 	ret
 ; -----------------------------------------------------------------------------
 

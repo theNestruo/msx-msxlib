@@ -32,7 +32,7 @@ IFDEF CFG_RAM_CARTRIDGE
 ; -----------------------------------------------------------------------------
 ; Variables for: MSX cartridge (ROM) header, entry point and initialization
 
-; Refresh rate in Hertzs (50Hz/60Hz) and related convenience variables
+; Refresh rate in Hertzs (50Hz/60Hz) and related convenience vars
 frame_rate:
 	rb	1
 frames_per_tenth:
@@ -99,17 +99,6 @@ IFDEF CFG_RAM_REPLAYER_WYZ
 
 ; WYZPlayer v0.47c variables
 	include	"libext/wyzplayer/WYZPROPLAY47c_RAM.tniasm.ASM"
-
-; WYZPlayer sound buffers. Recommended at least $10 bytes per channel
-wyzplayer_buffer:
-.a:
-	rb	$20
-.b:
-	rb	$20
-.c:
-	rb	$20
-.p:
-	rb	$20
 ; -----------------------------------------------------------------------------
 ENDIF ; IFDEF CFG_RAM_REPLAYER_WYZ
 

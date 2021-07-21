@@ -7,18 +7,7 @@
 
 ; -----------------------------------------------------------------------------
 ; Initializes the replayer
-REPLAYER.RESET:
-	call	.STOP
-; Initializes WYZPlayer sound buffers
-	ld	hl, wyzplayer_buffer.a
-	ld	[CANAL_A], hl
-	ld	hl, wyzplayer_buffer.b
-	ld	[CANAL_B], hl
-	ld	hl, wyzplayer_buffer.c
-	ld	[CANAL_C], hl
-	ld	hl, wyzplayer_buffer.p
-	ld	[CANAL_P], hl
-	ret
+REPLAYER.RESET:	equ	PLAYER_INIT
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
