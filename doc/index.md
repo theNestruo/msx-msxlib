@@ -24,21 +24,27 @@ This chapter gives some bases of MSXlib that are used in most of the modules. It
 * Assembly helper routines
 * Compressed data unpacker
 
-### 3. [MSXlib cookbook](chapter3.md)
+### 3. MSXlib cookbook
 A cookbook that explains the MSXlib capabilities using examples and source code.
 
-* Loading the charset graphics
-* Waiting and "Push space key"
-* Reading cursors and joystick input
-* Reading the keyboard
-* Printing text in screen
-* Printing numbers in screen
-* Putting sprites
-* Flickering sprites
-* Fading-in/out the screen
-* Replaying music in the background
-* Playing sounds
-* Using page 0 ($0000-$3FFF) as a compressed data storage
+This chapter is subdivided in the following sections:
+
+* [Texts and graphics](chapter3-1.md)
+	* Loading the charset graphics
+	* Printing text in screen
+	* Printing numbers in screen
+	* Putting sprites
+	* Flickering sprites
+	* Fading-in/out the screen
+* [Player input](chapter3-2.md)
+	* Waiting and "Push space key"
+	* Reading cursors and joystick input
+	* Reading the keyboard
+* [Music and sound effects](chapter3-3.md)
+	* Replaying music in the background
+	* Playing sounds
+* [Other recipes](chapter3-4.md)
+	* Using page 0 ($0000-$3FFF) as a compressed data storage
 
 ### [Appendix A. MSXlib reference](appendixA.md)
 Non-comprehensive reference for some MSXlib modules.

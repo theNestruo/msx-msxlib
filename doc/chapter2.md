@@ -43,4 +43,4 @@ This may be confusing at first but, for the sake of simplicity, this guide assum
 ---
 * Back to index: [MSXlib Development Guide](index.md)
 * Previous chapter: [Getting started with MSXlib](chapter1.md)
-* Next chapter: [MSXlib cookbook](chapter3.md)
+* Next chapter: [MSXlib cookbook: Texts and graphics](chapter3-1.md)

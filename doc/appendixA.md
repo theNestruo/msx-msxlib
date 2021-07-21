@@ -40,4 +40,4 @@ The MSXlib `H.TIMI` hook performs the following sequence:
 
 ---
 * Back to index: [MSXlib Development Guide](index.md)
-* Previous chapter: [MSXlib cookbook](chapter3.md)
+* Previous chapter: [MSXlib cookbook: Other recipes](chapter3-4.md)
