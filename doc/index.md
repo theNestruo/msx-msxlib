@@ -45,6 +45,7 @@ This chapter is subdivided in the following sections:
 	* Playing sounds
 * [Other recipes](chapter3-4.md)
 	* Using page 0 ($0000-$3FFF) as a compressed data storage
+	* Detecting a catridge in the secondary slot
 
 ### [Appendix A. MSXlib reference](appendixA.md)
 Non-comprehensive reference for some MSXlib modules.

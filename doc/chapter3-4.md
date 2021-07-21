@@ -73,6 +73,32 @@ Since the ROM cartridge size (`CFG_INIT_ROM_SIZE`) is configured to be larger th
 Despite both code and data are allowed in page 0, MSXlib supports using it as a compressed data storage. If the page 0 is present, the provided [compressed data unpackers](chapter2.md#compressed-data-unpacker) will be aware of it and, if the source compressed data is in that page, will automatically select the cartridge slot/subslot in page 0 before unpacking, and restore the BIOS afterwards.
 
 
+## Detecting a catridge in the secondary slot
+
+To emulate Konami and Casio cartridge combinations, include the secondary slot routines:
+
+```assembly
+include "lib/msx/etc/slot2.asm"
+```
+
+Then, you need to know what to look for and at which address it is and invoke the `SEARCH_IN_ANY_SLOT` routine.
+
+A simple example is to look for a Konami game released after Game Master, when they started to embed the RC code (a cartridge ID) at a fixed position:
+
+```assembly
+; Checks for Konami's "Goonies" (RC 734)
+	ld    hl, .GOONIES_DATA
+	call  SEARCH_IN_ANY_SLOT
+	ret   z ; "Goonies" is not present
+; "Goonies" is present
+	; ...
+
+.GOONIES_DATA:
+	dw    $4010 ; At address $4010...
+	db    4     ; ...check the following 4 bytes:
+	db    $43, $44, $07 $34 ; "CD" followed by the RC code 734 (BCD)
+```
+
 ---
 * Back to index: [MSXlib Development Guide](index.md)
 * Previous chapter: [MSXlib cookbook: Music and sound effects](chapter3-3.md)
