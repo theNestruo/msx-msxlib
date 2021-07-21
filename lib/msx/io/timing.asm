@@ -51,6 +51,17 @@ WAIT_TRIGGER_FOUR_SECONDS:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Skippable two seconds pause
+; ret nz: if the trigger went from off to on (edge)
+; ret z: if the pause timed out
+; touches: a, bc, de, hl
+WAIT_TRIGGER_TWO_SECONDS:
+	ld	a, [frame_rate]
+	add	a
+	jr	WAIT_TRIGGER_FRAMES_A
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Skippable one second pause
 ; ret nz: if the trigger went from off to on (edge)
 ; ret z: if the pause timed out

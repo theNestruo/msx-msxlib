@@ -10,7 +10,7 @@
 ; 1. Invokes the replayer
 ; 2. Reads the inputs
 ; 3. Tricks BIOS' KEYINT to skip keyboard scan, TRGFLG, OLDKEY/NEWKEY, ON STRIG...
-; 4. Invokes the previously existing hook
+; 5. Invokes the previously existing hook
 HOOK:
 	push	af ; Preserves VDP status register S#0 (a)
 
@@ -53,6 +53,12 @@ ENDIF ; CFG_HOOK_DISABLE_AUTO_INPUT
 	ld	[INTCNT], a
 
 	pop	af ; Restores VDP status register S#0 (a)
+
+IFDEF CFG_HOOK_PRESERVE_SPRITE_COLLISION_FLAG
+ELSE
+; Tricks BIOS' KEYINT to skip ON SPRITE...
+	and	$df ; Turns off sprite collision flag
+ENDIF ; IFDEF CFG_HOOK_PRESERVE_SPRITE_COLLISION_FLAG
 
 IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 ; Invokes the previously existing hook

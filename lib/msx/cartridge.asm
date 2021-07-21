@@ -157,21 +157,20 @@ IFDEF CFG_INIT_16KB_RAM
 
 ENDIF ; CFG_INIT_16KB_RAM
 
-; VDP: color 15,1,1
-	ld	a, 15
-	ld	[FORCLR], a
-	ld	a, 1
+	xor	a
+; screen ,,0
+	ld	[CLIKSW], a
+; VDP: color 15,0,0
 	ld	[BAKCLR], a
 	ld	[BDRCLR], a
-; VDP: screen 2
+	dec	a
+	ld	[FORCLR], a
+; screen 2
 	call	INIGRP
 ; screen ,2
 	call	DISSCR
 	ld	hl, RG1SAV
 	set	1, [hl] ; (first call to ENASCR will actually apply to the VDP)
-; screen ,,0
-	xor	a
-	ld	[CLIKSW], a
 
 IFEXIST SET_PALETTE
 ; MSX2 VDP: Custom palette
