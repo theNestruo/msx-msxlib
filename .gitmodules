@@ -1,0 +1,6 @@
+[submodule "ref/The-MSX-Red-Book"]
+	path = ref/The-MSX-Red-Book
+	url = https://github.com/gseidler/The-MSX-Red-Book.git
+[submodule "ref/MSX2-Technical-Handbook"]
+	path = ref/MSX2-Technical-Handbook
+	url = https://github.com/Konamiman/MSX2-Technical-Handbook.git

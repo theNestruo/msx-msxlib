@@ -1,14 +1,7 @@
-# ZX0
+# ZX1
 
-**ZX0** is an optimal data compressor for a custom
-[LZ77/LZSS](https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Storer%E2%80%93Szymanski)
-based compression format, that provides a tradeoff between high compression
-ratio, and extremely simple fast decompression. Therefore it's especially
-appropriate for low-end platforms, including 8-bit computers like the ZX
-Spectrum.
-
-A comparison with other compressors (courtesy of **introspec/spke**) can be seen
-[here](https://www.cpcwiki.eu/forum/programming/new-cruncher-zx0/msg197727/#msg197727).
+**ZX1** is a simpler but faster version of [ZX0](https://github.com/einar-saukas/ZX0)
+that sacrifices about 1.5% compression to run about 15% faster.
 
 
 ## Usage
@@ -16,29 +9,28 @@ A comparison with other compressors (courtesy of **introspec/spke**) can be seen
 To compress a file, use the command-line compressor as follows:
 
 ```
-zx0 Cobra.scr
+zx1 Cobra.scr
 ```
 
-This will generate a compressed file called "Cobra.scr.zx0".
+This will generate a compressed file called "Cobra.scr.zx1".
 
 Afterwards you can choose a decompressor routine in assembly Z80, according to
 your requirements for speed and size:
 
-* "Standard" routine: 69 bytes only
-* "Turbo" routine: 128 bytes, about 21% faster
-* "Fast" routine: 191 bytes, about 25% faster
-* "Mega" routine: 681 bytes, about 28% faster
+* "Standard" routine: 68 bytes only
+* "Turbo" routine: 128 bytes, about 20% faster
+* "Mega" routine: 406 bytes, about 25% faster
 
 Finally compile the chosen decompressor routine and load the compressed file
 somewhere in memory. To decompress data, just call the routine specifying the
 source address of compressed data in HL and the target address in DE.
 
 For instance, if you compile the decompressor routine to address 65000, load
-"Cobra.scr.zx0" at address 51200, and you want to decompress it directly to the
+"Cobra.scr.zx1" at address 51200, and you want to decompress it directly to the
 screen, then execute the following code:
 
 ```
-    LD    HL, 51200  ; source address (put "Cobra.scr.zx0" there)
+    LD    HL, 51200  ; source address (put "Cobra.scr.zx1" there)
     LD    DE, 16384  ; target address (screen memory in this case)
     CALL  65000      ; decompress routine compiled at this address
 ```
@@ -47,7 +39,7 @@ It's also possible to decompress data into a memory area that partially overlaps
 the compressed data itself (only if you won't need to decompress it again later,
 obviously). In this case, the last address of compressed data must be at least
 "delta" bytes higher than the last address of decompressed data. The exact value
-of "delta" for each case is reported by **ZX0** during compression. See image
+of "delta" for each case is reported by **ZX1** during compression. See image
 below:
 
 ```
@@ -60,19 +52,19 @@ below:
 For convenience, there's also a command-line decompressor that works as follows:
 
 ```
-dzx0 Cobra.scr.zx0
+dzx1 Cobra.scr.zx1
 ```
 
 
 ## Performance
 
-The **ZX0** optimal compressor algorithm is fairly complex, thus compressing
+The **ZX1** optimal compressor algorithm is fairly complex, thus compressing
 typical files can take a few seconds. During development, you can speed up this
-process simply using **ZX0** in "quick" mode. This will produce a non-optimal
+process simply using **ZX1** in "quick" mode. This will produce a non-optimal
 larger compressed file but execute almost instantly:
 
 ```
-zx0 -q Cobra.scr
+zx1 -q Cobra.scr
 ```
 
 This way, you can repeatedly modify your files, then quickly compress and test
@@ -81,15 +73,14 @@ without "quick" mode for maximum compression. Notice that using "quick" mode
 will only affect the size of the compressed file, not its format. Therefore
 all decompressor routines will continue to work exactly the same way.
 
-Fortunately all complexity lies on the compression process only. The **ZX0**
+Fortunately all complexity lies on the compression process only. The **ZX1**
 compression format itself is very simple and efficient, providing a high
 compression ratio that can be decompressed quickly and easily. The provided
-**ZX0** decompressor routines in assembly Z80 are small and fast, they only use
-main registers BC, DE, HL, A and optionally alternate register A' (use the
-backwards variant to avoid using A'), consume very little stack space and does
+**ZX1** decompressor routines in assembly Z80 are small and fast, they only use
+main registers (BC, DE, HL, and A), consume very little stack space and does
 not require additional decompression buffer.
 
-The provided **ZX0** decompressor in C writes the output file while reading the
+The provided **ZX1** decompressor in C writes the output file while reading the
 compressed file, without keeping it in memory. Therefore it always use the same
 amount of memory, regardless of file size. Thus even large compressed files can
 be decompressed in very small computers with limited memory, even if it took
@@ -100,7 +91,7 @@ for input and output files, and only memory space O(w) for processing.
 
 ## File Format
 
-The **ZX0** compressed format is very simple. There are only 3 types of blocks:
+The **ZX1** compressed format is very simple. There are only 3 types of blocks:
 
 * Literal (copy next N bytes from compressed file)
 ```
@@ -114,29 +105,30 @@ The **ZX0** compressed format is very simple. There are only 3 types of blocks:
 
 * Copy from new offset (repeat N bytes from new offset)
 ```
-    1  Elias(MSB(offset))  LSB(offset)  Elias(length-1)
+    1  offset  Elias(length-1)
 ```
 
-**ZX0** needs only 1 bit to distinguish between these blocks, because literal
+**ZX1** needs only 1 bit to distinguish between these blocks, because literal
 blocks cannot be consecutive, and reusing last offset can only happen after a
 literal block. The first block is always a literal, so the first bit is omitted.
 
-The offset MSB and all lengths are stored using interlaced
-[Elias Gamma Coding](https://en.wikipedia.org/wiki/Elias_gamma_coding). When
-offset MSB equals 256 it means EOF. The offset LSB is stored using 7 bits
-instead of 8, because it produces better results in most practical cases.
+All lengths are stored using interlaced
+[Elias Gamma Coding](https://en.wikipedia.org/wiki/Elias_gamma_coding). The
+offset is stored using either 1 or 2 bytes (the lowest bit of the first
+byte indicates if a second byte must be read). A special offset value indicates
+EOF.
 
 
 ## Advanced Features
 
-The **ZX0** compressor contains a few extra "hidden" features, that are slightly
-harder to use properly, and not supported by the **ZX0** decompressor in C. Please
+The **ZX1** compressor contains a few extra "hidden" features, that are slightly
+harder to use properly, and not supported by the **ZX1** decompressor in C. Please
 read carefully these instructions before attempting to use any of them!
 
 
 #### _COMPRESSING BACKWARDS_
 
-When using **ZX0** for "in-place" decompression (decompressing data to overlap the
+When using **ZX1** for "in-place" decompression (decompressing data to overlap the
 same memory area storing the compressed data), you must always leave a small
 margin of "delta" bytes of compressed data at the end. However it won't work to
 decompress some large data that will occupy all the upper memory until the last
@@ -156,7 +148,7 @@ lower than lowest address of decompressed data. See image below:
 To compress a file backwards, use the command-line compressor as follows:
 
 ```
-zx0 -b Cobra.scr
+zx1 -b Cobra.scr
 ```
 
 To decompress it later, you must call one of the supplied "backwards" variants
@@ -164,12 +156,12 @@ of the Assembly decompressor, specifying last source address of compressed data
 in HL and last target address in DE.
 
 For instance, if you compile a "backwards" Assembly decompressor routine to
-address 64000, load backwards compressed file "Cobra.scr.zx0" (with size 2202
+address 64000, load backwards compressed file "Cobra.scr.zx1" (with size 2272
 bytes) to address 51200, and want to decompress it directly to the ZX Spectrum
 screen (with 6912 bytes), then execute the following code:
 
 ```
-    LD    HL, 51200+2202-1  ; source (last address of "Cobra.scr.zx0")
+    LD    HL, 51200+2272-1  ; source (last address of "Cobra.scr.zx1")
     LD    DE, 16384+6912-1  ; target (last address of screen memory)
     CALL  64000             ; backwards decompress routine
 ```
@@ -216,7 +208,7 @@ For instance, if you want the first 6144 bytes of a certain file to be skipped
 as follows:
 
 ```
-zx0 +6144 Cobra.cbr
+zx1 +6144 Cobra.cbr
 ```
 
 In practice, suppose an action game uses a few generic sprites that are common
@@ -233,22 +225,22 @@ prefix, use the command-line compressor as follows:
 
 ```
 copy /b generic.gfx+level_1.gfx prefixed_level_1.gfx
-zx0 +2500 prefixed_level_1.gfx
+zx1 +2500 prefixed_level_1.gfx
 
 copy /b generic.gfx+level_2.gfx prefixed_level_2.gfx
-zx0 +2500 prefixed_level_2.gfx
+zx1 +2500 prefixed_level_2.gfx
 
 copy /b generic.gfx+level_3.gfx prefixed_level_3.gfx
-zx0 +2500 prefixed_level_3.gfx
+zx1 +2500 prefixed_level_3.gfx
 ```
 
 To decompress it later, you simply need to use one of the normal variants of the
 Assembly decompressor, as usual. In this case, if you loaded compressed file
-"prefixed_level_1.gfx.zx0" to address 48000 for instance, decompressing it will
+"prefixed_level_1.gfx.zx1" to address 48000 for instance, decompressing it will
 require the following code:
 
 ```
-    LD    HL, 48000  ; source address (put "prefixed_level_1.gfx.zx0" there)
+    LD    HL, 48000  ; source address (put "prefixed_level_1.gfx.zx1" there)
     LD    DE, 58500  ; target address (level specific memory area in this case)
     CALL  65000      ; decompress routine compiled at this address
 ```
@@ -291,7 +283,7 @@ compress everything else (possibly referencing this "suffix" of 768 bytes), then
 use the command-line compressor as follows:
 
 ```
-zx0 -b +768 Cobra.cbr
+zx1 -b +768 Cobra.cbr
 ```
 
 In previous example, suppose the action game now stores level-specific sprites
@@ -304,22 +296,22 @@ compressor as follows:
 
 ```
 copy /b level_1.gfx+generic.gfx level_1_suffixed.gfx
-zx0 -b +1024 level_1_suffixed.gfx
+zx1 -b +1024 level_1_suffixed.gfx
 
 copy /b level_2.gfx+generic.gfx level_2_suffixed.gfx
-zx0 -b +1024 level_2_suffixed.gfx
+zx1 -b +1024 level_2_suffixed.gfx
 
 copy /b level_3.gfx+generic.gfx level_3_suffixed.gfx
-zx0 -b +1024 level_3_suffixed.gfx
+zx1 -b +1024 level_3_suffixed.gfx
 ```
 
 To decompress it later, use the backwards variant of the Assembly decompressor.
 In this case, if you compile a "backwards" decompressor routine to address
-64000, and load compressed file "level_1_suffixed.gfx.zx0" (with 217 bytes) to
+64000, and load compressed file "level_1_suffixed.gfx.zx1" (with 217 bytes) to
 address 39000 for instance, decompressing it will require the following code:
 
 ```
-    LD    HL, 39000+217-1  ; source (last address of "level_1_suffixed.gfx.zx0")
+    LD    HL, 39000+217-1  ; source (last address of "level_1_suffixed.gfx.zx1")
     LD    DE, 33000+512-1  ; target (last address of level-specific data)
     CALL  64000            ; backwards decompress routine
 ```
@@ -337,10 +329,9 @@ Also if you are using "in-place" decompression, you must leave a small margin of
 
 ## License
 
-The **ZX0** data compression format and algorithm was designed and implemented
+The **ZX1** data compression format and algorithm was designed and implemented
 by **Einar Saukas**. Special thanks to **introspec/spke** for several
-suggestions and improvements, and together with **uniabis** for providing the
-"Fast" decompressor!
+suggestions and improvements!
 
 The optimal C compressor is available under the "BSD-3" license. In practice,
 this is relevant only if you want to modify its source code and/or incorporate
@@ -350,87 +341,42 @@ compress files, you can simply ignore these conditions.
 The decompressors can be used freely within your own programs (either for the
 ZX Spectrum or any other platform), even for commercial releases. The only
 condition is that you must indicate somehow in your documentation that you have
-used **ZX0**.
+used **ZX1**.
 
 
 ## Links
 
-**ZX0** ported to other platforms:
+**ZX1** ported to other platforms:
 
 * [DEC PDP11](https://github.com/ivagorRetrocomp/DeZX)
 
-* [Hitachi 6309](https://github.com/dougmasten/zx0-6x09)
-
 * [Intel 8080](https://github.com/ivagorRetrocomp/DeZX)
 
-* [Intel 8088/x86](https://github.com/emmanuel-marty/unzx0_x86)
-
-* [MOS 6502](https://github.com/bboxy/bitfire/tree/master/packer/zx0/6502)
-
-* [MOS 6502](https://xxl.atari.pl/zx0-decompressor/) (stream)
-
-* [Motorola 6809](https://github.com/dougmasten/zx0-6x09)
-
-* [Motorola 68000](https://github.com/emmanuel-marty/unzx0_68000)
-
-Tools supporting **ZX0**:
+Tools supporting **ZX1**:
 
 * [z88dk](http://www.z88dk.org/) - The main C compiler for Z80 machines, that
 provides built-in support for **ZX0**, **ZX1**, **ZX2**, and **ZX7**.
 
-* [ZX Basic](https://zxbasic.readthedocs.io/) - The main BASIC compiler for
-Z80 machines, that provides built-in support for **ZX0**.
-
-* [Mad-Pascal](https://github.com/tebe6502/Mad-Pascal) - The 32-bit Turbo
-Pascal compiler for Atari XE/XL, that provides built-in support for **ZX0**.
-
-* [RASM Assembler](https://github.com/EdouardBERGE/rasm/) - A very fast Z80
-assembler, that provides built-in support for **ZX0** and **ZX7**.
-
 * [MSXlib](https://github.com/theNestruo/msx-msxlib) - A set of libraries to
-create MSX videogame cartridges, that provides built-in support
-for **ZX0**, **ZX1**, and **ZX7**.
-
-* [coco-dev](https://github.com/jamieleecho/coco-dev) - A Docker development
-environment to create Tandy Color Computer applications, that provides
-built-in support for **ZX0**.
+create MSX videogame cartridges, that provides support for **ZX0**, **ZX1**,
+and **ZX7**.
 
 * [ConvImgCpc](https://github.com/DemoniakLudo/ConvImgCpc) - An image
 conversion utility for Amstrad CPC, that provides built-in support
 for **ZX0** and **ZX1**.
 
-Projects using **ZX0**:
-
-* [Bitfire](https://github.com/bboxy/bitfire) - A disk image loader/generator
-for Commodore 64, that stores all compressed data using a modified version
-of **ZX0**.
-
-* [NSID_Emu](https://spectrumcomputing.co.uk/forums/viewtopic.php?f=8&t=2786) -
-A SID Player for ZX Spectrum that stores all compressed data using **ZX0**.
-
-* [ZX Interface 2 Cartridges](http://www.fruitcake.plus.com/Sinclair/Interface2/Cartridges/Interface2_RC_New_3rdParty_GameConversions.htm) -
-Several ZX Interface 2 conversions were created using either **ZX0** or **ZX7**
-so a full game could fit into a small 16K cartridge.
-
-* [Sonic GX](http://norecess.cpcscene.net/) - A remake of Sonic the Hedgehog
-for the GX-4000, that stores all compressed data using **ZX0**.
-
-* [Rit and Tam](http://www.indieretronews.com/2021/02/rit-and-tam-arcade-classic-rodland-is.html) -
-A remake of Rodland for the Amstrad, that stores all compressed data
-using **ZX0**.
-
 Related projects (by the same author):
 
-* [RCS](https://github.com/einar-saukas/RCS) - Use **ZX0** and **RCS** together
+* [RCS](https://github.com/einar-saukas/RCS) - Use **ZX1** and **RCS** together
 to improve compression of ZX Spectrum screens.
 
-* [ZX0](https://github.com/einar-saukas/ZX0) - The official **ZX0** repository.
+* [ZX0](https://github.com/einar-saukas/ZX0) - The original compressor on
+which **ZX1** is based.
 
-* [ZX1](https://github.com/einar-saukas/ZX1) - A simpler but faster version
-of **ZX0**, that sacrifices about 1.5% compression to run about 15% faster.
+* [ZX1](https://github.com/einar-saukas/ZX1) - The official **ZX1** repository.
 
 * [ZX2](https://github.com/einar-saukas/ZX2) - A minimalist version of **ZX1**,
 intended for compressing very small files.
 
 * [ZX7](https://spectrumcomputing.co.uk/entry/27996/ZX-Spectrum/ZX7) - A widely
-popular predecessor compressor (now superseded by **ZX0**).
+popular predecessor compressor (now superseded by **ZX0** and **ZX1**).

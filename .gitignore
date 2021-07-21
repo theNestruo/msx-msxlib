@@ -2,6 +2,7 @@
 *.bin
 *.chr
 *.clr
+*.dll
 *.plet5
 *.spr
 *.zx0
