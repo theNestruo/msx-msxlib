@@ -4,3 +4,6 @@
 [submodule "ref/MSX2-Technical-Handbook"]
 	path = ref/MSX2-Technical-Handbook
 	url = https://github.com/Konamiman/MSX2-Technical-Handbook.git
+[submodule "libext/ZX0"]
+	path = libext/ZX0
+	url = https://github.com/einar-saukas/ZX0.git
