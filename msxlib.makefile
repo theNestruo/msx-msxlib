@@ -53,7 +53,7 @@ SRCS_LIBEXT=\
 	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
 	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
 	libext\ZX0\z80\dzx0_standard.asm \
-	libext\zx1\dzx1_standard.asm \
+	libext\ZX1\z80\dzx1_standard.asm \
 	libext\zx7\dzx7_standard.tniasm.asm
 
 #
