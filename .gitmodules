@@ -7,3 +7,6 @@
 [submodule "libext/ZX0"]
 	path = libext/ZX0
 	url = https://github.com/einar-saukas/ZX0.git
+[submodule "libext/ZX1"]
+	path = libext/ZX1
+	url = https://github.com/einar-saukas/ZX1.git
