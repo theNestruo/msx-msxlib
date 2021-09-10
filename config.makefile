@@ -23,6 +23,6 @@ PNG2SPR=png2spr.exe
 TMX2BIN=tmx2bin.exe
 
 PACK_PLET5=pletter
-PACK_ZX0=zx0.exe
+PACK_ZX0=libext\ZX0\win\zx0.exe
 PACK_ZX1=zx1.exe
 PACK_ZX7=zx7.exe

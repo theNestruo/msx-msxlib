@@ -2,7 +2,7 @@
 ; -----------------------------------------------------------------------------
 ; Pack-able splash screen routine
 	org	$e000, $f380
-	include "retroeuskal.asm"
+	include "retroeuskal\retroeuskal.asm"
 ; -----------------------------------------------------------------------------
 
 ; EOF

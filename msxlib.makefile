@@ -52,16 +52,13 @@ SRCS_LIBEXT=\
 	libext\pt3\PT3-RAM.tniasm.asm \
 	libext\wyzplayer\WYZPROPLAY47cMSX.ASM \
 	libext\wyzplayer\WYZPROPLAY47c_RAM.tniasm.ASM \
-	libext\zx0\dzx0_standard.asm \
+	libext\ZX0\z80\dzx0_standard.asm \
 	libext\zx1\dzx1_standard.asm \
 	libext\zx7\dzx7_standard.tniasm.asm
 
 #
 # phony targets
 #
-
-# default target
-default: compile
 
 clean:
 	$(REMOVE) $(ROM)
@@ -117,7 +114,7 @@ debug: $(ROM) $(SYMS)
 %.spr.plet5: %.spr
 	$(PACK_PLET5) $<
 
-# ZX0
+# ZX0 v2.0
 
 %.bin.zx0: %.bin
 	$(REMOVE) $@

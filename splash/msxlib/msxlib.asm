@@ -74,7 +74,7 @@
 ; Enable screen
 	halt
 	call	ENASCR
-	
+
 ; Animation
 	ld	b, 16
 .ANIMATION_LOOP:
@@ -96,7 +96,7 @@
 	call	RDVRM
 	inc	a
 	call	WRTVRM
-	
+
 ; Pause
 	ld	b, 60 ; ~1 second
 .PAUSE_LOOP:
@@ -121,10 +121,10 @@
 
 ; -----------------------------------------------------------------------------
 .CHRTBL_0:
-	incbin	"charset.pcx.chr"
+	incbin	"msxlib/charset.png.chr"
 	.CHRTBL_0_SIZE:	equ $ - .CHRTBL_0
 .SPRTBL_0:
-	incbin	"sprites.pcx.spr"
+	incbin	"msxlib/sprites.png.spr"
 	.SPRTBL_0_SIZE:	equ $ - .SPRTBL_0
 .SPRATR_0:
 	db	88 +12, 0,       $00, 0

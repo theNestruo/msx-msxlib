@@ -58,7 +58,7 @@
 	ld	hl, CLRTBL + 6	; "S", "L"
 	ld	a, $20		; green
 	call	WRTVRM
-	
+
 ; Name table
 	ld	hl, NAMTBL
 	ld	bc, NAMTBL_SIZE
@@ -80,7 +80,7 @@
 	ld	de, NAMTBL + 13 *SCR_WIDTH + .NAMTBL_0_CENTER
 	ld	bc, .NAMTBL_0_ROW_SIZE
 	call	LDIRVM
-	
+
 ; Sprite
 	ld	hl, .SPRTBL_0
 	ld	de, SPRTBL
@@ -94,7 +94,7 @@
 ; Enable screen
 	halt
 	call	ENASCR
-	
+
 ; Pause
 	ld	b, 0 ; 256 frames
 .LOOP:
@@ -105,15 +105,15 @@
 
 ; -----------------------------------------------------------------------------
 .CHRTBL_0:
-	incbin	"charset.pcx.chr"
+	incbin	"retroeuskal/charset.png.chr"
 	.CHRTBL_0_SIZE:	equ $ - .CHRTBL_0
 .NAMTBL_0:
-	incbin	"screen.tmx.bin"
+	incbin	"retroeuskal/screen.tmx.bin"
 	.NAMTBL_0_SIZE:		equ $ - .NAMTBL_0
 	.NAMTBL_0_ROW_SIZE:	equ .NAMTBL_0_SIZE /4
 	.NAMTBL_0_CENTER:	equ (SCR_WIDTH - .NAMTBL_0_ROW_SIZE) / 2
 .SPRTBL_0:
-	incbin	"sprites.pcx.spr"
+	incbin	"retroeuskal/sprites.png.spr"
 	.SPRTBL_0_SIZE:	equ $ - .SPRTBL_0
 .SPRATR_0:
 	db	96 -1, 72, $00, 8

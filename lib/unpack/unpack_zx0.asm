@@ -36,8 +36,8 @@ ENDIF ; IFDEF CFG_INIT_ROM_SIZE
 
 ; -----------------------------------------------------------------------------
 ; ZX0 decoder by Einar Saukas
-; "Standard" version (69 bytes only)
-	include	"libext/zx0/dzx0_standard.asm"
+; "Standard" version (68 bytes only)
+	include	"libext/ZX0/z80/dzx0_standard.asm"
 ; -----------------------------------------------------------------------------
 
 ; EOF

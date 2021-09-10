@@ -40,16 +40,16 @@ SHARED_DATAS_INTERMEDIATE=\
 # targets
 #
 
-games\examples\00minimal\minimal.rom: games\examples\00minimal\minimal.asm $(SRCS_MSXLIB)
+games\examples\00minimal\minimal.rom: games\examples\00minimal\minimal.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT)
 	$(ASM) $< $@
 
-games\examples\01basic\basic.rom: games\examples\01basic\basic.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
+games\examples\01basic\basic.rom: games\examples\01basic\basic.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(SHARED_DATAS)
 	$(ASM) $< $@
 
-games\examples\02snake\snake.rom: games\examples\02snake\snake.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
+games\examples\02snake\snake.rom: games\examples\02snake\snake.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(SHARED_DATAS)
 	$(ASM) $< $@
 
-games\examples\03minimal48kb\minimal48kb.rom: games\examples\03minimal48kb\minimal48kb.asm $(SRCS_MSXLIB) $(SHARED_DATAS)
+games\examples\03minimal48kb\minimal48kb.rom: games\examples\03minimal48kb\minimal48kb.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(SHARED_DATAS)
 	$(ASM) $< $@
 
 # default targets
