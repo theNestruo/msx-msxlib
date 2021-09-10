@@ -37,7 +37,7 @@ ENDIF ; IFDEF CFG_INIT_ROM_SIZE
 ; -----------------------------------------------------------------------------
 ; ZX1 decoder by Einar Saukas
 ; "Standard" version (68 bytes only)
-	include	"libext/zx1/dzx1_standard.asm"
+	include	"libext/ZX1/z80/dzx1_standard.asm"
 ; -----------------------------------------------------------------------------
 
 ; EOF
