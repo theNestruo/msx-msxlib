@@ -3,6 +3,8 @@
 ; 	Unpacker routine: ZX1 decoder-based implementation
 ; =============================================================================
 
+	CFG_UNPACK_ZX1:	equ 1
+
 ; -----------------------------------------------------------------------------
 ; Unpack to RAM routine
 ; param hl: packed data source address
