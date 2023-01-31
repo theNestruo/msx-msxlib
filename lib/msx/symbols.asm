@@ -172,8 +172,10 @@
 	STACK_POINTER_INIT:	equ $f380 ; As suggested by the MSX2 Technical Handbook
 
 ; MSX system variables
-	RDPRIM:	equ $f380 ; Routine that reads from a primary slot
-	WRPRIM:	equ $f385 ; Routine that writes to a primary slot
+	RDPRIM:	equ $f380 ; RDSLT subroutine that reads from a primary slot (5b)
+	WRPRIM:	equ $f385 ; WRSLT subroutine that writes to a primary slot (7b)
+	CLPRIM:	equ $f38c ; CALSLT subroutine that calls a routine in a primary Slot (14b)
+	USRTAB:	equ $f39a ; Table of addresses of routines specified with the instruction DEFUSRX= (20b)
 	LINL40: equ $f3ae ; Width for SCREEN 0 (default 37)
 	LINL32: equ $f3af ; Width for SCREEN 1 (default 29)
 	LINLEN: equ $f3b0 ; Width for the current text mode
@@ -210,15 +212,24 @@
 	INTFLG:	equ $fc9b ; STOP flag (0 = none, 3 = CTRL+STOP, 4 = STOP)
 	JIFFY:	equ $fc9e ; Software clock; each VDP interrupt gets increased by 1
 	INTCNT:	equ $fca2 ; ON INTERVAL counter (counts backwards)
+	CSRSW:	equ $fca9 ; Flag to indicate whether the cursor will be shown (0 = no; another value, yes)
+	CAPST:	equ $fcab ; Capital status. (0 = Off; another value = On)
+	KANAST:	equ $fcac ; Status of the KANA key (0 = Off; another value = On)
+	KANAMD: equ $fcad ; Flag to know if the keyboard type is "KANA" (0) or "JIS" (another value)
 	SCRMOD: equ $fcaf ; Screen mode
+	OLDSCR:	equ $fcb0 ; Old screen mode
 	EXPTBL:	equ $fcc1 ; Set to $80 during power-up if Primary Slot is expanded (4b)
 	MNROM:	equ $fcc1 ; The first EXPTBL variable is also the Main ROM (BIOS) slot ID
 	SLTTBL:	equ $fcc5 ; Mirror of the four possible Secondary Slot Registers (4b)
+	SLTADR:	equ $fcc9 ; Indicates the existence of routines on any page in any slot (64b)
+	SLTWRK: equ $fd09 ; Work area for slots and pages, reserving two bytes for each page (128b)
+	PROCNM:	equ $fd89 ; Work area of the instructions CALL and OPEN. Contents the instruction name or device name (16b)
 
 ; MSX system hooks
-	HKEYI:	equ $fd9a ; Interrupt handler
-	HTIMI:	equ $fd9f ; Interrupt handler
-
+	HKEYI:	equ $fd9a ; Called at the beginning of the KEYINT interrupt routine
+	HTIMI:	equ $fd9f ; Called by the KEYINT interrupt routine when Vblank interrupt occurs
+	HRUNC:	equ $fecb ; Called at the beginning of the routine RUNC, used by the Basic instructions NEW and RUN
+	HSTKE:	equ $feda ; This hook allows to automatically re-execute the ROM after the disks are installed
 	HOOK_SIZE:	equ HTIMI - HKEYI
 ; -----------------------------------------------------------------------------
 
