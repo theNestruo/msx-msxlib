@@ -33,7 +33,11 @@ RESET_PASSWORD:
 ; ret [password]: the encoded password
 ENCODE_PASSWORD:
 ; Random first digit
+IFDEF CFG_RAM_RANDOM
+	call	GET_RANDOM
+ELSE
 	ld	a, r
+ENDIF ; IFDEF CFG_RAM_RANDOM
 	; and	$0f ; unnecessary (because .WRITE_DIGIT implementation)
 	ld	c, a ; preserves digit in c
 	ex	af, af'

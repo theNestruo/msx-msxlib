@@ -42,7 +42,9 @@ SRCS_MSXLIB=\
 	lib\unpack\unpack_zx0.asm \
 	lib\unpack\unpack_zx1.asm \
 	lib\unpack\unpack_zx7.asm \
-	lib\unpack\ram.asm
+	lib\unpack\ram.asm \
+	lib\etc\random.asm \
+	lib\etc\ram.asm \
 
 SRCS_LIBEXT=\
 	libext\ayFX-replayer\ayFX-ROM.tniasm.asm \
