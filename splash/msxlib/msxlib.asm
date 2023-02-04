@@ -10,7 +10,8 @@
 
 ; MSX system variables
 	RG1SAV:	equ $f3e0 ; Content of VDP(1) register (R#1)
-	FORCLR:	equ $f3e9 ; Foreground colour
+	; BAKCLR:	equ $f3ea ; Background colour
+	BDRCLR:	equ $f3eb ; Border colour
 
 ; VRAM addresses
 	CHRTBL:	equ $0000 ; Pattern table
@@ -25,15 +26,9 @@
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; VDP: color ,1,1
-	ld	hl, FORCLR
-	ld	a, 15
-	ld	[hl], a
-	ld	a, 4
-	inc	hl ; BAKCLR
-	ld	[hl], a
-	inc	hl ; BDRCLR
-	ld	[hl], a
+; VDP: color ,4,4
+	ld	hl, $0404
+	ld	[BAKCLR], hl
 ; VDP: screen 2
 	call	INIT32
 ; screen ,2
