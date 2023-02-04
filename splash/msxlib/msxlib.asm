@@ -10,7 +10,7 @@
 
 ; MSX system variables
 	RG1SAV:	equ $f3e0 ; Content of VDP(1) register (R#1)
-	; BAKCLR:	equ $f3ea ; Background colour
+	BAKCLR:	equ $f3ea ; Background colour
 	BDRCLR:	equ $f3eb ; Border colour
 
 ; VRAM addresses
