@@ -20,7 +20,23 @@ LD_HL_A_MASK:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Computes a modulus b, with both unsigned operands
+; (this routine can be potentially slow)
+; param a: the dividend, unsigned (0..255)
+; param b: the divisor, unsigned (1..255)
+; ret a: the modulus, unsigned
+A_MODULUS_B:
+; Is a greater than b?
+	cp	b
+	ret	c ; no
+; yes: subtract b from a and compare again
+	sub	b
+	jp	A_MODULUS_B
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Computes a modulus c, with both unsigned operands
+; (this routine can be potentially slow)
 ; param a: the dividend, unsigned (0..255)
 ; param c: the divisor, unsigned (0..255)
 ; ret a: the modulus, unsigned

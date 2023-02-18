@@ -6,7 +6,7 @@
 ; -----------------------------------------------------------------------------
 ; Emulates the instruction "hl += 2*a" (in C syntax)
 ; param hl: operand
-; param a: usigned operand (0..127)
+; param a: unsigned operand (0..127)
 ADD_HL_2A:
 	add	a
 ; ------VVVV----falls through--------------------------------------------------
@@ -14,7 +14,7 @@ ADD_HL_2A:
 ; -----------------------------------------------------------------------------
 ; Emulates the instruction "add hl, a" (or "hl += a" in C syntax)
 ; param hl: operand
-; param a: usigned operand (0..255)
+; param a: unsigned operand (0..255)
 ADD_HL_A:
 	add	l
 	ld	l, a
@@ -26,7 +26,7 @@ ADD_HL_A:
 ; -----------------------------------------------------------------------------
 ; Emulates the instruction "add de, a" (or "de += a" in C syntax)
 ; param de: operand
-; param a: usigned operand
+; param a: unsigned operand
 ADD_DE_A:
 	add	e
 	ld	e, a
@@ -38,7 +38,7 @@ ADD_DE_A:
 ; -----------------------------------------------------------------------------
 ; Reads a byte from a byte array (i.e.: "a = hl[a]" in C syntax)
 ; param hl: byte array address
-; param a: usigned 0-based index
+; param a: unsigned 0-based index
 ; ret hl: pointer to the byte (i.e.: hl + a)
 ; ret a: read byte
 GET_HL_A_BYTE:
@@ -50,6 +50,15 @@ GET_HL_A_BYTE:
 	ld	a, [hl] ; a = [hl]
 	ret
 ; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Reads a word from a word array (i.e.: "h,l = hl[2*a+1], hl[2*a]" in C syntax)
+; param hl: word array address
+; param a: unsigned 0-based index (0, 1, 2...)
+; ret hl: read word
+GET_HL_2A_WORD:
+	add	a
+; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
 ; Reads a word from a word array (i.e.: "h,l = hl[a+1], hl[a]" in C syntax)

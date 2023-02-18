@@ -4,9 +4,48 @@
 ; =============================================================================
 
 ; -----------------------------------------------------------------------------
+; Makes color 0 transparent or solid
+; Does nothing if the MSX does not have MSX2 VDP or greater
+SET_COLOR_0:
+
+; Makes color 0 transparent (normal)
+; touches a, bc, hl
+.NORMAL:
+; MSX2 VDP?
+	call	CHECK_MSX2_VDP
+	ret	z ; not MSX2
+.NORMAL_NO_CHECK:
+; Resets TP bit for transparent
+	ld	hl, RG08SAV
+	res	5, [hl] ; TP: Transparent from palette (0=Normal, 1=Color 0 is solid)
+	jr	.WRTVDP_8
+
+; Makes color 0 solid (black by default)
+; touches a, bc, hl
+.SOLID:
+; MSX2 VDP?
+	call	CHECK_MSX2_VDP
+	ret	z ; not MSX2
+.SOLID_NO_CHECK:
+; Sets TP bit for black
+	ld	hl, RG08SAV
+	set	5, [hl] ; TP: Transparent from palette (0=Normal, 1=Color 0 is solid)
+.WRTVDP_8:
+	ld	b, [hl]
+	ld	c, 8
+	jp	WRTVDP
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Sets the color palette
-; param hl: palette as sixteen $0RGB values (with R, G, B in 0..7)
+; Does nothing if the MSX does not have MSX2 VDP or greater
+; param hl: palette as sixteen $0GRB values (with R, G, B in 0..7)
+; touches a, bc, hl
 SET_PALETTE:
+; MSX2 VDP?
+	call	CHECK_MSX2_VDP
+	ret	z ; not MSX2
+.NO_CHECK:
 ; Reads the first VDP write port
 	ld	a, [VDP_DW]
 	ld	c, a
@@ -24,6 +63,17 @@ SET_PALETTE:
 	inc	c
 	otir
 	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Checks if the MSX does have MSX2 VDP or greater
+; ret z/nz: does not/does have MSX2 VDP or greater
+; touches a
+CHECK_MSX2_VDP:
+; MSX2 VDP?
+	ld	a, [MSXID3]
+	or	a
+	ret	; ret z/nz
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

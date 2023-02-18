@@ -161,8 +161,7 @@ IFDEF CFG_INIT_DISABLE_PALETTE
 ELSE
 IFEXIST SET_PALETTE
 ; MSX2 VDP: Custom palette
-	ld	a, [MSXID3]
-	or	a
+	call	CHECK_MSX2_VDP
 	jr	z, .PALETTE_OK ; not MSX2
 ; Is the 1 key or 2 key down?
 	xor	a ; 7 6 5 4 3 2 1 0
@@ -210,6 +209,7 @@ ENDIF
 .HL_OK:
 	ld	[frame_rate], hl
 
+; Initializes the pseudo-random generator
 IFEXIST GET_RANDOM
 	ld  	hl, 0xA280
 	ld	[current_random +0], hl

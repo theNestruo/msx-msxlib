@@ -84,7 +84,7 @@ WAIT_TRIGGER_FRAMES_A:
 ; -----------------------------------------------------------------------------
 ; Skippable pause
 ; param b: pause length (in frames)
-; ret nz: if the trigger went from off to on (edge)
+; ret nz: if any trigger went from off to on (edge)
 ; ret z: if the pause timed out
 ; touches: a, bc, de, hl
 WAIT_TRIGGER_FRAMES:
@@ -97,7 +97,7 @@ ELSE
 	halt
 	ld	a, [input.edge]
 ENDIF
-	bit	BIT_TRIGGER_A, a
+	and	$30 ; 1 << BIT_TRIGGER_A or 1 << BIT_TRIGGER_B
 	ret	nz ; trigger
 	djnz	WAIT_TRIGGER_FRAMES
 	ret	; no trigger (z)
@@ -105,7 +105,7 @@ ENDIF
 
 ; -----------------------------------------------------------------------------
 ; Waits for the trigger
-; ret nz always: the trigger went from off to on (edge)
+; ret nz always: any trigger went from off to on (edge)
 ; touches: a, bc, de, hl
 WAIT_TRIGGER:
 	halt
@@ -114,7 +114,7 @@ IFDEF CFG_HOOK_DISABLE_AUTO_INPUT
 ELSE
 	ld	a, [input.edge]
 ENDIF
-	bit	BIT_TRIGGER_A, a
+	and	$30 ; 1 << BIT_TRIGGER_A or 1 << BIT_TRIGGER_B
 	jr	z, WAIT_TRIGGER
 	ret	; trigger (nz)
 ; -----------------------------------------------------------------------------
