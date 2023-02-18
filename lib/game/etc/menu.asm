@@ -106,7 +106,31 @@ PRINT_OPTIONS_MENU_CURSOR:
 	inc	hl
 	inc	de
 	jr	.PRINT_BLANK
-	jp	PRINT_TEXT
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Hides the options menu cursor
+HIDES_OPTIONS_MENU_CURSOR:
+	ld	b, 0
+	ld	hl, [options_menu.coordinates]
+.LOOP:
+	push	bc ; (preserves counter)
+; Reads the coordinates
+	ld	e, [hl]
+	inc	hl
+	ld	d, [hl]
+	inc	hl
+; Compares with the current option
+	push	hl ; (preserves data pointer)
+	ld	hl, [options_menu.cursor_definition]
+	call	PRINT_OPTIONS_MENU_CURSOR.PRINT_BLANK
+	pop	hl ; (restores data pointer)
+	pop	bc ; (restores size)
+	inc	b
+	ld	a, [options_menu.size]
+	cp	b
+	jr	nz, .LOOP
+	ret
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

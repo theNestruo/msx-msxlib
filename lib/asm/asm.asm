@@ -213,9 +213,9 @@ RET_NOT_ZERO:
 ; ------VVVV----falls through--------------------------------------------------
 
 ; -----------------------------------------------------------------------------
-; Convenience routine that just rets (actually, any )
+; Convenience routine that just rets
 ; (mainly to be used in no-op entries of jump tables; unnecessary otherwise)
-RET_:
+RET_NO_OP:
 	ret
 ; -----------------------------------------------------------------------------
 

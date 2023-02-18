@@ -5,7 +5,7 @@ IFDEF CFG_RAM_RANDOM
 
 ; Current (latest generated) pseudo-random 7 bit number, also working as seed
 current_random:
-	rb	1
+	rw	2
 ; -----------------------------------------------------------------------------
 ENDIF
 

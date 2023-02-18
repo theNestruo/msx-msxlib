@@ -89,17 +89,18 @@ ENDIF
 IFEXIST SNSMAT_NO_DI_EI
 IFDEF CFG_HOOK_ENABLE_AUTO_KEYBOARD
 	ld	a, [OLDKEY + 4] ; R Q P O N M L K
-	cpl
 ELSE
 	ld	c, 4 ; R Q P O N M L K
 	call	SNSMAT_NO_DI_EI.C_OK
+	cpl
 ENDIF
 ELSE
 	ld	a, 4 ; R Q P O N M L K
 	call	SNSMAT
+	cpl
 ENDIF
-	bit	2, a
-	jr	nz, .NOT_TRIGGER_B
+	and	$0c ; N or M
+	jr	z, .NOT_TRIGGER_B
 ; Saves trigger B in current level
 	set	BIT_TRIGGER_B, b
 .NOT_TRIGGER_B:
@@ -108,24 +109,27 @@ ENDIF
 IFEXIST SNSMAT_NO_DI_EI
 IFDEF CFG_HOOK_ENABLE_AUTO_KEYBOARD
 	ld	a, [OLDKEY + 7] ; CR SEL BS STOP TAB ESC F5 F4
-	cpl
 ELSE
 	ld	c, 7 ; CR SEL BS STOP TAB ESC F5 F4
 	call	SNSMAT_NO_DI_EI.C_OK
+	cpl
 ENDIF
 ELSE
 	ld	a, 7 ; CR SEL BS STOP TAB ESC F5 F4
 	call	SNSMAT
+	cpl
 ENDIF
-	bit	6, a
-	jr	nz, .NOT_SELECT
+	ld	c, a ; (preserves a in c)
+	and	$68 ; SEL BS or TAB
+	jr	z, .NOT_SELECT
 ; Saves "select" button in current level
 	set	BIT_BUTTON_SELECT, b
 .NOT_SELECT:
 
 ; "Start" button (STOP key)
-	bit	4, a
-	jr	nz, .NOT_START
+	ld	a, c ; (restores a)
+	and	$94 ; CR STOP or ESC
+	jr	z, .NOT_START
 ; Saves "start" button in current level
 	set	BIT_BUTTON_START, b
 .NOT_START:
