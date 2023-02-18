@@ -30,13 +30,15 @@ SHARED_DATAS=\
 	games\examples\shared\charset.png.chr.$(PACK_EXTENSION) \
 	games\examples\shared\charset.png.clr.$(PACK_EXTENSION) \
 	games\examples\shared\sprites.png.spr.$(PACK_EXTENSION) \
-	games\examples\shared\screen.tmx.bin.$(PACK_EXTENSION)
+	games\examples\shared\screen.tmx.bin.$(PACK_EXTENSION) \
+	games\experiments\shared\sprites.png.spr.$(PACK_EXTENSION)
 
 SHARED_DATAS_INTERMEDIATE=\
 	games\examples\shared\charset.png.chr \
 	games\examples\shared\charset.png.clr \
 	games\examples\shared\sprites.png.spr \
-	games\examples\shared\screen.tmx.bin
+	games\examples\shared\screen.tmx.bin \
+	games\experiments\shared\sprites.png.spr
 
 #
 # targets

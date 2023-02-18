@@ -104,13 +104,13 @@ $(SYM): tniasm.sym
 # GFXs, SPRs, and BINs targets
 #
 
-# -lh by default because packing usally produces smaller binaries
+# -hl by default for FILVRM compatibility
 %.pcx.chr %.pcx.clr: %.pcx
-	$(PCX2MSX) -lh $<
+	$(PCX2MSX) -hl $<
 
-# -lh by default because packing usally produces smaller binaries
+# -hl by default for FILVRM compatibility
 %.png.chr %.png.clr: %.png
-	$(PNG2MSX) -lh $<
+	$(PNG2MSX) -hl $<
 
 %.pcx.spr: %.pcx
 	$(PCX2SPR) $<
