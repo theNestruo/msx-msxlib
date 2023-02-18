@@ -12,6 +12,8 @@ SRCS_MSXLIB=\
 	lib\ram_end.asm \
 	lib\msx\symbols.asm \
 	lib\msx\cartridge.asm \
+	lib\msx\cartridge_header.asm \
+	lib\msx\cartridge_init.asm \
 	lib\msx\hook.asm \
 	lib\msx\ram.asm \
 	lib\msx\io\input.asm \
@@ -29,6 +31,7 @@ SRCS_MSXLIB=\
 	lib\msx\etc\attract_print.asm \
 	lib\msx\etc\ram.asm \
 	lib\asm\asm.asm \
+	lib\asm\etc.asm \
 	lib\game\tiles.asm \
 	lib\game\player.asm \
 	lib\game\enemy.asm \
@@ -44,7 +47,7 @@ SRCS_MSXLIB=\
 	lib\unpack\unpack_zx7.asm \
 	lib\unpack\ram.asm \
 	lib\etc\random.asm \
-	lib\etc\ram.asm \
+	lib\etc\ram.asm
 
 SRCS_LIBEXT=\
 	libext\ayFX-replayer\ayFX-ROM.tniasm.asm \
@@ -58,6 +61,18 @@ SRCS_LIBEXT=\
 	libext\ZX1\z80\dzx1_standard.asm \
 	libext\zx7\dzx7_standard.tniasm.asm
 
+BINS_MSXLIB=\
+	splash\msxlib.bin.plet5 \
+	splash\msxlib.bin.zx0 \
+	splash\msxlib.bin.zx1 \
+	splash\msxlib.bin.zx7 \
+	splash\retroeuskal.bin.plet5 \
+	splash\retroeuskal.bin.zx0 \
+	splash\retroeuskal.bin.zx1 \
+	splash\retroeuskal.bin.zx7
+
+MSXLIB=$(SRC_MSXLIB) $(SRCS_LIBEXT) $(BINS_MSXLIB)
+
 #
 # phony targets
 #
@@ -66,13 +81,24 @@ clean:
 	$(REMOVE) $(ROM)
 	$(REMOVE) $(SYM) tniasm.sym tniasm.tmp
 
-compile: $(ROM)
+compile: $(ROM) $(MSXLIB)
 
-test: $(ROM)
-	$(EMULATOR) $<
+run: runnable
+	$(EMULATOR) $(ROM)
 
-debug: $(ROM) $(SYMS)
-	$(DEBUGGER) $<
+debug: debuggable
+	$(DEBUGGER) $(ROM)
+
+#
+# Convenience auxiliary targets
+#
+
+runnable: $(ROM)
+
+debuggable: $(ROM) $(SYM)
+
+$(SYM): tniasm.sym
+	$(COPY) $< $@
 
 #
 # GFXs, SPRs, and BINs targets
@@ -119,46 +145,36 @@ debug: $(ROM) $(SYMS)
 # ZX0 v2.0
 
 %.bin.zx0: %.bin
-	$(REMOVE) $@
-	$(PACK_ZX0) $<
+	$(PACK_ZX0) -f $<
 
 %.chr.zx0: %.chr
-	$(REMOVE) $@
-	$(PACK_ZX0) $<
+	$(PACK_ZX0) -f $<
 
 %.clr.zx0: %.clr
-	$(REMOVE) $@
-	$(PACK_ZX0) $<
+	$(PACK_ZX0) -f $<
 
 %.nam.zx0: %.nam
-	$(REMOVE) $@
-	$(PACK_ZX0) $<
+	$(PACK_ZX0) -f $<
 
 %.spr.zx0: %.spr
-	$(REMOVE) $@
-	$(PACK_ZX0) $<
+	$(PACK_ZX0) -f $<
 
 # ZX1
 
 %.bin.zx1: %.bin
-	$(REMOVE) $@
-	$(PACK_ZX1) $<
+	$(PACK_ZX1) -f $<
 
 %.chr.zx1: %.chr
-	$(REMOVE) $@
-	$(PACK_ZX1) $<
+	$(PACK_ZX1) -f $<
 
 %.clr.zx1: %.clr
-	$(REMOVE) $@
-	$(PACK_ZX1) $<
+	$(PACK_ZX1) -f $<
 
 %.nam.zx1: %.nam
-	$(REMOVE) $@
-	$(PACK_ZX1) $<
+	$(PACK_ZX1) -f $<
 
 %.spr.zx1: %.spr
-	$(REMOVE) $@
-	$(PACK_ZX1) $<
+	$(PACK_ZX1) -f $<
 
 # ZX7
 

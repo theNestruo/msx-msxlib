@@ -1,4 +1,7 @@
 
+# default target
+default: compile
+
 # commands and tools
 include config.makefile
 
@@ -43,9 +46,9 @@ DATAS_INTERMEDIATE=\
 # main targets
 #
 
-$(ROM) tniasm.sym: $(SRCS) $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(DATAS)
-	$(ASM) $< $@
-# cmd /c findstr /b /i "dbg_" tniasm.sym | sort
-
 # default targets
 include msxlib.makefile
+
+$(ROM) tniasm.sym: $(SRCS) $(MSXLIB) $(DATAS)
+	$(ASM) $< $@
+# cmd /c findstr /b /i "dbg_" tniasm.sym | sort

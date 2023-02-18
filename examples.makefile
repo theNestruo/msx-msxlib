@@ -1,12 +1,12 @@
 
+# default target
+default: compile
+
 # commands and tools
 include config.makefile
 
 # packer; must match the included unpacker routine
 PACK_EXTENSION=zx0
-
-# default target
-default: compile
 
 #
 # paths and file lists
@@ -40,17 +40,17 @@ SHARED_DATAS_INTERMEDIATE=\
 # targets
 #
 
-games\examples\00minimal\minimal.rom: games\examples\00minimal\minimal.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT)
-	$(ASM) $< $@
-
-games\examples\01basic\basic.rom: games\examples\01basic\basic.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(SHARED_DATAS)
-	$(ASM) $< $@
-
-games\examples\02snake\snake.rom: games\examples\02snake\snake.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(SHARED_DATAS)
-	$(ASM) $< $@
-
-games\examples\03minimal48kb\minimal48kb.rom: games\examples\03minimal48kb\minimal48kb.asm $(SRCS_MSXLIB) $(SRCS_LIBEXT) $(SHARED_DATAS)
-	$(ASM) $< $@
-
 # default targets
 include msxlib.makefile
+
+games\examples\00minimal\minimal.rom: games\examples\00minimal\minimal.asm $(MSXLIB)
+	$(ASM) $< $@
+
+games\examples\01basic\basic.rom: games\examples\01basic\basic.asm $(MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
+
+games\examples\02snake\snake.rom: games\examples\02snake\snake.asm $(MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
+
+games\examples\03minimal48kb\minimal48kb.rom: games\examples\03minimal48kb\minimal48kb.asm $(MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
