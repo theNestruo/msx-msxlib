@@ -231,6 +231,24 @@
 	HRUNC:	equ $fecb ; Called at the beginning of the routine RUNC, used by the Basic instructions NEW and RUN
 	HSTKE:	equ $feda ; This hook allows to automatically re-execute the ROM after the disks are installed
 	HOOK_SIZE:	equ HTIMI - HKEYI
+
+; MSX2 system variables
+	RG08SAV:	equ $ffe7 ; Content of VDP(9) register (R#8)
+	RG09SAV:	equ $ffe8 ; Content of VDP(10) register (R#9)
+	RG10SAV:	equ $ffe9 ; Content of VDP(11) register (R#10)
+	RG11SAV:	equ $ffea ; Content of VDP(12) register (R#11)
+	RG12SAV:	equ $ffeb ; Content of VDP(13) register (R#12)
+	RG13SAV:	equ $ffec ; Content of VDP(14) register (R#13)
+	RG14SAV:	equ $ffed ; Content of VDP(15) register (R#14)
+	RG15SAV:	equ $ffee ; Content of VDP(16) register (R#15)
+	RG16SAV:	equ $ffef ; Content of VDP(17) register (R#16)
+	RG17SAV:	equ $fff0 ; Content of VDP(18) register (R#17)
+	RG18SAV:	equ $fff1 ; Content of VDP(19) register (R#18)
+	RG19SAV:	equ $fff2 ; Content of VDP(20) register (R#19)
+	RG20SAV:	equ $fff3 ; Content of VDP(21) register (R#20)
+	RG21SAV:	equ $fff4 ; Content of VDP(22) register (R#21)
+	RG22SAV:	equ $fff5 ; Content of VDP(23) register (R#22)
+	RG23SAV:	equ $fff6 ; Content of VDP(24) register (R#23)
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
