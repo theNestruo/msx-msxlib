@@ -67,10 +67,10 @@ INIT_CHARSET:
 
 ; The data is the shared data of the examples
 .CHRTBL_PACKED:
-	incbin	"games/examples/shared/charset.pcx.chr.zx0"
+	incbin	"games/examples/shared/charset.png.chr.zx0"
 
 .CLRTBL_PACKED:
-	incbin	"games/examples/shared/charset.pcx.clr.zx0"
+	incbin	"games/examples/shared/charset.png.clr.zx0"
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------

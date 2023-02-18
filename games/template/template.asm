@@ -741,9 +741,9 @@ NAMTBL_PACKED_TABLE:
 ; Charset binary data (CHRTBL and CLRTBL)
 CHARSET_PACKED:
 .CHR:
-	incbin	"games/template/charset.pcx.chr.zx0"
+	incbin	"games/template/charset.png.chr.zx0"
 .CLR:
-	incbin	"games/template/charset.pcx.clr.zx0"
+	incbin	"games/template/charset.png.clr.zx0"
 
 ; Charset-related symbolic constants
 CHARSET:
@@ -754,7 +754,7 @@ CHARSET:
 ; -----------------------------------------------------------------------------
 ; Sprites binary data (SPRTBL)
 SPRTBL_PACKED:
-	incbin	"games/template/sprites.pcx.spr.zx0"
+	incbin	"games/template/sprites.png.spr.zx0"
 
 ; Sprite-related symbolic constants (SPRATR)
 	; ...

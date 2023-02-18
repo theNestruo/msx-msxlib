@@ -16,24 +16,26 @@ ROM=\
 	games\examples\00minimal\minimal.rom \
 	games\examples\01basic\basic.rom \
 	games\examples\02snake\snake.rom \
-	games\examples\03minimal48kb\minimal48kb.rom
+	games\examples\03minimal48kb\minimal48kb.rom \
+	games\experiments\fsjh1test\fsjh1test.rom
 
 SYM=\
 	games\examples\00minimal\minimal.sym \
 	games\examples\01basic\basic.sym \
 	games\examples\02snake\snake.sym \
-	games\examples\03minimal48kb\minimal48kb.sym
+	games\examples\03minimal48kb\minimal48kb.sym \
+	games\experiments\fsjh1test\fsjh1test.sym
 
 SHARED_DATAS=\
-	games\examples\shared\charset.pcx.chr.$(PACK_EXTENSION) \
-	games\examples\shared\charset.pcx.clr.$(PACK_EXTENSION) \
-	games\examples\shared\sprites.pcx.spr.$(PACK_EXTENSION) \
+	games\examples\shared\charset.png.chr.$(PACK_EXTENSION) \
+	games\examples\shared\charset.png.clr.$(PACK_EXTENSION) \
+	games\examples\shared\sprites.png.spr.$(PACK_EXTENSION) \
 	games\examples\shared\screen.tmx.bin.$(PACK_EXTENSION)
 
 SHARED_DATAS_INTERMEDIATE=\
-	games\examples\shared\charset.pcx.chr \
-	games\examples\shared\charset.pcx.clr \
-	games\examples\shared\sprites.pcx.spr \
+	games\examples\shared\charset.png.chr \
+	games\examples\shared\charset.png.clr \
+	games\examples\shared\sprites.png.spr \
 	games\examples\shared\screen.tmx.bin
 
 #
@@ -54,3 +56,9 @@ games\examples\02snake\snake.rom: games\examples\02snake\snake.asm $(MSXLIB) $(S
 
 games\examples\03minimal48kb\minimal48kb.rom: games\examples\03minimal48kb\minimal48kb.asm $(MSXLIB) $(SHARED_DATAS)
 	$(ASM) $< $@
+
+games\experiments\fsjh1test\fsjh1test.rom: games\experiments\fsjh1test\fsjh1test.asm $(MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
+
+# secondary targets
+.secondary: $(SHARED_DATAS_INTERMEDIATE)

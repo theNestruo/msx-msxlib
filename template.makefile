@@ -28,15 +28,15 @@ SRCS=\
 	splash\msxlib.bin.$(PACK_EXTENSION) \
 
 DATAS=\
-	$(GAME_PATH)\charset.pcx.chr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\charset.pcx.clr.$(PACK_EXTENSION) \
-	$(GAME_PATH)\sprites.pcx.spr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\charset.png.chr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\charset.png.clr.$(PACK_EXTENSION) \
+	$(GAME_PATH)\sprites.png.spr.$(PACK_EXTENSION) \
 	$(GAME_PATH)\screen.tmx.bin.$(PACK_EXTENSION)
 
 DATAS_INTERMEDIATE=\
-	$(GAME_PATH)\charset.pcx.chr \
-	$(GAME_PATH)\charset.pcx.clr \
-	$(GAME_PATH)\sprites.pcx.spr \
+	$(GAME_PATH)\charset.png.chr \
+	$(GAME_PATH)\charset.png.clr \
+	$(GAME_PATH)\sprites.png.spr \
 	$(GAME_PATH)\screen.tmx.bin
 
 # secondary targets
@@ -52,3 +52,6 @@ include msxlib.makefile
 $(ROM) tniasm.sym: $(SRCS) $(MSXLIB) $(DATAS)
 	$(ASM) $< $@
 # cmd /c findstr /b /i "dbg_" tniasm.sym | sort
+
+# secondary targets
+.secondary: $(DATAS_INTERMEDIATE)

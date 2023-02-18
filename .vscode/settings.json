@@ -19,7 +19,9 @@
 		"**/*.hl": { "when": "$(basename)" },
 		"**/*.nam": { "when": "$(basename)" },
 		"**/*.spr": { "when": "$(basename)" },
+		"**/*.plet5": { "when": "$(basename)" },
 		"**/*.zx0": { "when": "$(basename)" },
+		"**/*.zx1": { "when": "$(basename)" },
 		"**/*.zx7": { "when": "$(basename)" },
 	},
 	"z80-asm-meter.platform": "msx"
