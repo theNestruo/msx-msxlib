@@ -33,6 +33,8 @@ GET_RANDOM:
 	ret
 ; -----------------------------------------------------------------------------
 
+IFEXIST A_MODULUS_C
+
 ; -----------------------------------------------------------------------------
 ; Uniform generator for 8 bit numbers between two values
 ; param c: maximum value (inclusive)
@@ -68,5 +70,7 @@ RANDOM_BETWEEN_0_C:
 	call	GET_RANDOM
 	jp	A_MODULUS_C
 ; -----------------------------------------------------------------------------
+
+ENDIF ; IFEXIST A_MODULUS_C
 
 ; EOF
