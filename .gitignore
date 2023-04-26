@@ -3,6 +3,7 @@
 *.chr
 *.clr
 *.dll
+*.pt3.hl
 *.plet5
 *.spr
 *.sym
