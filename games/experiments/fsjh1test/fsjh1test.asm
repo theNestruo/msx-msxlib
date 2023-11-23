@@ -63,9 +63,22 @@ INIT:
 
 	call	VISUAL_FEEDBACK
 
+; Algorithm 1
 	call	READ_INPUT_BUFFER
-	ld	hl, spratr_buffer + 1
+	ld	hl, accumulator_1
 	call	APPLY_BUFFERED_INPUT_TO_HL
+; (visual)
+	ld	a, [accumulator_1]
+	add	128 -4
+	ld	[spratr_buffer + $00 + 1], a
+
+; Algorithm 2
+	ld	hl, accumulator_2
+	call	ALGORITHM_2_1
+; (visual)
+	call	ALGORITHM_2_2
+	add	128 -4
+	ld	[spratr_buffer + $18 + 1], a
 
 	jr	.LOOP
 ; -----------------------------------------------------------------------------
@@ -136,28 +149,33 @@ RESET_INPUT_BUFFER_AND_VISUAL_FEEDBACK:
 	ld	[input_buffer.write_pointer], hl
 
 	ld	a, [spratr_buffer + $04 + 1]
-	ld	[spratr_buffer + $00 + 1], a
+	ld	[spratr_buffer + $00 + 1], a ; Algorithm 1
+	ld	[spratr_buffer + $18 + 1], a ; Algorithm 2
 
 ; Half left marker
 	ld	c, b
 	sra	c
 	sub	c
 	sub	4
-	ld	[spratr_buffer + $08 + 1], a
+	ld	[spratr_buffer + $08 + 1], a ; Algorithm 1
+	ld	[spratr_buffer + $20 + 1], a ; Algorithm 2
 	add	c
 	add	c
 	add	8
-	ld	[spratr_buffer + $0c + 1], a
+	ld	[spratr_buffer + $0c + 1], a ; Algorithm 1
+	ld	[spratr_buffer + $24 + 1], a ; Algorithm 2
 
 ; Left/right visual feedback
 	ld	a, [spratr_buffer + $04 + 1]
 	sub	b
 	sub	8
-	ld	[spratr_buffer + $10 + 1], a
+	ld	[spratr_buffer + $10 + 1], a ; Algorithm 1
+	ld	[spratr_buffer + $28 + 1], a ; Algorithm 2
 	add	b
 	add	b
 	add	16
-	ld	[spratr_buffer + $14 + 1], a
+	ld	[spratr_buffer + $14 + 1], a ; Algorithm 1
+	ld	[spratr_buffer + $2c + 1], a ; Algorithm 2
 	ret
 ; -----------------------------------------------------------------------------
 
@@ -177,7 +195,8 @@ VISUAL_FEEDBACK:
 	jr	z, .A_LEFT_OK
 	ld	a, 15
 .A_LEFT_OK:
-	ld	[spratr_buffer + $10 + 3], a
+	ld	[spratr_buffer + $10 + 3], a ; Algorithm 1
+	ld	[spratr_buffer + $28 + 3], a ; Algorithm 2
 
 ; Visual feedback (right)
 	ld	a, 4
@@ -188,7 +207,8 @@ VISUAL_FEEDBACK:
 	jr	z, .A_RIGHT_OK
 	ld	a, 15
 .A_RIGHT_OK:
-	ld	[spratr_buffer + $14 + 3], a
+	ld	[spratr_buffer + $14 + 3], a ; Algorithm 1
+	ld	[spratr_buffer + $2c + 3], a ; Algorithm 2
 
 	ret
 ; -----------------------------------------------------------------------------
@@ -218,7 +238,6 @@ READ_INPUT_BUFFER:
 ; param b: previously buffered input.level
 ; param hl: the address of the value to update
 APPLY_BUFFERED_INPUT_TO_HL:
-
 ; Based on the current input.level
 	bit	BIT_STICK_LEFT, a
 	jr	nz, .CURRENT_LEFT
@@ -263,6 +282,75 @@ APPLY_BUFFERED_INPUT_TO_HL:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; ret a
+ALGORITHM_2_1:
+; Based on the current input.level
+	ld	a, [input.level]
+	bit	BIT_STICK_LEFT, a
+	jr	nz, .CURRENT_LEFT
+	bit	BIT_STICK_RIGHT, a
+	jr	nz, .CURRENT_RIGHT
+.CURRENT_NONE:
+	ld	a, [hl]
+	or	a
+	ret	z
+	jp	p, .DO_DEC
+	jp	.DO_INC
+
+.CURRENT_LEFT:
+	ld	a, [input.edge]
+	bit	BIT_STICK_LEFT, a
+	jp	z, .DO_DEC_TO_MAX
+; edge
+	ld	a, -14
+	ld	[hl], a
+.DO_DEC_TO_MAX:
+	ld	a, [hl]
+	cp	-32
+	ret	z
+.DO_DEC:
+	dec	[hl]
+	ret
+
+.CURRENT_RIGHT:
+	ld	a, [input.edge]
+	bit	BIT_STICK_RIGHT, a
+	jp	z, .DO_INC_TO_MAX
+; edge
+	ld	a, 14
+	ld	[hl], a
+.DO_INC_TO_MAX:
+	ld	a, [hl]
+	cp	32
+	ret	z
+.DO_INC:
+	inc	[hl]
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+ALGORITHM_2_2:
+	ld	a, [accumulator_2]
+	or	a
+	ret	z
+	jp	m, .LEFT
+; right
+	cp	32
+	ld	a, 30
+	ret	z
+	ld	a, 15
+	ret
+
+.LEFT:
+	cp	-32
+	ld	a, -30
+	ret	z
+	ld	a, -15
+	ret
+
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 DATA_CHRTBL_PACKED:
 	incbin	"games/examples/shared/charset.png.chr.zx0"
 DATA_CLRTBL_PACKED:
@@ -271,12 +359,21 @@ DATA_SPRTBL_PACKED:
 	incbin	"games/experiments/shared/sprites.png.spr.zx0"
 
 DATA_SPRATR:
-	db	96 -1, 128 -4, $00, 7
-	db	80 -1, 128 -4, $04, 6
-	db	80 -1, 128 -4, $04, 6
-	db	80 -1, 128 -4, $04, 6
-	db	96 -1, 128 -4, $08, 4
-	db	96 -1, 128 -4, $0c, 4
+; Algorithm 1
+	db	80 -1, 128 -4, $00, 7
+	db	64 -1, 128 -4, $04, 6
+	db	64 -1, 128 -4, $04, 6
+	db	64 -1, 128 -4, $04, 6
+	db	80 -1, 128 -4, $08, 4
+	db	80 -1, 128 -4, $0c, 4
+; Algorithm 2
+	db	112 -1, 128 -4, $00, 7
+	db	 96 -1, 128 -4, $04, 6
+	db	 96 -1, 128 -4, $04, 6
+	db	 96 -1, 128 -4, $04, 6
+	db	112 -1, 128 -4, $08, 4
+	db	112 -1, 128 -4, $0c, 4
+
 	db	SPAT_END
 
 DATA_LITERALS:
@@ -302,6 +399,8 @@ input_buffer:
 	.size:		rb 1 ; Requested size, in bytes
 	.size_bcd:	rb 1 ; Requested size, in bytes (BCD)
 
+accumulator_1:	rb 1
+accumulator_2:	rb 1
 ; -----------------------------------------------------------------------------
 
 	include	"lib/ram_end.asm"
