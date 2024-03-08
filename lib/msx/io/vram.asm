@@ -322,10 +322,10 @@ IFDEF CFG_SPRITES_FLICKER
 ; The flickering size has changed between frames; resets the offset for the next frame
 	ld	[hl], 0
 	pop	hl ; (restores stack status)
-.NO_FLICKER:
 ENDIF ; IFDEF CFG_SPRITES_FLICKER
 
 ; LDIRVM the actual SPRATR buffer
+.NO_FLICKER:
 	ld	hl, spratr_buffer
 	ld	de, SPRATR
 	ld	bc, SPRATR_SIZE

@@ -26,13 +26,21 @@ REPLAYER.PLAY:
 	; Locates and unpacks the song
 		ld	hl, SONG_TABLE
 		call	GET_HL_2A_WORD
-		ld	de, unpack_buffer.song
+		IFEXIST unpack_buffer.song
+			ld	de, unpack_buffer.song
+		ELSE
+			ld	de, unpack_buffer
+		ENDIF ; IFEXIST unpack_buffer.song
 		call	UNPACK
 
 	; (ensures no ROUT in the middle of WYZ_CARGA_CANCION_HL)
 		halt
 	; Initializes song
-		ld	hl, unpack_buffer.song
+		IFEXIST unpack_buffer.song
+			ld	hl, unpack_buffer.song
+		ELSE
+			ld	hl, unpack_buffer
+		ENDIF ; IFEXIST unpack_buffer.song
 		jp	WYZ_CARGA_CANCION_HL
 
 	ELSE
