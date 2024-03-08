@@ -16,6 +16,7 @@ INIT_ATTRACT_PRINT:
 .NEXT_LINE:
 	xor	a
 	ld	[attract_print.framecounter], a
+.LOCATE_CENTER:
 ; Locates the actual destination
 	ld	hl, [attract_print.source]
 	ld	de, [attract_print.target_line]

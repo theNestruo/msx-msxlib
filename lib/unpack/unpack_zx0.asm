@@ -17,8 +17,11 @@ IF (CFG_INIT_ROM_SIZE > 32)
 	cp	h
 	jr	c, dzx0_standard ; no
 ; Yes: unpacks from page 0
-	di
 	push	de ; (preserves destination buffer address)
+	IFDEF CFG_UNPACK_PAGE0_SYNC
+		halt
+	ENDIF ; IFDEF CFG_UNPACK_PAGE0_SYNC
+	di
 	call	SET_PAGE0.CARTRIDGE
 	pop	de ; (restores destination buffer address)
 	call	dzx0_standard

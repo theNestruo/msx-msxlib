@@ -215,12 +215,12 @@ IFDEF CFG_SPRITES_FLICKER
 	bit	6, a
 	jr	z, .NO_FLICKER ; no: non-flickering LDIRVM
 ; yes
-IF CFG_SPRITES_NO_FLICKER > 4
-; Was the 5th sprite one of the no-flicker ones?
-	and	$0f
-	sub	CFG_SPRITES_NO_FLICKER
-	jr	c, .NO_FLICKER ; yes: non-flickering LDIRVM
-ENDIF ; IF CFG_SPRITES_NO_FLICKER > 4
+	IF CFG_SPRITES_NO_FLICKER > 4
+	; Was the 5th sprite one of the no-flicker ones?
+		and	$0f
+		sub	CFG_SPRITES_NO_FLICKER
+		jr	c, .NO_FLICKER ; yes: non-flickering LDIRVM
+	ENDIF ; IF CFG_SPRITES_NO_FLICKER > 4
 
 ; Counts how many actual sprites are in the buffer
 	ld	hl, spratr_buffer + CFG_SPRITES_NO_FLICKER *4
@@ -238,33 +238,34 @@ ENDIF ; IF CFG_SPRITES_NO_FLICKER > 4
 	jp	nz, .LOOP
 
 ; Enough sprites in this frame to apply the flickering routine?
-IF CFG_SPRITES_NO_FLICKER < 4
-	ld	a, 4 ; (at least five sprites)
-ELSE
-	ld	a, CFG_SPRITES_NO_FLICKER + 1 ; (at least 2 flickering sprites)
-ENDIF ; IF CFG_SPRITES_NO_FLICKER < 4
+	IF CFG_SPRITES_NO_FLICKER < 4
+		ld	a, 4 ; (at least five sprites)
+	ELSE
+		ld	a, CFG_SPRITES_NO_FLICKER + 1 ; (at least 2 flickering sprites)
+	ENDIF ; IF CFG_SPRITES_NO_FLICKER < 4
 	cp	e
 	jr	nc, .NO_FLICKER ; no: non-flickering LDIRVM
 ; yes
 	push	hl ; (preserves actual spratr buffer end)
 
 ; Calculates flicker size (in bytes)
-IF CFG_SPRITES_NO_FLICKER != 0
-	ld	a, -CFG_SPRITES_NO_FLICKER ; e (size, bytes) = (e -CFG_SPRITES_NO_FLICKER) * 4
-	add	e
-	add	a
-	add	a
-	ld	e, a
-ELSE
-	sla	e ; e (size, bytes) = e * 4
-	sla	e
-ENDIF ; IF CFG_SPRITES_NO_FLICKER != 0
+	IF CFG_SPRITES_NO_FLICKER != 0
+		ld	a, -CFG_SPRITES_NO_FLICKER ; e (size, bytes) = (e -CFG_SPRITES_NO_FLICKER) * 4
+		add	e
+		add	a
+		add	a
+		ld	e, a
+	ELSE
+		sla	e ; e (size, bytes) = e * 4
+		sla	e
+	ENDIF ; IF CFG_SPRITES_NO_FLICKER != 0
 
 ; Reads the 5th sprite plane
 	ld	a, [STATFL]
 	and	$0f
 ; Computes the new flickering offset
 	sub	CFG_SPRITES_NO_FLICKER
+	jr	z, .RESET_OFFSET ; (no offset)
 	add	a ; a (offset, bytes) = a *4
 	add	a
 	ld	hl, spratr_buffer.flicker_offset
@@ -287,6 +288,7 @@ ENDIF ; IF CFG_SPRITES_NO_FLICKER != 0
 ; Copies the sprites before the offset at the actual end of the spratr buffer
 	ld	hl, spratr_buffer + CFG_SPRITES_NO_FLICKER *4
 	pop	de ; de = actual spratr buffer end
+	push	de ; (preserves actual spratr buffer end)
 	ld	b, 0 ; bc = offset
 	ld	c, a
 	push	bc ; (preserves offset)
@@ -295,13 +297,13 @@ ENDIF ; IF CFG_SPRITES_NO_FLICKER != 0
 	ld	a, SPAT_END
 	ld	[de], a
 
-IF CFG_SPRITES_NO_FLICKER != 0
-; LDIRVM the non-flickering sprites
-	ld	hl, spratr_buffer
-	ld	de, SPRATR
-	ld	bc, CFG_SPRITES_NO_FLICKER *4
-	call	LDIRVM
-ENDIF ; IF CFG_SPRITES_NO_FLICKER != 0
+	IF CFG_SPRITES_NO_FLICKER != 0
+	; LDIRVM the non-flickering sprites
+		ld	hl, spratr_buffer
+		ld	de, SPRATR
+		ld	bc, CFG_SPRITES_NO_FLICKER *4
+		call	LDIRVM
+	ENDIF ; IF CFG_SPRITES_NO_FLICKER != 0
 
 ; LDIRVM the sprites, starting from the offset
 	ld	hl, spratr_buffer + CFG_SPRITES_NO_FLICKER *4
@@ -309,7 +311,12 @@ ENDIF ; IF CFG_SPRITES_NO_FLICKER != 0
 	add	hl, bc
 	ld	de, SPRATR + CFG_SPRITES_NO_FLICKER *4
 	ld	bc, SPRATR_SIZE - CFG_SPRITES_NO_FLICKER *4
-	jp	LDIRVM
+	call	LDIRVM
+
+; Restores the original SPAT_END
+	pop	hl ; (restores actual spratr buffer end)
+	ld	[hl], SPAT_END
+	ret
 
 .RESET_OFFSET:
 ; The flickering size has changed between frames; resets the offset for the next frame
@@ -349,7 +356,7 @@ ENASCR_NO_FADE:
 ; LDIRVM the NAMTBL and SPRATR buffers
 	halt	; (sync in case screen was enabled)
 	call	LDIRVM_NAMTBL
-	call	LDIRVM_SPRATR
+	call	LDIRVM_SPRATR.NO_FLICKER
 ; Enables the screen
 	halt	; (sync before enabling screen)
 	jp	ENASCR

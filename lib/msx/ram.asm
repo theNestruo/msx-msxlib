@@ -95,10 +95,10 @@ ENDIF ; IFDEF CFG_RAM_REPLAYER_PT3
 
 IFDEF CFG_RAM_REPLAYER_WYZ
 ; -----------------------------------------------------------------------------
-; Variables for: Replayer routines: WYZPlayer v0.47c-based implementation
+; Variables for: Replayer routines: WYZ PSG proPLAYER v0.47d-based implementation
 
-; WYZPlayer v0.47c variables
-	include	"libext/wyzplayer/WYZPROPLAY47c_RAM.tniasm.ASM"
+; WYZ PSG proPLAYER v0.47d variables
+	include	"libext/wyzplayer047d/wyzplayer-RAM.tniasm.asm"
 ; -----------------------------------------------------------------------------
 ENDIF ; IFDEF CFG_RAM_REPLAYER_WYZ
 

@@ -14,11 +14,8 @@ INIT_OPTIONS_MENU:
 ; Copies the menu definition
 	ld	de, options_menu
 	ld	a, [hl] ; (number of options in a)
-	ldi	; options_menu.size
-	ldi	; options_menu.cursor_definition (l)
-	ldi	; options_menu.cursor_definition (h)
-	ldi	; options_menu.offset (l)
-	ldi	; options_menu.offset (h)
+	ld	bc, 5
+	ldir	; options_menu.size, .cursor_definition, .offset
 	ex	de, hl
 	ld	[hl], e ; options_menu.coordinates (l)
 	inc	hl
@@ -146,6 +143,19 @@ HANDLE_OPTIONS_MENU_UP_DOWN:
 	or	a ; (rets nc)
 	ret
 
+; ret c: option change
+HANDLE_OPTIONS_MENU_UP_DOWN_CIRCULAR:
+	ld	a, [input.edge]
+; Changes option on stick
+	bit	BIT_STICK_UP, a
+	jr	nz, HANDLE_OPTIONS_MENU.DEC_CIRCULAR
+	bit	BIT_STICK_DOWN, a
+	jr	nz, HANDLE_OPTIONS_MENU.INC_CIRCULAR
+	or	a ; (rets nc)
+	ret
+
+; ret nc: no option change
+; ret c: option change
 HANDLE_OPTIONS_MENU_LR:
 	ld	a, [input.edge]
 ; Changes option on stick
@@ -153,6 +163,17 @@ HANDLE_OPTIONS_MENU_LR:
 	jr	nz, HANDLE_OPTIONS_MENU.DEC
 	bit	BIT_STICK_RIGHT, a
 	jr	nz, HANDLE_OPTIONS_MENU.INC
+	or	a ; (rets nc)
+	ret
+
+; ret c: option change
+HANDLE_OPTIONS_MENU_LR_CIRCULAR:
+	ld	a, [input.edge]
+; Changes option on stick
+	bit	BIT_STICK_LEFT, a
+	jr	nz, HANDLE_OPTIONS_MENU.DEC_CIRCULAR
+	bit	BIT_STICK_RIGHT, a
+	jr	nz, HANDLE_OPTIONS_MENU.INC_CIRCULAR
 	or	a ; (rets nc)
 	ret
 ; -----------------------------------------------------------------------------
@@ -193,11 +214,29 @@ HANDLE_OPTIONS_MENU:
 	ld	hl, options_menu.current_position
 	ld	a, [hl]
 	or	a
-	ret	z ; yes ; (rets nc)
-; no
-	dec	[hl]
-	scf	; (rets c)
+	jr	nz, .DO_DEC ; no
+; yes ; (rets nc)
 	ret
+
+; Moves up/left towards the first option, or wraps around to the last option
+.DEC_CIRCULAR:
+; First option?
+	call	.DEC
+	ret	c ; no
+; yes
+	jr	.DO_LAST
+
+; Actually decreases the current position
+.DO_DEC:
+	dec	[hl]
+; Feedback sound
+	IFEXIST	CFG_MENU_ON_MOVE
+		call	CFG_MENU_ON_MOVE
+	ENDIF ; IFEXIST CFG_MENU_ON_MOVE
+; rets c
+	scf
+	ret
+
 
 ; Moves down/right towards the last option
 .INC:
@@ -206,11 +245,42 @@ HANDLE_OPTIONS_MENU:
 	ld	a, [options_menu.size]
 	dec	a
 	cp	[hl]
-	ret	z ; yes ; (rets nc)
-; no
-	inc	[hl]
-	scf	; (rets c)
+	jr	nz, .DO_INC ; no
+; yes ; (rets nc)
 	ret
+
+; Moves down/right towards the last option, or wraps around to the first option
+.INC_CIRCULAR:
+; Last option?
+	call	.INC
+	ret	c ; no
+; yes
+	jr	.DO_FIRST
+
+; Actually increases the current position
+.DO_INC:
+	inc	[hl]
+; Feedback sound
+	IFEXIST	CFG_MENU_ON_MOVE
+		call	CFG_MENU_ON_MOVE
+	ENDIF ; IFEXIST CFG_MENU_ON_MOVE
+; rets c
+	scf
+	ret
+
+
+; Actually sets the current position to the first position
+.DO_FIRST:
+	xor	a
+	ld	[hl], a
+; Feedback sound
+	IFEXIST	CFG_MENU_ON_MOVE
+		call	CFG_MENU_ON_MOVE
+	ENDIF ; IFEXIST CFG_MENU_ON_MOVE
+; rets c
+	scf
+	ret
+
 
 ; Moves directly to the last option
 .LAST:
@@ -219,10 +289,22 @@ HANDLE_OPTIONS_MENU:
 	ld	a, [options_menu.size]
 	dec	a
 	cp	[hl]
-	ret	z ; yes ; (rets nc)
-; no
+	jr	nz, .DO_LAST_A_OK ; no
+; yes ; (rets nc)
+	ret
+
+; Actually sets the current position to the last position
+.DO_LAST:
+	ld	a, [options_menu.size]
+	dec	a
+.DO_LAST_A_OK:
 	ld	[hl], a
-	scf	; (rets c)
+; Feedback sound
+	IFEXIST	CFG_MENU_ON_MOVE
+		call	CFG_MENU_ON_MOVE
+	ENDIF ; IFEXIST CFG_MENU_ON_MOVE
+; rets c
+	scf
 	ret
 ; -----------------------------------------------------------------------------
 

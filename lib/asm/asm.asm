@@ -36,6 +36,18 @@ ADD_DE_A:
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
+; Emulates the instruction "add bc, a" (or "bc += a" in C syntax)
+; param bc: operand
+; param a: unsigned operand
+ADD_BC_A:
+	add	c
+	ld	c, a
+	ret	nc
+	inc	b
+	ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
 ; Reads a byte from a byte array (i.e.: "a = hl[a]" in C syntax)
 ; param hl: byte array address
 ; param a: unsigned 0-based index
@@ -205,7 +217,7 @@ FOR_EACH_ARRAY_IX:
 ; Convenience routine to return 0 and the z flag;
 ; (to be used in comparisons only; inline otherwise)
 ; ret a: 0
-; ret z
+; ret z, nc
 RET_ZERO:
 	xor	a
 	ret
@@ -215,7 +227,7 @@ RET_ZERO:
 ; Convenience routine to return -1 ($ff) and the nz flag;
 ; (to be used in comparisons only; inline otherwise)
 ; ret a: -1 ($ff)
-; ret nz
+; ret nz, nc
 RET_NOT_ZERO:
 	or	-1
 	; ret	; (falls through)
