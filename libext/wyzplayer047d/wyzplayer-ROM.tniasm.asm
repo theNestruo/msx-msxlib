@@ -420,6 +420,7 @@ INICIA_EFECTO_MUSICA:
 
 
 ;______________________________________________________
+	IFDEF CFG_WYZ_SFX
 
 ;REPRODUCE EFECTOS DE SONIDO
 
@@ -433,6 +434,8 @@ WYZ_INICIA_EFECTO:
                 LD      HL,WYZ_FLAGS
                 SET     WYZ_BIT_SFX,[HL]
                 RET
+
+        ENDIF ; IFDEF CFG_WYZ_SFX
 ;______________________________________________________
 
 

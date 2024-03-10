@@ -48,7 +48,7 @@ REPLAYER.PLAY:
 		push	af ; (preserves song index)
 		call	REPLAYER.STOP
 		pop	af ; (restores song index)
-		jp	CARGA_CANCION
+		jp	WYZ_CARGA_CANCION
 	ENDIF ; IFDEF CFG_WYZ_PACKED
 ; -----------------------------------------------------------------------------
 

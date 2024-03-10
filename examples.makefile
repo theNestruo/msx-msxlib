@@ -16,13 +16,17 @@ ROM=\
 	games\examples\00minimal\minimal.rom \
 	games\examples\01basic\basic.rom \
 	games\examples\02snake\snake.rom \
-	games\examples\03minimal48kb\minimal48kb.rom
+	games\examples\03minimal48kb\minimal48kb.rom \
+	games\examples\pt3music\pt3music.rom \
+	games\examples\wyzmusic\wyzmusic.rom
 
 SYM=\
 	games\examples\00minimal\minimal.sym \
 	games\examples\01basic\basic.sym \
 	games\examples\02snake\snake.sym \
-	games\examples\03minimal48kb\minimal48kb.sym
+	games\examples\03minimal48kb\minimal48kb.sym \
+	games\examples\pt3music\pt3music.sym \
+	games\examples\wyzmusic\wyzmusic.sym
 
 SHARED_DATAS=\
 	games\examples\shared\charset.png.chr.$(PACK_EXTENSION) \
@@ -53,6 +57,12 @@ games\examples\02snake\snake.rom: games\examples\02snake\snake.asm $(MSXLIB) $(S
 	$(ASM) $< $@
 
 games\examples\03minimal48kb\minimal48kb.rom: games\examples\03minimal48kb\minimal48kb.asm $(MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
+
+games\examples\pt3music\pt3music.rom: games\examples\pt3music\pt3music.asm $(MSXLIB)
+	$(ASM) $< $@
+
+games\examples\wyzmusic\wyzmusic.rom: games\examples\wyzmusic\wyzmusic.asm $(MSXLIB)
 	$(ASM) $< $@
 
 # secondary targets
