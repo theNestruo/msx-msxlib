@@ -17,6 +17,7 @@ ROM=\
 	games\examples\01basic\basic.rom \
 	games\examples\02snake\snake.rom \
 	games\examples\03minimal48kb\minimal48kb.rom \
+	games\examples\04flash\flash.rom \
 	games\examples\pt3music\pt3music.rom \
 	games\examples\wyzmusic\wyzmusic.rom
 
@@ -57,6 +58,9 @@ games\examples\02snake\snake.rom: games\examples\02snake\snake.asm $(MSXLIB) $(S
 	$(ASM) $< $@
 
 games\examples\03minimal48kb\minimal48kb.rom: games\examples\03minimal48kb\minimal48kb.asm $(MSXLIB) $(SHARED_DATAS)
+	$(ASM) $< $@
+
+games\examples\04flash\flash.rom: games\examples\04flash\flash.asm $(MSXLIB)
 	$(ASM) $< $@
 
 games\examples\pt3music\pt3music.rom: games\examples\pt3music\pt3music.asm $(MSXLIB)

@@ -1,10 +1,10 @@
 {
-	"editor.insertSpaces": false,
-	"editor.minimap.maxColumn": 80,
-	"editor.tabSize": 8,
-	"editor.rulers": [
-		80
-	],
+	"[z80-asm-meter][z80-macroasm]": {
+		"editor.insertSpaces": false,
+		"editor.minimap.maxColumn": 80,
+		"editor.tabSize": 8,
+		"editor.rulers": [ 80 ]
+	},
 	"files.associations": {
 		"*.makefile": "makefile",
 		"makefile.*": "makefile"
@@ -24,5 +24,10 @@
 		"**/*.zx1": { "when": "$(basename)" },
 		"**/*.zx7": { "when": "$(basename)" },
 	},
-	"z80-asm-meter.platform": "msx"
+	"z80-asm-meter.platform": "msx",
+	"z80-asm-meter.syntax": "tniasm",
+	"z80-macroasm.format.baseIndent": 1,
+	"z80-macroasm.format.bracketType": "square",
+	"z80-macroasm.format.colonAfterLabels": true,
+	"z80-macroasm.format.spaceAfterArgument": true
 }

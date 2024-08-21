@@ -14,31 +14,132 @@
 		"$errmatcher-tniasm",
 		"$errmatcher-tniasm-preprocessor"
 	],
-	"tasks": [{
-		"label": "make (default task)",
-		"type": "shell",
-		"command": "mingw32-make.exe",
-		"group": {
-			"kind": "build",
-			"isDefault": true
+	"tasks": [
+		{
+			"label": "make (default task)",
+			"type": "shell",
+			"command": "mingw32-make.exe",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "make debug build",
+			"type": "shell",
+			"command": "mingw32-make.exe debuggable",
+			"group": "build"
+		},
+		{
+			"label": "make release build",
+			"type": "shell",
+			"command": "mingw32-make.exe clean compile",
+			"group": "build"
+		},
+		{
+			"label": "make & run",
+			"type": "shell",
+			"command": "mingw32-make.exe run",
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "MDL -po (pattern-based optimizer)",
+			"type": "shell",
+			"command": "java -jar C:\\dev\\bin\\mdl.jar -dialect tniasm -po games\\examples\\wyzmusic\\wyzmusic.asm",
+			"group": "build",
+			"problemMatcher": {
+				"applyTo": "allDocuments",
+				"fileLocation": [
+					"autoDetect",
+					"${workspaceFolder}"
+				],
+				"owner": "mdl",
+				"pattern": [
+					{
+						"regexp": "^(\\w+): (.+) in (.+)#([0-9]+): (.+)$",
+						"severity": 1,
+						"code": 2,
+						"file": 3,
+						"line": 4,
+						"message": 5
+					}
+				]
+			},
+			"presentation": {
+				"echo": false,
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true,
+				"revealProblems": "onProblem"
+			}
+		},
+		{
+			"label": "MDL -so (search-based-based optimizer)",
+			"type": "shell",
+			"command": "java -jar C:\\dev\\bin\\mdl.jar -dialect tniasm -so games\\examples\\wyzmusic\\wyzmusic.asm",
+			"group": "build",
+			"problemMatcher": {
+				"applyTo": "allDocuments",
+				"fileLocation": [
+					"autoDetect",
+					"${workspaceFolder}"
+				],
+				"owner": "mdl",
+				"pattern": [
+					{
+						"regexp": "^(\\w+): (.+) in (.+)#([0-9]+): (.+)$",
+						"severity": 1,
+						"code": 2,
+						"file": 3,
+						"line": 4,
+						"message": 5
+					}
+				]
+			},
+			"presentation": {
+				"echo": false,
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true,
+				"revealProblems": "onProblem"
+			}
+		},
+		{
+			"label": "MDL -ro (code reoganizer optimizer)",
+			"type": "shell",
+			"command": "java -jar C:\\dev\\bin\\mdl.jar -dialect tniasm -ro games\\examples\\wyzmusic\\wyzmusic.asm",
+			"group": "build",
+			"problemMatcher": {
+				"applyTo": "allDocuments",
+				"fileLocation": [
+					"autoDetect",
+					"${workspaceFolder}"
+				],
+				"owner": "mdl",
+				"pattern": [
+					{
+						"regexp": "^(\\w+): (.+) in (.+)#([0-9]+): (.+)$",
+						"severity": 1,
+						"code": 2,
+						"file": 3,
+						"line": 4,
+						"message": 5
+					}
+				]
+			},
+			"presentation": {
+				"echo": false,
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true,
+				"revealProblems": "onProblem"
+			}
 		}
-	}, {
-		"label": "make debug build",
-		"type": "shell",
-		"command": "mingw32-make.exe debuggable",
-		"group": "build"
-	}, {
-		"label": "make release build",
-		"type": "shell",
-		"command": "mingw32-make.exe clean compile",
-		"group": "build"
-	}, {
-		"label": "make & run",
-		"type": "shell",
-		"command": "mingw32-make.exe run",
-		"group": {
-			"kind": "test",
-			"isDefault": true
-		}
-	}]
+	]
 }
