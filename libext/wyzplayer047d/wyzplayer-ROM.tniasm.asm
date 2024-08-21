@@ -111,7 +111,7 @@ WYZ_PLAYER_OFF:
 
         LD	HL, PSG_REG
         LD	DE, PSG_REG_SEC
-        LD	BC, 14
+        LD	C, 14                   ; (optimizado desde: LD BC, 14)
         LDIR
 
         jp	WYZ_VOLCADO_PSG
@@ -153,8 +153,8 @@ WYZ_CARGA_CANCION_HL:
                 LD      [TEMPO], A
 		DEC	A
 		LD	[TTEMPO], A
-		LD	A, [HL]
 	IFDEF CFG_WYZ_HYBRID
+		LD	A, [HL]
 		AND	10000000B
 		LD	[HYBRID], A
 	ENDIF ; IFDEF CFG_WYZ_HYBRID
@@ -323,7 +323,6 @@ DECODE_CANAL:   LD      A, [HL]
 
 NO_SILENCIO:    CP      00111110B       ;ES PUNTILLO?
                 JR      NZ, NO_PUNTILLO
-                OR      A
                 RRC     B
                 XOR     A
                 JR      NO_MODIFICA
@@ -336,14 +335,8 @@ NO_PUNTILLO:    CP      00111111B       ;ES COMANDO?
                 LD      [DE], A
                 INC     HL
                 INC     DE
-                LD      A, [HL]          ;No. DE INSTRUMENTO
-                LD      [DE], A
-                INC     DE
-                INC	HL
-                LD      A, [HL]          ;VOLUMEN RELATIVO DEL INSTRUMENTO
-                LD      [DE], A
-                INC     DE
-                INC	HL
+                LDI                     ;No. DE INSTRUMENTO
+                LDI                     ;VOLUMEN RELATIVO DEL INSTRUMENTO
                 JR      DECODE_CANAL
 
 NO_INSTRUMENTO: BIT     2, B
@@ -352,10 +345,7 @@ NO_INSTRUMENTO: BIT     2, B
                 LD      [DE], A
                 INC     DE
                 INC	HL
-                LD	A, [HL]
-                LD	[DE], A
-                INC	DE
-                INC	HL
+                LDI
                 JR      DECODE_CANAL
 
 NO_ENVOLVENTE:  BIT     1, B
@@ -645,9 +635,7 @@ PAUTAS:         LD      IY, PSG_REG+0
                 LD      IY, PSG_REG+4
                 LD      IX, PUNTERO_P_C
                 LD      HL, PSG_REG+10
-                CALL    PAUTA           ;PAUTA CANAL C
-
-                RET
+                JP      PAUTA           ;PAUTA CANAL C
 
 
 
@@ -737,8 +725,8 @@ LNJP0:          LD      A, [HL]
                 INC     HL
                 BIT     7, A
                 JR      Z, NO_FIN_CANAL_A	;
-                BIT	0, A
-                JR	Z, FIN_CANAL_A
+                RRA                             ; (optimizado desde: BIT 0, A...
+                JR	NC, FIN_CANAL_A         ; ...JR Z, FIN_CANAL_A)
 
 FIN_NOTA_A:	LD      E, [IX+CANAL_A-PUNTERO_A]
 		LD	D, [IX+CANAL_A-PUNTERO_A+1]	;PUNTERO BUFFER AL INICIO
@@ -822,8 +810,8 @@ LOCALIZA_EFECTO:
 LEJP0:          INC     HL
                 BIT     7, A
                 JR      Z, NO_FIN_CANAL_P	;
-                BIT	0, A
-                JR	Z, FIN_CANAL_P
+                RRA                             ; (optimzado desde: BIT 0, A
+                JR	NC, FIN_CANAL_P         ; ...JR Z, FIN_CANAL_A)
 FIN_NOTA_P:	LD      DE, [CANAL_P]
 		LD	[IX+0], E
 		LD	[IX+1], D
@@ -880,7 +868,6 @@ PCAJP0:		BIT	6, A		;OCTAVA -1
 		LD	E, [IY+0]
 		LD	D, [IY+1]
 
-		AND	A
 		RRC	D
 		RR	E
 		LD	[IY+0], E
@@ -892,7 +879,6 @@ PCAJP1:		BIT	5, A		;OCTAVA +1
 		LD	E, [IY+0]
 		LD	D, [IY+1]
 
-		AND	A
 		RLC	E
 		RL	D
 		LD	[IY+0], E
@@ -1082,8 +1068,8 @@ REPRODUCE_EFECTO_MUSICA:
                 INC     HL
                 LD      A, [HL]
                 LD	B, A
-                BIT	7, A				;09.08.13 BIT MAS SIGINIFICATIVO ACTIVA ENVOLVENTES
-                JR	Z, NO_ENVOLVENTES_SONIDO
+                RLA	; (optimizado desde: BIT 7, A...) ;09.08.13 BIT MAS SIGINIFICATIVO ACTIVA ENVOLVENTES
+                JR	NC, NO_ENVOLVENTES_SONIDO ; (...JR Z, NO_ENVOLVENTES_SONIDO)
                 LD	A, $12
                 LD	[DE], A
                 INC	HL
