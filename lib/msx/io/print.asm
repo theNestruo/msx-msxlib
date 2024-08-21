@@ -146,7 +146,7 @@ PRINT_BLOCK:
 ; Prepares for the next row
 	ex	de, hl ; preserves updated source (hl) in de
 	pop	hl ; restores destination in hl
-	ld	bc, SCR_WIDTH
+	ld	c, SCR_WIDTH ; (optimized from ld bc, SCR_WIDTH as b is already 0)
 	add	hl, bc
 	ex	de, hl ; restores source and destination in hl and de
 	pop	bc ; restores counters
