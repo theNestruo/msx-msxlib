@@ -286,7 +286,7 @@ ENDIF ; IFDEF CFG_INIT_USE_HIMEM_KEEP_HOOKS
 ; Selects primary slot in page 3 first (for $FFFF to refer to that slot)
 	rrc	c
 	rrc	c		; c = PP000000
-	ld	a, d		; a = P3P2P1PP
+	; ld	a, d		; a = P3P2P1PP ; (unnecessary)
 	and	$3f		; a = 00P2P1PP
 	or	c		; a = PPP2P1PP
 	out	[PPI.A], a

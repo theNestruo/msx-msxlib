@@ -70,7 +70,7 @@ WRTVRM_NAMTBL_COLUMN_OUT:
 ; For each char...
 	ld	de, SCR_WIDTH
 	ld	b, SCR_HEIGHT
-	ld	a, $20 ; " " ASCII
+	ld	a, e ; (optimized from: ld a, $20) ; " " ASCII
 .CHAR:
 ; Erases the character
 	call	WRTVRM
