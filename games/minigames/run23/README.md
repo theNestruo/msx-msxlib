@@ -21,7 +21,7 @@ Just play it. You'll get it very quickly.
 ## Credits
 
 - Coded by: [**theNestruo**](http://github.com/theNestruo)
-- Music loops by: [**erKNM**](http://twitter.com/DGrijando)
+- Music loops by: [**KNM**](http://twitter.com/DGrijando)
 - Graphics from: [**PiiXL**](https://piiixl.itch.io/) (license: CC BY-ND 4.0)
 - Sound effects from: [AY Sound FX Editor](https://github.com/Threetwosevensixseven/ayfxedit-improved) (samples from _sfxcollection_ folder)
 - External libraries:
