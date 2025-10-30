@@ -207,11 +207,32 @@
 		; $fbe2, $fbed ; RIGHT DOWN UP LEFT DEL INS HOME SPACE
 		; $fbe3, $fbee ; 4 3 2 1 0 none none none
 		; $fbe4, $fbef ; . , - 9 8 7 6 5
+	LINWRK:	equ $fc18 ; Work area for screen management (40b)
+	PATWRK:	equ $fc40 ; Returned character pattern by the routine GETPAT (8b)
 	BOTTOM: equ $fc48 ; Address of the beginning of the available RAM area
 	HIMEM:	equ $fc4a ; High free RAM address available (init stack with)
+	TRPTBL:	equ $fc4c ; Tables for each of the following instructions: (78b)
+		; TRPTBL	(3 * 10 bytes)	=> ON KEY GOSUB
+		; TRPTBL+30	(3 * 1 byte)	=> ON STOP GOSUB
+		; TRPTBL+33	(3 * 1 byte)	=> ON SPRITE GOSUB
+		; TRPTBL+48	(3 * 5 bytes)	=> ON STRIG GOSUB
+		; TRPTBL+51	(3 * 1 byte)	=> ON INTERVAL GOSUB
+		; TRPTBL+54			=> Reserved
+		; The first byte serves as an flag:
+		; 0 = OFF, 1 = ON, 2 = STOP, 3 = Call in progress, 7 = Call waiting.
+		; The other 2 bytes contain the address of the line number
+		; of the routine to be called by the GOSUB in the Basic program
+	RTYCNT:	equ $fc9a ; Interrupt control
 	INTFLG:	equ $fc9b ; STOP flag (0 = none, 3 = CTRL+STOP, 4 = STOP)
-	JIFFY:	equ $fc9e ; Software clock; each VDP interrupt gets increased by 1
-	INTCNT:	equ $fca2 ; ON INTERVAL counter (counts backwards)
+	PADY:	equ $fc9c ; Y-coordinate of a connected touch pad. (Until MSX2+)
+	PADX:	equ $fc9d ; X-coordinate of a connected touch pad. (Until MSX2+)
+	JIFFY:	equ $fc9e ; Software clock; each VDP interrupt gets increased by 1 (2b)
+	INTVAL:	equ $fca0 ; Contains length of the interval when the ON INTERVAL routine was established (2b)
+	INTCNT:	equ $fca2 ; ON INTERVAL counter (counts backwards) (2b)
+	LOWLIM:	equ $fca4 ; Used by the Cassette system (minimal length of startbit)
+	WINWID:	equ $fca5 ; Used by the Cassette system (store the difference between a low-and high-cycle)
+	GRPHED:	equ $fca6 ; Heading for the output of graphic characters
+	ESCCNT:	equ $fca7 ; Escape sequence counter
 	CSRSW:	equ $fca9 ; Flag to indicate whether the cursor will be shown (0 = no; another value, yes)
 	CAPST:	equ $fcab ; Capital status. (0 = Off; another value = On)
 	KANAST:	equ $fcac ; Status of the KANA key (0 = Off; another value = On)
@@ -230,7 +251,7 @@
 	HTIMI:	equ $fd9f ; Called by the KEYINT interrupt routine when Vblank interrupt occurs
 	HRUNC:	equ $fecb ; Called at the beginning of the routine RUNC, used by the Basic instructions NEW and RUN
 	HSTKE:	equ $feda ; This hook allows to automatically re-execute the ROM after the disks are installed
-	HOOK_SIZE:	equ HTIMI - HKEYI
+	HOOK_SIZE:	equ HTIMI - HKEYI ; (5b)
 
 ; MSX2 system variables
 	RG08SAV:	equ $ffe7 ; Content of VDP(9) register (R#8)
